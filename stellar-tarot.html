@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Astra · Stellar Tarot</title>
+<style>
+  :root{
+    --void:#0a0a1f;
+    --void-2:#11102e;
+    --ink:#070612;
+    --gold:#e9c46a;
+    --gold-soft:#c9a24b;
+    --silver:#cdd6f4;
+    --mist:#8b8fb5;
+    --rose:#d98b9e;
+    --line:rgba(233,196,106,.22);
+    --card-w:clamp(96px,22vw,150px);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    background:
+      radial-gradient(120% 80% at 50% -10%,#1a1840 0%,transparent 55%),
+      radial-gradient(90% 70% at 80% 110%,#1b1230 0%,transparent 50%),
+      var(--void);
+    color:var(--silver);
+    min-height:100%;
+    overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  /* drifting starfield */
+  .stars{position:fixed;inset:0;z-index:0;pointer-events:none}
+  .stars::before,.stars::after{
+    content:"";position:absolute;inset:-50%;
+    background-image:
+      radial-gradient(1px 1px at 20% 30%,#fff,transparent),
+      radial-gradient(1px 1px at 70% 60%,#fff,transparent),
+      radial-gradient(1.4px 1.4px at 40% 80%,#e9c46a,transparent),
+      radial-gradient(1px 1px at 85% 20%,#fff,transparent),
+      radial-gradient(1px 1px at 10% 70%,#cdd6f4,transparent),
+      radial-gradient(1.3px 1.3px at 55% 15%,#fff,transparent),
+      radial-gradient(1px 1px at 90% 85%,#d98b9e,transparent);
+    background-size:600px 600px;background-repeat:repeat;
+    opacity:.5;animation:drift 140s linear infinite;
+  }
+  .stars::after{background-size:380px 380px;opacity:.3;animation-duration:90s;animation-direction:reverse}
+  @keyframes drift{to{transform:translateY(-300px)}}
+
+  .wrap{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:clamp(20px,5vw,56px) 18px 80px}
+
+  header{text-align:center;margin-bottom:clamp(24px,5vw,48px)}
+  .eyebrow{
+    font-family:"Trebuchet MS",sans-serif;
+    letter-spacing:.42em;text-transform:uppercase;
+    font-size:11px;color:var(--gold-soft);margin-bottom:14px;padding-left:.42em
+  }
+  h1{
+    font-size:clamp(40px,9vw,82px);font-weight:400;line-height:.92;
+    letter-spacing:.01em;color:#fff;
+    text-shadow:0 0 30px rgba(233,196,106,.25)
+  }
+  h1 em{font-style:italic;color:var(--gold)}
+  .tagline{color:var(--mist);margin-top:16px;font-size:clamp(14px,2.4vw,17px);font-style:italic}
+
+  /* ── panel shell ── */
+  .panel{
+    border:1px solid var(--line);border-radius:18px;
+    background:linear-gradient(180deg,rgba(28,26,64,.6),rgba(12,11,32,.5));
+    backdrop-filter:blur(6px);
+    padding:clamp(20px,4vw,34px);margin-top:26px;
+    box-shadow:0 20px 60px -30px rgba(0,0,0,.9),inset 0 1px 0 rgba(255,255,255,.04)
+  }
+  .step-label{
+    font-family:"Trebuchet MS",sans-serif;font-size:11px;letter-spacing:.3em;
+    text-transform:uppercase;color:var(--gold-soft);margin-bottom:18px;
+    display:flex;align-items:center;gap:12px
+  }
+  .step-label::before{content:"";width:26px;height:1px;background:var(--gold-soft);opacity:.6}
+
+  /* ── spread chooser ── */
+  .spreads{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}
+  .spread{
+    text-align:left;border:1px solid var(--line);border-radius:14px;
+    background:rgba(10,9,28,.5);color:var(--silver);
+    padding:18px 18px 16px;cursor:pointer;transition:.25s;font-family:inherit;
+    position:relative;overflow:hidden
+  }
+  .spread:hover{border-color:var(--gold);transform:translateY(-3px);box-shadow:0 14px 30px -18px rgba(233,196,106,.6)}
+  .spread.active{border-color:var(--gold);background:rgba(233,196,106,.08)}
+  .spread .glyph{font-size:22px;color:var(--gold);margin-bottom:10px;letter-spacing:2px}
+  .spread h3{font-size:19px;font-weight:400;color:#fff;margin-bottom:4px}
+  .spread .count{font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold-soft);margin-bottom:9px}
+  .spread p{font-size:13px;color:var(--mist);line-height:1.5}
+
+  /* ── controls row ── */
+  .controls{display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:rgba(10,9,28,.5)}
+  .seg button{
+    font-family:"Trebuchet MS",sans-serif;font-size:12px;letter-spacing:.12em;text-transform:uppercase;
+    background:none;border:none;color:var(--mist);padding:11px 20px;cursor:pointer;transition:.2s
+  }
+  .seg button.on{background:var(--gold);color:var(--ink);font-weight:600}
+  .hint{font-size:13px;color:var(--mist);font-style:italic}
+
+  .btn{
+    font-family:"Trebuchet MS",sans-serif;font-size:12px;letter-spacing:.18em;text-transform:uppercase;
+    border:1px solid var(--gold);color:var(--gold);background:none;border-radius:999px;
+    padding:13px 28px;cursor:pointer;transition:.25s
+  }
+  .btn:hover{background:var(--gold);color:var(--ink)}
+  .btn:disabled{opacity:.3;cursor:not-allowed}
+  .btn.solid{background:var(--gold);color:var(--ink);font-weight:600}
+  .btn.ghost{border-color:var(--line);color:var(--mist)}
+  .btn.ghost:hover{border-color:var(--silver);color:var(--silver);background:none}
+
+  .pick-status{text-align:center;margin:6px 0 22px;color:var(--mist);font-style:italic;min-height:22px}
+  .pick-status b{color:var(--gold);font-style:normal}
+
+  /* ── the deck / fan area ── */
+  .stage{position:relative;min-height:300px;display:flex;align-items:center;justify-content:center;padding:30px 0}
+
+  /* fan layout */
+  .fan{position:relative;width:100%;max-width:760px;height:300px;margin:0 auto}
+  .cardback{
+    position:absolute;top:50%;left:50%;
+    width:var(--card-w);aspect-ratio:5/8;border-radius:12px;cursor:pointer;
+    transform-origin:bottom center;
+    transition:transform .45s cubic-bezier(.2,.7,.2,1),filter .3s;
+    will-change:transform
+  }
+  .cardback .face{width:100%;height:100%;border-radius:12px;overflow:hidden;
+    box-shadow:0 10px 26px -10px rgba(0,0,0,.85),inset 0 0 0 1px rgba(233,196,106,.35)}
+  .cardback:hover{filter:brightness(1.25) drop-shadow(0 0 16px rgba(233,196,106,.5))}
+  .cardback.chosen{opacity:0;pointer-events:none;transition:opacity .3s,transform .5s}
+
+  /* pile layout (pick from top) */
+  .pile{position:relative;width:var(--card-w);aspect-ratio:5/8;margin:0 auto;cursor:pointer}
+  .pile .cardback{position:absolute;top:0;left:0;transform:none;cursor:pointer}
+  .pile:hover .cardback:last-child{transform:translateY(-14px) rotate(1.5deg)}
+  .pile-tap{position:absolute;inset:0;z-index:5}
+
+  /* drawn cards layout */
+  .reading{margin-top:30px}
+  .board{display:flex;flex-wrap:wrap;gap:22px;justify-content:center}
+  .slot{width:var(--card-w);display:flex;flex-direction:column;align-items:center;gap:10px}
+  .slot .pos{font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-soft);text-align:center;min-height:26px}
+  .tcard{
+    width:100%;aspect-ratio:5/8;border-radius:12px;perspective:1200px;cursor:pointer
+  }
+  .tcard .inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .8s cubic-bezier(.3,.7,.2,1)}
+  .tcard.flipped .inner{transform:rotateY(180deg)}
+  .tcard .side{position:absolute;inset:0;backface-visibility:hidden;border-radius:12px;overflow:hidden}
+  .tcard .back{transform:rotateY(0)}
+  .tcard .front{transform:rotateY(180deg)}
+  .tcard.rev .front{transform:rotateY(180deg) rotate(180deg)}
+
+  /* card front art */
+  .front-art{width:100%;height:100%;background:linear-gradient(165deg,#16143a,#0c0b22);
+    border:1px solid rgba(233,196,106,.4);border-radius:12px;
+    display:flex;flex-direction:column;align-items:center;justify-content:space-between;
+    padding:12px 8px;text-align:center;position:relative;overflow:hidden}
+  .front-art .num{font-family:"Trebuchet MS",sans-serif;font-size:9px;letter-spacing:.2em;color:var(--gold-soft)}
+  .front-art .sigil{font-size:clamp(30px,8vw,46px);color:var(--gold);text-shadow:0 0 18px rgba(233,196,106,.6);line-height:1}
+  .front-art .nm{font-size:clamp(11px,2.6vw,14px);color:#fff;line-height:1.15}
+  .front-art .astro{font-size:13px;color:var(--rose)}
+  /* suit tints on minor fronts */
+  .front-art[data-arcana="minor"],.front-art[data-arcana="court"]{background:linear-gradient(165deg,#141733,#0b0b20)}
+  /* keyword chips */
+  .kwrow{display:flex;flex-wrap:wrap;gap:7px;margin:2px 0 12px}
+  .kw{font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--silver);border:1px solid var(--line);border-radius:999px;padding:4px 11px;background:rgba(233,196,106,.04)}
+
+  /* meaning blocks */
+  .meaning{margin-top:14px;border-top:1px solid var(--line);padding-top:20px}
+  .meaning h4{font-size:20px;font-weight:400;color:#fff;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .meaning h4 .pos-tag{font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
+  .meaning .glyphline{color:var(--rose);font-size:14px;margin:4px 0 10px;font-style:italic}
+  .meaning .orient{font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-soft);border:1px solid var(--line);border-radius:999px;padding:3px 10px;display:inline-block;margin-bottom:10px}
+  .meaning p{color:var(--silver);line-height:1.65;font-size:15px}
+  .meaning .pos-read{color:var(--mist);font-size:14px;line-height:1.6;margin-top:8px;font-style:italic}
+
+  .synthesis{margin-top:26px;border:1px solid var(--line);border-radius:14px;background:rgba(233,196,106,.05);padding:24px}
+  .synthesis .step-label{margin-bottom:12px}
+  .synthesis p{line-height:1.7;font-size:15px;color:var(--silver)}
+
+  .center{text-align:center;margin-top:30px}
+
+  /* journal */
+  .journal{margin-top:26px;border:1px solid var(--line);border-radius:14px;background:rgba(10,9,28,.4);padding:20px}
+  .journal textarea{
+    width:100%;min-height:120px;resize:vertical;margin-top:6px;
+    background:rgba(7,6,18,.6);border:1px solid var(--line);border-radius:10px;
+    color:var(--silver);font-family:inherit;font-size:15px;line-height:1.6;padding:14px;
+  }
+  .journal textarea:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 1px rgba(233,196,106,.3)}
+  .journal textarea::placeholder{color:var(--mist);opacity:.7;font-style:italic}
+  .journal-row{display:flex;justify-content:space-between;align-items:center;margin-top:10px;gap:12px;flex-wrap:wrap}
+
+  /* export bar */
+  .export-bar{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:28px}
+
+  /* capture header — only meaningful in the exported image/pdf */
+  #capture{padding:2px}
+  .capture-head{text-align:center;margin-bottom:20px}
+  .cap-title{font-size:24px;color:#fff;letter-spacing:.02em}
+  .cap-title em{color:var(--gold);font-style:italic}
+  .cap-meta{font-family:"Trebuchet MS",sans-serif;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold-soft);margin-top:6px}
+  .journal-print{margin-top:26px;border:1px solid var(--line);border-radius:14px;background:rgba(10,9,28,.4);padding:24px}
+  .journal-print p{white-space:pre-wrap;line-height:1.7;font-size:15px;color:var(--silver)}
+  .upload-note{margin-top:34px;font-size:12px;color:var(--mist);text-align:center;font-style:italic;line-height:1.6}
+  .hidden{display:none!important}
+  footer{text-align:center;color:var(--mist);font-size:12px;margin-top:50px;opacity:.7;letter-spacing:.05em}
+
+  @media(max-width:560px){
+    .fan{height:240px}
+    .controls{justify-content:center}
+  }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+<div class="stars"></div>
+
+<svg width="0" height="0" style="position:absolute">
+  <!-- shared card-back design: astrolabe -->
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="42%" r="65%">
+      <stop offset="0%" stop-color="#2a2660"/>
+      <stop offset="60%" stop-color="#15123a"/>
+      <stop offset="100%" stop-color="#0a0820"/>
+    </radialGradient>
+  </defs>
+  <symbol id="astrolabe" viewBox="0 0 100 160">
+    <rect width="100" height="160" fill="url(#bg)"/>
+    <rect x="4" y="4" width="92" height="152" rx="7" fill="none" stroke="#e9c46a" stroke-opacity=".55" stroke-width="1"/>
+    <rect x="8" y="8" width="84" height="144" rx="5" fill="none" stroke="#e9c46a" stroke-opacity=".25" stroke-width=".6"/>
+    <g transform="translate(50,80)" fill="none" stroke="#e9c46a">
+      <circle r="34" stroke-opacity=".7" stroke-width="1"/>
+      <circle r="27" stroke-opacity=".35" stroke-width=".6"/>
+      <circle r="20" stroke-opacity=".5" stroke-width=".6"/>
+      <circle r="11" stroke-opacity=".7" stroke-width=".8"/>
+      <g stroke-opacity=".45" stroke-width=".5">
+        <line x1="-34" y1="0" x2="34" y2="0"/><line x1="0" y1="-34" x2="0" y2="34"/>
+        <line x1="-24" y1="-24" x2="24" y2="24"/><line x1="-24" y1="24" x2="24" y2="-24"/>
+      </g>
+      <circle r="2.4" fill="#e9c46a" stroke="none"/>
+      <g fill="#e9c46a" stroke="none">
+        <circle cx="0" cy="-20" r="1.3"/><circle cx="17" cy="10" r="1.3"/><circle cx="-17" cy="10" r="1.3"/>
+        <circle cx="0" cy="-34" r="1"/><circle cx="29" cy="17" r="1"/><circle cx="-29" cy="17" r="1"/>
+      </g>
+    </g>
+    <text x="50" y="148" text-anchor="middle" fill="#e9c46a" fill-opacity=".7" font-family="Trebuchet MS, sans-serif" font-size="6" letter-spacing="3">ASTRA</text>
+    <g fill="#cdd6f4" fill-opacity=".7">
+      <circle cx="20" cy="28" r=".7"/><circle cx="78" cy="36" r=".7"/><circle cx="26" cy="132" r=".7"/><circle cx="74" cy="126" r=".7"/>
+    </g>
+  </symbol>
+</svg>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">The Astra Deck · 78 Cards · Major &amp; Minor Arcana</div>
+    <h1>Stellar <em>Tarot</em></h1>
+    <p class="tagline">Twenty-two Major Arcana as planets and signs, fifty-six Minor across the four classic suits — Wands, Cups, Swords, Pentacles. Choose how the heavens are dealt, then let them be read.</p>
+  </header>
+
+  <!-- STEP 1: spread -->
+  <section class="panel" id="step-spread">
+    <div class="step-label">One · Choose your spread</div>
+    <div class="spreads" id="spreadList"></div>
+  </section>
+
+  <!-- STEP 2: draw method + deck -->
+  <section class="panel hidden" id="step-draw">
+    <div class="step-label">Two · Draw your cards</div>
+    <div class="controls" style="margin-bottom:8px">
+      <div class="seg" id="methodSeg">
+        <button data-m="fan" class="on">Fan & pick</button>
+        <button data-m="pile">Cut from top</button>
+      </div>
+      <button class="btn ghost" id="shuffleBtn">↺ Shuffle</button>
+      <span class="hint" id="orientToggleWrap">
+        <label style="cursor:pointer"><input type="checkbox" id="reversals" checked style="accent-color:var(--gold)"> allow reversed cards</label>
+      </span>
+    </div>
+    <p class="pick-status" id="pickStatus"></p>
+    <div class="stage" id="stage"></div>
+  </section>
+
+  <!-- STEP 3: reading -->
+  <section class="panel hidden" id="step-read">
+    <div class="step-label">Three · The reading</div>
+    <p class="hint" style="text-align:center;margin-bottom:8px">Tap any card to turn it over.</p>
+
+    <div id="capture">
+      <div class="capture-head">
+        <div class="cap-title">Astra · Stellar Tarot</div>
+        <div class="cap-meta" id="capMeta"></div>
+      </div>
+      <div class="board" id="board"></div>
+      <div class="reading" id="readingDetail"></div>
+      <div class="synthesis hidden" id="synthesis">
+        <div class="step-label">The stars, taken together</div>
+        <p id="synthText"></p>
+      </div>
+      <!-- journal text rendered here for export only -->
+      <div class="journal-print hidden" id="journalPrint">
+        <div class="step-label">Journal</div>
+        <p id="journalPrintText"></p>
+      </div>
+    </div>
+
+    <div class="journal">
+      <div class="step-label">Your notes</div>
+      <textarea id="journalBox" placeholder="What does this reading stir up? Jot down impressions, questions, what rings true, what you want to remember…"></textarea>
+      <div class="journal-row">
+        <span class="hint" id="journalSaved">Notes stay with this reading until you draw again.</span>
+      </div>
+    </div>
+
+    <div class="export-bar">
+      <button class="btn" id="exportImg">⤓ Save as image</button>
+      <button class="btn" id="exportPdf">⤓ Save as PDF</button>
+      <button class="btn solid" id="againBtn">Draw again</button>
+    </div>
+  </section>
+
+  <p class="upload-note">Placeholder card art is in play. When you upload your stellar card images, drop them in and they'll replace the astrolabe backs and the front sigils automatically.</p>
+  <footer>Astra · for reflection and play, not prophecy</footer>
+</div>
+
+<script>
+/* ───────── 78-CARD STELLAR DECK ───────── */
+/* ───────── FULL 78-CARD STELLAR DECK ───────── */
+
+/* 22 MAJOR ARCANA — deeper meanings */
+const MAJORS = [
+  {n:0,  name:"The Voyager",       sigil:"✷", astro:"Uranus", glyph:"♅",
+   up:"Pure potential and the leap into the unknown. A fresh orbit begins and the only map is forward. The Voyager carries everything they need in a single bundle and nothing they think they need — innocence, faith, and a willingness to fall. This is the soul before experience writes on it: open, curious, unafraid of the edge.",
+   rev:"Recklessness dressed as freedom. The leap taken blind, the warning ignored, the cliff misread as a runway. Reversed, the Voyager asks whether you're being brave or merely careless — and whether your refusal to plan is courage or avoidance.",
+   key:["beginnings","faith","spontaneity","the unknown"]},
+  {n:1,  name:"The Magus",         sigil:"☿", astro:"Mercury", glyph:"☿",
+   up:"Will made manifest. All four elements lie on the table and the Magus channels the sky through the body and into the world. As above, so below — you are the conduit between intention and form. Skill, focus, and the confidence that what you imagine can be built.",
+   rev:"Power scattered or turned to sleight of hand. Talent without direction, or charisma used to deceive — sometimes to deceive yourself. The tools are present but the will behind them is muddled or manipulative.",
+   key:["manifestation","willpower","skill","focus"]},
+  {n:2,  name:"The High Priestess",sigil:"☾", astro:"The Moon", glyph:"☽",
+   up:"The intuitive deep and the veil between worlds. She sits at the threshold of the seen and unseen, holding knowledge that arrives without argument. The tide knows before the shore does. Trust the quiet pull beneath the surface of your thoughts.",
+   rev:"A signal ignored, secrets kept too long, intuition overruled by noise. Reversed, the inner voice has gone unheard — or you're hiding something, even from yourself.",
+   key:["intuition","mystery","the subconscious","inner voice"]},
+  {n:3,  name:"The Empress",        sigil:"♀", astro:"Venus", glyph:"♀",
+   up:"Abundance and the fertile field. The Empress creates by nurturing — she does not force the bloom, she tends the conditions for it. Sensuality, beauty, generativity, the ripening of anything you've planted with care.",
+   rev:"Creative block or care turned to smothering. Nourishment curdled into dependence, or neglect of your own needs while tending everyone else's. The garden goes untended.",
+   key:["abundance","nurture","creativity","fertility"]},
+  {n:4,  name:"The Emperor",        sigil:"♈", astro:"Aries", glyph:"♈",
+   up:"Structure and sovereign order. The Emperor builds the frame the future stands on — boundaries, discipline, the steady authority that turns chaos into something you can rely on. Leadership earned, not merely claimed.",
+   rev:"Rigidity, or control without warmth. The throne grown cold, authority become tyranny, or a refusal to lead when leadership is needed. Structure that has stopped serving its purpose.",
+   key:["structure","authority","stability","discipline"]},
+  {n:5,  name:"The Hierophant",     sigil:"♉", astro:"Taurus", glyph:"♉",
+   up:"Tradition and the inherited map. Wisdom passed hand to hand, the institutions and teachers that carry meaning across generations. Sometimes the established path is established because it works.",
+   rev:"Dogma that no longer fits. Time to question the doctrine, leave the orthodoxy, or find your own way to the sacred. Rebellion against a teaching you've outgrown.",
+   key:["tradition","teaching","belief","conformity"]},
+  {n:6,  name:"The Lovers",         sigil:"♊", astro:"Gemini", glyph:"♊",
+   up:"Union and the meaningful choice. More than romance — this is alignment of values, the decision that defines who you are. Two paths or two souls meeting under one sky, and the integrity required to choose well.",
+   rev:"Discord, misalignment, a choice avoided. Values in conflict, a relationship out of balance, or a decision you keep refusing to make.",
+   key:["union","choice","values","alignment"]},
+  {n:7,  name:"The Chariot",        sigil:"♋", astro:"Cancer", glyph:"♋",
+   up:"Drive and directed will. Two opposing forces yoked together and steered toward a single star by sheer determination. Victory through focus, momentum held on course.",
+   rev:"Loss of control, scattered momentum, a stalled engine. The forces pulling in opposite directions and no hand on the reins.",
+   key:["determination","direction","willpower","momentum"]},
+  {n:8,  name:"Strength",           sigil:"♌", astro:"Leo", glyph:"♌",
+   up:"Quiet courage and the soft hand that tames the lion. Not domination but mastery through gentleness — power held with grace, fear met with compassion. The strongest force is patient.",
+   rev:"Self-doubt or raw force. The inner beast unmastered, courage faltering, or strength expressed as aggression rather than calm.",
+   key:["courage","compassion","inner strength","patience"]},
+  {n:9,  name:"The Hermit",         sigil:"♍", astro:"Virgo", glyph:"♍",
+   up:"Solitude and the inner lantern. Withdraw from the noise to find the light that guides you back. The Hermit seeks truth in silence and returns with something worth sharing.",
+   rev:"Isolation curdled into loneliness, or a refusal to look inward. Withdrawal that has become hiding.",
+   key:["solitude","reflection","inner guidance","searching"]},
+  {n:10, name:"Wheel of Fortune",   sigil:"♃", astro:"Jupiter", glyph:"♃",
+   up:"Cycles, fate, and the turning sky. Fortune rises and falls; the wise ride the arc rather than fight it. A pivot point — what goes around is coming around now.",
+   rev:"A downturn in the cycle, or resistance to a change you cannot stop. Bad luck, or clinging to a wheel that's already turning past you.",
+   key:["cycles","fate","change","turning points"]},
+  {n:11, name:"Justice",            sigil:"♎", astro:"Libra", glyph:"♎",
+   up:"Balance, truth, cause and effect. The scales settle exactly where they're earned. Accountability, fairness, the clear-eyed reckoning of consequence. Decisions made with both head and conscience.",
+   rev:"Imbalance, evasion, accounts left unsettled. Unfairness, dishonesty, or a refusal to take responsibility for what you've set in motion.",
+   key:["fairness","truth","accountability","balance"]},
+  {n:12, name:"The Hanged Star",    sigil:"♆", astro:"Neptune", glyph:"♆",
+   up:"Surrender and the shift in perspective. Suspended on purpose, you finally see the constellation whole. Letting go of control reveals what struggle never could. A meaningful pause.",
+   rev:"Stalling, martyrdom, a sacrifice with no purpose. Suspension that has become stuckness, or a refusal to surrender what needs releasing.",
+   key:["surrender","perspective","pause","letting go"]},
+  {n:13, name:"Death",              sigil:"♏", astro:"Scorpio", glyph:"♏",
+   up:"Transformation, not ending. One configuration dissolves so another can rise — nothing real is lost, only changed. The hardest, cleanest doorway. What dies makes room.",
+   rev:"Clinging to what is already gone. A transition refused, a chapter you keep rereading because you won't turn the page.",
+   key:["transformation","endings","release","rebirth"]},
+  {n:14, name:"Temperance",         sigil:"♐", astro:"Sagittarius", glyph:"♐",
+   up:"Alchemy and measured blend. Opposites married into something finer than either alone. Patience, moderation, the slow art of mixing until the proportion is right.",
+   rev:"Excess or impatience with the slow mix. Imbalance, overindulgence, or forcing a combination that needs more time.",
+   key:["balance","moderation","alchemy","patience"]},
+  {n:15, name:"The Devil",          sigil:"♑", astro:"Capricorn", glyph:"♑",
+   up:"Shadow, attachment, the gravity well. The chains are loose enough to slip — name the thing that binds you and it loses half its power. Confront what you'd rather not look at: desire, dependence, the bargain you made.",
+   rev:"Breaking free, releasing a binding you'd outgrown. The chains coming off, the spell recognized for what it was.",
+   key:["attachment","shadow","temptation","bondage"]},
+  {n:16, name:"The Tower",          sigil:"♂", astro:"Mars", glyph:"♂",
+   up:"Sudden upheaval. The false structure struck by lightning so that truth can stand where illusion stood. Painful, fast, and ultimately clearing. What falls was never solid.",
+   rev:"Disaster narrowly averted, or change resisted until it breaks worse. A collapse delayed, or one you're surviving from the inside.",
+   key:["upheaval","revelation","sudden change","collapse"]},
+  {n:17, name:"The Star",           sigil:"♒", astro:"Aquarius", glyph:"♒",
+   up:"Hope, renewal, the guiding light. After the Tower's dark, a clear point to steer by. Healing, faith restored, the quiet certainty that you'll find your way. Replenishment.",
+   rev:"Faith dimmed, disconnection from your source of hope. Despair, or a guiding light you've lost sight of.",
+   key:["hope","renewal","healing","inspiration"]},
+  {n:18, name:"The Moon",           sigil:"♓", astro:"Pisces", glyph:"♓",
+   up:"Dream, illusion, the lit unknown. Not everything seen by moonlight is what it seems. Intuition and fear walk the same path here; trust the journey through uncertainty even when you can't see the end.",
+   rev:"Confusion clearing, or fear that has overstayed. Illusions lifting, or anxiety distorting what's actually there.",
+   key:["illusion","intuition","uncertainty","the subconscious"]},
+  {n:19, name:"The Sun",            sigil:"☉", astro:"The Sun", glyph:"☉",
+   up:"Vitality, clarity, joy made plain. Warmth that asks nothing in return. Success, truth in full daylight, the simple radiance of a thing going right. Permission to feel good.",
+   rev:"A cloud across the sun — temporary dimming of a bright thing. Joy deferred, or optimism that's gone slightly hollow.",
+   key:["joy","success","vitality","clarity"]},
+  {n:20, name:"Judgement",          sigil:"♇", astro:"Pluto", glyph:"♇",
+   up:"Reckoning and rebirth. A call you've waited for sounds, and you rise to meet it. Self-evaluation, absolution, the moment you become who the journey made you. Answer the trumpet.",
+   rev:"A verdict avoided, the call ignored. Self-doubt, or refusing the reckoning that would set you free.",
+   key:["reckoning","rebirth","awakening","calling"]},
+  {n:21, name:"The Cosmos",         sigil:"♄", astro:"Saturn", glyph:"♄",
+   up:"Completion and wholeness. The orbit closes and you arrive where the journey always meant to end — fuller than you began. Integration, accomplishment, the satisfying click of a cycle complete before the next one opens.",
+   rev:"A cycle not quite finished, a final lesson still owed. Closure withheld, or a loose thread keeping you from the whole.",
+   key:["completion","wholeness","fulfillment","integration"]}
+];
+
+/* SUITS — stellar elemental reframing */
+const SUITS = {
+  Wands:     {element:"Fire",  sigil:"🜂", signs:"Aries · Leo · Sagittarius",
+    theme:"passion, drive, creativity, and the spark of action",
+    court:"the fire that lights, drives, and forges"},
+  Cups:      {element:"Water", sigil:"🜄", signs:"Cancer · Scorpio · Pisces",
+    theme:"emotion, love, intuition, and the inner sea",
+    court:"the water that feels, heals, and runs deep"},
+  Swords:    {element:"Air",   sigil:"🜁", signs:"Gemini · Libra · Aquarius",
+    theme:"thought, truth, conflict, and the clarity of mind",
+    court:"the air that thinks, cuts, and clarifies"},
+  Pentacles: {element:"Earth", sigil:"🜃", signs:"Taurus · Virgo · Capricorn",
+    theme:"body, work, money, and the material ground",
+    court:"the earth that builds, holds, and provides"}
+};
+
+/* per-rank meanings, themed by suit. {S} = suit theme noun */
+const NUM_MEANINGS = {
+  Wands:{
+    "Ace":["The spark itself — raw creative fire, a new passion, the match struck. Pure potential to make, move, and begin.","A spark that won't catch, or energy with nowhere to go. Delays, false starts, inspiration that fizzles."],
+    "2":["The first plan after the spark. Standing at the edge of your domain, choosing which world to reach for. Vision before commitment.","Fear of the leap, a plan stalled by indecision, playing small when the world is open."],
+    "3":["The first ships sailing out. Expansion underway, foresight rewarded, momentum you can finally see returning.","Delays in the venture, plans that overreached, waiting on a horizon that stays empty."],
+    "4":["A threshold of celebration — home, harmony, a milestone reached. The joyful pause that earns the next push.","A celebration muted, or stability that feels unstable. Harmony you can't quite settle into."],
+    "5":["Friction and creative chaos. Everyone's flame pulling a different way — competition, sparring, the heat of disagreement.","Conflict avoided or finally cooling. Tension released, or simmering beneath a forced calm."],
+    "6":["The victory ride. Recognition earned, the crowd cheering, a win that's truly yours. Confidence justified.","Praise that doesn't come, a victory delayed, or success that rings hollow without acknowledgement."],
+    "7":["Holding your ground against the rush. Defending a position, standing firm when challenged from below.","Overwhelmed by the pressure, ground given up, or exhaustion from a fight you can't keep winning."],
+    "8":["Swift movement — everything happening at once. Messages, momentum, events accelerating toward their target.","Delays, scattered energy, a rush that's lost its aim. Too much at once with no direction."],
+    "9":["The last stand. Wounded but still standing, resilience drawn from depleted reserves. Almost through.","Defenses kept up too long, paranoia, exhaustion clung to past its usefulness."],
+    "10":["The heavy load carried to the finish. Burden of success, responsibility that's become too much to bear alone.","Releasing the burden, delegating at last, or collapsing under a weight you refused to set down."]
+  },
+  Cups:{
+    "Ace":["The cup overflowing — new love, deep feeling, the heart cracked open. An emotional or spiritual beginning.","Emotion blocked or spilled. A closed heart, a love withheld, feeling that can't find its outlet."],
+    "2":["Two tides meeting as one. Partnership, mutual attraction, the meeting of equals. Connection that balances.","A partnership out of balance, a connection strained, or attraction that's cooled to distance."],
+    "3":["The gathering of friends, the toast, the shared joy. Community, celebration, belonging.","Overindulgence, gossip, or a circle that's become too much of a crowd."],
+    "4":["Contemplation and quiet discontent. A gift offered that goes unnoticed because you're looking inward.","Apathy lifting, or a new offer finally seen. Re-engagement after withdrawal."],
+    "5":["Grief over what's spilled — but two cups still stand. Loss, regret, the focus on what's gone over what remains.","Acceptance dawning, moving forward, the gaze shifting to the cups still upright."],
+    "6":["Sweetness from the past — nostalgia, innocence, a kindness remembered. Comfort in familiar warmth.","Stuck in the past, or finally ready to leave it. Nostalgia that's become a hiding place."],
+    "7":["Many cups, many dreams — and the danger of choosing none. Imagination, illusion, options that dazzle and confuse.","Clarity returning, a real choice made among the fantasies. Focus after drift."],
+    "8":["Walking away from what no longer fulfills. Leaving the cups behind to seek something deeper, even when it's enough on paper.","Fear of leaving, or drifting without purpose. Staying in the shallow, or wandering with no shore in mind."],
+    "9":["The wish fulfilled. Contentment, emotional satisfaction, the quiet pleasure of having what you wanted.","A wish that didn't satisfy, or pleasure that's become indulgence. Satisfaction just out of reach."],
+    "10":["The full tide of belonging — lasting joy, harmony, the emotional home. Fulfillment shared with those you love.","Harmony disrupted, a rift in the home, or an ideal of happiness that strains against the real."]
+  },
+  Swords:{
+    "Ace":["A breakthrough of clarity — the blade of truth cutting fog. New ideas, mental sharpness, a decision made clean.","Confusion, a truth misused, or clarity weaponized. The mind sharp but pointed wrong."],
+    "2":["A stalemate, eyes blindfolded, blade balanced. A decision avoided by refusing to look. Truce held in tension.","The blindfold off, the choice finally faced — or stalemate breaking into conflict."],
+    "3":["Heartbreak named plainly. Grief, painful truth, the clean cut that hurts because it's honest.","The pain beginning to heal, or grief held onto past its season. Recovery, slowly."],
+    "4":["Rest and retreat. The mind laid down to recover, a necessary stillness before re-entering the fray.","Restlessness, burnout, or a return to action before you're ready. Rest refused."],
+    "5":["A hollow victory. Winning at a cost, conflict that leaves everyone diminished. Pride that isolates.","Reconciliation possible, or defeat accepted. The fight's pointlessness finally clear."],
+    "6":["The crossing to calmer water. Transition away from difficulty, moving on, the slow passage toward peace.","A transition stalled, baggage carried across, or resistance to a move you need to make."],
+    "7":["Strategy in the shadows. Cunning, getting away with something, or acting alone outside the rules.","Deception exposed, conscience catching up, or a scheme abandoned. Coming clean."],
+    "8":["Trapped by your own thinking. Restriction that's more mental than real — the blindfold and bindings you could remove.","The bindings loosening, a way out spotted, perspective shifting toward freedom."],
+    "9":["The 3am mind — anxiety, dread, the nightmare worse than the day. Worry magnified in the dark.","The worst fears proving hollow, anxiety releasing its grip, dawn approaching."],
+    "10":["Rock bottom and the end of the cycle. Painful ending, betrayal, the worst finally over because there's nowhere lower.","Recovery beginning, the slow climb up, or resistance to an ending that's already complete."]
+  },
+  Pentacles:{
+    "Ace":["A seed of solid worth — a new venture, opportunity, the tangible beginning. Prosperity with roots.","An opportunity missed or poorly grounded. A seed planted in bad soil, or fixation on money over meaning."],
+    "2":["Juggling, adapting, keeping the plates spinning. Balance in motion, managing more than one demand with grace.","Overwhelm, dropped balls, or disorganization. The juggle becoming a scramble."],
+    "3":["The craft of collaboration. Skill recognized, teamwork building something none could alone. Quality work in progress.","Misaligned effort, poor teamwork, or skill that goes unappreciated. The build stalling."],
+    "4":["Holding tight to what you have. Security, saving, control — and the question of whether you're protecting or hoarding.","Loosening the grip, or clinging harder. Generosity returning, or scarcity-fear tightening."],
+    "5":["Out in the cold, but light through the window. Hardship, want, the feeling of exclusion — and help nearer than it seems.","Recovery from hard times, help accepted at last, or a deeper slide into isolation."],
+    "6":["The flow of giving and receiving. Generosity, fair exchange, support offered or accepted in balance.","Strings attached, an unequal exchange, or generosity that's really control. Debt and power."],
+    "7":["The pause to assess the harvest. Patience, long-term investment, evaluating whether the work is paying off.","Impatience, a poor return, or effort sunk into the wrong field. Reassessing what to keep tending."],
+    "8":["The apprentice at the bench. Diligence, mastery through repetition, pride in steady, careful work.","Perfectionism, drudgery, or shortcuts that undermine the craft. Effort without heart."],
+    "9":["The reward of self-made comfort. Independence, refined pleasure, the garden you grew alone and enjoy in peace.","Over-reliance on status, or comfort that's become isolation. Luxury that doesn't satisfy."],
+    "10":["Legacy and lasting wealth. Family, foundation, abundance that outlives you. The full estate, generations deep.","A legacy in question, family or financial instability, or wealth that hasn't bought belonging."]
+  }
+};
+
+/* COURT cards — role meanings per suit element */
+const COURT_MEANINGS = {
+  Page:  {role:"The Page",
+    Wands:["A messenger of fire — curiosity, a creative spark, the eager beginner ready to chase a passion.","Restlessness without direction, a flighty enthusiasm, or news that disappoints."],
+    Cups: ["A messenger of water — emotional openness, a creative or intuitive invitation, tender new feeling.","Emotional immaturity, moodiness, or a heart-message you're not ready to receive."],
+    Swords: ["A messenger of air — sharp curiosity, the thirst to know, vigilance and quick ideas.","Gossip, scattered thinking, or curiosity turned to suspicion. All edge, no aim."],
+    Pentacles:["A messenger of earth — a studious beginner, a tangible opportunity, the willingness to learn the craft.","Procrastination, an opportunity unused, or potential left in the ground."]},
+  Knight:{role:"The Knight",
+    Wands:["The charge of fire — bold, charismatic, all momentum. Adventure pursued at full gallop.","Recklessness, impatience, a temper that burns hot and leaves wreckage."],
+    Cups: ["The quest of water — the romantic, the dreamer who follows the heart and offers it freely.","Moodiness, unrealistic ideals, or a charmer whose feelings don't hold."],
+    Swords: ["The drive of air — ambitious, direct, intellectually fearless, cutting straight to the goal.","Aggression, haste, ideas pushed without care for their wake. Cold drive."],
+    Pentacles:["The steadiness of earth — reliable, methodical, the one who finishes what they start. Patient and unglamorous progress.","Stubbornness, stagnation, or caution so heavy nothing moves."]},
+  Queen: {role:"The Queen",
+    Wands:["The warmth of fire — radiant, confident, magnetic. Leads by inspiration and burns bright for others.","Demanding, jealous, or a confidence tipped into domineering. Fire that consumes."],
+    Cups: ["The depth of water — compassionate, intuitive, emotionally wise. Holds space and feels deeply for all.","Over-giving to depletion, emotional overwhelm, or boundaries dissolved entirely."],
+    Swords: ["The clarity of air — perceptive, honest, independent. Cuts through illusion with kind precision.","Coldness, harsh judgement, or a sharpness that's become cruelty. Isolation by intellect."],
+    Pentacles:["The abundance of earth — nurturing and practical, grounded luxury, the one who provides and grows.","Smothering, materialism, or self-neglect in the service of caretaking."]},
+  King:  {role:"The King",
+    Wands:["The mastery of fire — visionary leadership, bold and inspiring authority. Lights the way and others follow.","Tyranny, impulsiveness, or vision untethered from responsibility. The ruler ruled by ego."],
+    Cups: ["The mastery of water — emotional balance, diplomacy, the calm depth that steadies everyone around them.","Emotional manipulation, moodiness in power, or feeling suppressed beneath a calm mask."],
+    Swords: ["The mastery of air — intellectual authority, fair and clear judgement, truth wielded with discipline.","Cold rationality, manipulation through logic, or authority that's lost its conscience."],
+    Pentacles:["The mastery of earth — provider and builder, stable success, abundance shared from a secure foundation.","Greed, stubbornness, or success guarded so tightly it stops growing."]}
+};
+
+
+/* assemble full deck: majors + (Ace,2-10,Page,Knight,Queen,King) x 4 suits */
+function buildFullDeck(){
+  const deck = MAJORS.map(m => ({...m, arcana:"major"}));
+  const ranks = ["Ace","2","3","4","5","6","7","8","9","10"];
+  const courts = ["Page","Knight","Queen","King"];
+  Object.entries(SUITS).forEach(([suit,info])=>{
+    ranks.forEach(r=>{
+      const mm = NUM_MEANINGS[suit][r];
+      deck.push({
+        arcana:"minor", suit, rank:r, element:info.element, suitSigil:info.sigil,
+        name:`${r==="Ace"?"Ace":r} of ${suit}`,
+        sigil:info.sigil, astro:info.signs, glyph:info.element,
+        up:mm[0], rev:mm[1],
+        key:[info.element.toLowerCase(), info.theme.split(",")[0].trim()]
+      });
+    });
+    courts.forEach(c=>{
+      const cm = COURT_MEANINGS[c][suit];
+      deck.push({
+        arcana:"court", suit, rank:c, element:info.element, suitSigil:info.sigil,
+        name:`${COURT_MEANINGS[c].role} of ${suit}`,
+        sigil:info.sigil, astro:info.signs, glyph:info.element,
+        up:cm[0], rev:cm[1],
+        key:[c.toLowerCase(), info.element.toLowerCase()]
+      });
+    });
+  });
+  return deck;
+}
+const DECK = buildFullDeck();
+
+
+/* ───────── SPREADS ───────── */
+const SPREADS = {
+  one:{name:"One Card",glyph:"☉",count:1,
+    blurb:"A single star for clarity, a daily pull, or one clean answer.",
+    positions:["The message"],
+    reads:["What the sky most wants you to see right now."]},
+  three:{name:"Three Cards",glyph:"☽ ☉ ☾",count:3,
+    blurb:"Past · Present · Future. The most versatile reading there is.",
+    positions:["Past","Present","Future"],
+    reads:["The orbit that brought you here.","Where you stand under the current sky.","The trajectory now forming ahead."]},
+  situation:{name:"Situation Spread",glyph:"△",count:3,
+    blurb:"Situation · Obstacle · Advice. For when you need a way through.",
+    positions:["The situation","The obstacle","The advice"],
+    reads:["The terrain as it truly is.","The force working against you.","How the stars counsel you to move."]},
+  mindbody:{name:"Mind · Body · Spirit",glyph:"✷",count:3,
+    blurb:"A grounding three-card check-in across your whole self.",
+    positions:["Mind","Body","Spirit"],
+    reads:["What occupies your thoughts.","What your physical self is asking for.","What your deeper self is reaching toward."]},
+  five:{name:"Five-Card Cross",glyph:"✛",count:5,
+    blurb:"Present, challenge, past, future, outcome — a fuller arc.",
+    positions:["Present","Challenge","Root / Past","Near future","Likely outcome"],
+    reads:["The heart of the matter now.","What crosses or tests you.","The root this grew from.","What's approaching on the horizon.","Where this trajectory tends."]},
+  horseshoe:{name:"Seven-Card Horseshoe",glyph:"⌒",count:7,
+    blurb:"A classic arc from past through to final outcome.",
+    positions:["Past","Present","Hidden influences","You / the querent","Others' attitudes","Advice","Outcome"],
+    reads:["The orbit behind you.","The present configuration.","What moves unseen beneath the surface.","Your own light in this.","How others' gravity pulls on it.","The counsel of the stars.","Where it all resolves."]},
+  celtic:{name:"Celtic Cross",glyph:"✚",count:10,
+    blurb:"The full ten-card map. The deepest reading in the deck.",
+    positions:["The heart","The crossing","The root","The past","The crown","The future","Your stance","Outer influences","Hopes & fears","The outcome"],
+    reads:["The core of the question, its present heart.","What crosses it — the immediate challenge.","The foundation, what lies beneath consciously or not.","What is passing away behind you.","What crowns the matter — your aim or possibility.","What is coming next into view.","How you hold yourself within it.","The environment and others around you.","What you most hope for, or quietly fear.","The culmination this trajectory points toward."]},
+  relationship:{name:"The Relationship",glyph:"♡",count:7,
+    blurb:"A seven-card look at the dynamic between two people.",
+    positions:["You","Them","The connection","Foundation","What unites","What challenges","Where it's heading"],
+    reads:["Your energy and role in this bond.","Their energy and role as it stands.","The relationship itself, as its own living thing.","What this was built on.","The force that draws you together.","The friction or lesson between you.","The trajectory the two of you are on."]},
+  year:{name:"Year Ahead",glyph:"☉",count:12,
+    blurb:"Twelve cards, one per month — a map of the year to come.",
+    positions:["Month 1","Month 2","Month 3","Month 4","Month 5","Month 6","Month 7","Month 8","Month 9","Month 10","Month 11","Month 12"],
+    reads:["The theme of the first month.","The theme of the second.","The theme of the third.","The theme of the fourth.","The theme of the fifth.","The theme of the sixth.","The theme of the seventh.","The theme of the eighth.","The theme of the ninth.","The theme of the tenth.","The theme of the eleventh.","The theme of the twelfth — how the year closes."]}
+};
+
+/* ───────── STATE ───────── */
+let state={spread:null,method:"fan",reversals:true,drawn:[],need:0};
+const $=id=>document.getElementById(id);
+const backSVG=`<svg class="face" viewBox="0 0 100 160" preserveAspectRatio="none"><use href="#astrolabe"/></svg>`;
+
+/* build spread chooser */
+const spreadList=$("spreadList");
+Object.entries(SPREADS).forEach(([key,s])=>{
+  const b=document.createElement("button");
+  b.className="spread";b.dataset.key=key;
+  b.innerHTML=`<div class="glyph">${s.glyph}</div><h3>${s.name}</h3>
+    <div class="count">${s.count} card${s.count>1?"s":""}</div><p>${s.blurb}</p>`;
+  b.onclick=()=>selectSpread(key,b);
+  spreadList.appendChild(b);
+});
+
+function selectSpread(key,el){
+  state.spread=key;state.need=SPREADS[key].count;
+  document.querySelectorAll(".spread").forEach(x=>x.classList.remove("active"));
+  el.classList.add("active");
+  $("step-draw").classList.remove("hidden");
+  $("step-read").classList.add("hidden");
+  $("synthesis").classList.add("hidden");
+  state.drawn=[];
+  buildDeck();
+  $("step-draw").scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+/* method + options */
+$("methodSeg").querySelectorAll("button").forEach(b=>{
+  b.onclick=()=>{
+    $("methodSeg").querySelectorAll("button").forEach(x=>x.classList.remove("on"));
+    b.classList.add("on");state.method=b.dataset.m;buildDeck();
+  };
+});
+$("shuffleBtn").onclick=()=>{ if(state.spread) buildDeck(); };
+$("reversals").onchange=e=>state.reversals=e.target.checked;
+$("againBtn").onclick=()=>{
+  state.drawn=[];buildDeck();
+  $("journalBox").value="";
+  $("journalPrint").classList.add("hidden");
+  $("step-read").classList.add("hidden");
+  $("step-draw").scrollIntoView({behavior:"smooth",block:"start"});
+};
+
+/* ───────── export (image / pdf) ───────── */
+function prepCapture(){
+  // ensure all cards are face-up in the export
+  document.querySelectorAll("#board .tcard").forEach(c=>c.classList.add("flipped"));
+  // fold journal text into the printable block
+  const txt=$("journalBox").value.trim();
+  if(txt){
+    $("journalPrintText").textContent=txt;
+    $("journalPrint").classList.remove("hidden");
+  } else {
+    $("journalPrint").classList.add("hidden");
+  }
+}
+function stamp(){
+  const s=SPREADS[state.spread];
+  const d=new Date();
+  const date=d.toLocaleDateString(undefined,{year:"numeric",month:"long",day:"numeric"});
+  $("capMeta").textContent=`${s.name} · ${date}`;
+  return {date};
+}
+async function renderCanvas(){
+  prepCapture();stamp();
+  const node=$("capture");
+  await new Promise(r=>setTimeout(r,120)); // let layout settle
+  return await html2canvas(node,{backgroundColor:"#0a0a1f",scale:2,useCORS:true});
+}
+function fileStamp(){
+  const s=SPREADS[state.spread].name.replace(/\s+/g,"-").toLowerCase();
+  const d=new Date().toISOString().slice(0,10);
+  return `astra-${s}-${d}`;
+}
+async function withBusy(btn,fn){
+  const label=btn.textContent;btn.disabled=true;btn.textContent="Preparing…";
+  try{ await fn(); }
+  catch(e){ console.error(e); alert("Export hit a snag — try again in a moment."); }
+  finally{ btn.disabled=false;btn.textContent=label; }
+}
+$("exportImg").onclick=()=>withBusy($("exportImg"),async()=>{
+  const canvas=await renderCanvas();
+  const a=document.createElement("a");
+  a.href=canvas.toDataURL("image/png");
+  a.download=fileStamp()+".png";
+  a.click();
+});
+$("exportPdf").onclick=()=>withBusy($("exportPdf"),async()=>{
+  const canvas=await renderCanvas();
+  const img=canvas.toDataURL("image/png");
+  const {jsPDF}=window.jspdf;
+  const pw=595.28, ph=841.89; // A4 pt
+  const pdf=new jsPDF({unit:"pt",format:"a4"});
+  const margin=24, usableW=pw-margin*2;
+  const imgH=canvas.height*(usableW/canvas.width);
+  if(imgH<=ph-margin*2){
+    pdf.setFillColor(10,10,31);pdf.rect(0,0,pw,ph,"F");
+    pdf.addImage(img,"PNG",margin,margin,usableW,imgH);
+  } else {
+    // paginate a tall reading across multiple pages
+    const pageImgH=ph-margin*2;
+    const pageCanvasH=pageImgH*(canvas.width/usableW);
+    let y=0;
+    while(y<canvas.height){
+      const slice=document.createElement("canvas");
+      slice.width=canvas.width;
+      slice.height=Math.min(pageCanvasH,canvas.height-y);
+      const ctx=slice.getContext("2d");
+      ctx.drawImage(canvas,0,y,canvas.width,slice.height,0,0,canvas.width,slice.height);
+      const sliceImg=slice.toDataURL("image/png");
+      const sliceH=slice.height*(usableW/canvas.width);
+      pdf.setFillColor(10,10,31);pdf.rect(0,0,pw,ph,"F");
+      pdf.addImage(sliceImg,"PNG",margin,margin,usableW,sliceH);
+      y+=slice.height;
+      if(y<canvas.height) pdf.addPage();
+    }
+  }
+  pdf.save(fileStamp()+".pdf");
+});
+
+/* shuffle helper */
+function shuffled(){
+  const a=DECK.map((c,i)=>i);
+  for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
+  return a;
+}
+
+/* ───────── build the deck (fan or pile) ───────── */
+let order=[];
+function buildDeck(){
+  order=shuffled();
+  state.drawn=[];
+  const stage=$("stage");stage.innerHTML="";
+  updateStatus();
+  if(state.method==="fan") buildFan(stage);
+  else buildPile(stage);
+}
+
+function buildFan(stage){
+  const fan=document.createElement("div");fan.className="fan";
+  const N=order.length, span=Math.min(78,N*3.1), step=span/(N-1), start=-span/2;
+  order.forEach((deckIdx,i)=>{
+    const c=document.createElement("div");c.className="cardback";
+    const rot=start+step*i;
+    const lift=Math.cos(rot*Math.PI/180);
+    c.style.transform=`translate(-50%,-50%) rotate(${rot}deg) translateY(-${lift*38}px)`;
+    c.style.zIndex=i;
+    c.innerHTML=backSVG;
+    c.onmouseenter=()=>{c.style.transform=`translate(-50%,-50%) rotate(${rot}deg) translateY(-${lift*38+26}px)`;};
+    c.onmouseleave=()=>{if(!c.classList.contains("chosen"))c.style.transform=`translate(-50%,-50%) rotate(${rot}deg) translateY(-${lift*38}px)`;};
+    c.onclick=()=>chooseCard(deckIdx,c);
+    fan.appendChild(c);
+  });
+  stage.appendChild(fan);
+}
+
+function buildPile(stage){
+  const wrap=document.createElement("div");
+  const pile=document.createElement("div");pile.className="pile";
+  // render a stack of a dozen backs for depth
+  for(let i=0;i<12;i++){
+    const c=document.createElement("div");c.className="cardback";
+    c.style.transform=`translate(${(i-6)*0.6}px,${(i-6)*0.6}px) rotate(${(i-6)*0.4}deg)`;
+    c.style.zIndex=i;c.innerHTML=backSVG;pile.appendChild(c);
+  }
+  const tap=document.createElement("div");tap.className="pile-tap";
+  tap.onclick=()=>{ if(order.length) cutFromTop(pile); };
+  pile.appendChild(tap);
+  const cap=document.createElement("p");cap.className="hint";
+  cap.style.cssText="text-align:center;margin-top:18px";
+  cap.textContent="Tap the deck to cut the top card.";
+  wrap.appendChild(pile);wrap.appendChild(cap);
+  stage.appendChild(wrap);
+}
+
+function cutFromTop(pile){
+  const deckIdx=order.shift();
+  // little lift animation on top card
+  const top=pile.querySelector(".cardback:nth-last-child(2)");
+  if(top){top.style.transition="transform .35s,opacity .35s";top.style.transform="translateY(-40px) rotate(-3deg)";top.style.opacity="0";}
+  registerDraw(deckIdx);
+}
+
+function chooseCard(deckIdx,el){
+  if(state.drawn.length>=state.need) return;
+  el.classList.add("chosen");
+  // remove from order so it can't be picked twice
+  order=order.filter(x=>x!==deckIdx);
+  registerDraw(deckIdx);
+}
+
+function registerDraw(deckIdx){
+  if(state.drawn.length>=state.need) return;
+  const reversed=state.reversals && Math.random()<0.5;
+  state.drawn.push({card:DECK[deckIdx],reversed});
+  updateStatus();
+  if(state.drawn.length===state.need) setTimeout(reveal,400);
+}
+
+function updateStatus(){
+  const s=SPREADS[state.spread];const got=state.drawn.length;
+  $("pickStatus").innerHTML = got>=state.need
+    ? `<b>All ${state.need} drawn.</b> The stars are aligning…`
+    : `Drawn <b>${got}</b> of <b>${state.need}</b>${state.need>1?` · next: <b>${s.positions[got]}</b>`:""}`;
+}
+
+/* ───────── reveal & reading ───────── */
+/* card label helpers */
+function cardTopLabel(c){
+  if(c.arcana==="major") return `${String(c.n).padStart(2,"0")} · MAJOR`;
+  return `${c.suit.toUpperCase()} · ${c.element.toUpperCase()}`;
+}
+function cardBottomLabel(c){
+  if(c.arcana==="major") return c.astro; // planet/sign name
+  return c.suitSigil + " " + c.element;
+}
+
+function reveal(){
+  const s=SPREADS[state.spread];
+  $("step-read").classList.remove("hidden");
+  const board=$("board");board.innerHTML="";
+  state.drawn.forEach((d,i)=>{
+    const slot=document.createElement("div");slot.className="slot";
+    slot.innerHTML=`<div class="pos">${s.positions[i]}</div>`;
+    const card=document.createElement("div");
+    card.className="tcard"+(d.reversed?" rev":"");
+    card.innerHTML=`
+      <div class="inner">
+        <div class="side back">${backSVG}</div>
+        <div class="side front">
+          <div class="front-art" data-arcana="${d.card.arcana}">
+            <div class="num">${cardTopLabel(d.card)}</div>
+            <div class="sigil">${d.card.sigil}</div>
+            <div class="nm">${d.card.name}</div>
+            <div class="astro">${cardBottomLabel(d.card)}</div>
+          </div>
+        </div>
+      </div>`;
+    card.onclick=()=>{card.classList.toggle("flipped");};
+    slot.appendChild(card);
+    board.appendChild(slot);
+    // auto-flip in sequence
+    setTimeout(()=>card.classList.add("flipped"),300+i*260);
+  });
+  renderDetail();
+  stamp();
+  $("step-read").scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+function renderDetail(){
+  const s=SPREADS[state.spread];const wrap=$("readingDetail");wrap.innerHTML="";
+  state.drawn.forEach((d,i)=>{
+    const m=document.createElement("div");m.className="meaning";
+    const astroLine = d.card.arcana==="major"
+      ? `${d.card.sigil} ${d.card.astro} ${d.card.glyph}`
+      : `${d.card.suitSigil} ${d.card.suit} · ${d.card.element} · ${d.card.astro}`;
+    const keys = (d.card.key||[]).map(k=>`<span class="kw">${k}</span>`).join("");
+    m.innerHTML=`
+      <h4>${d.card.name} <span class="pos-tag">${s.positions[i]}</span></h4>
+      <div class="glyphline">${astroLine}</div>
+      <div class="kwrow">${keys}</div>
+      <span class="orient">${d.reversed?"Reversed":"Upright"}</span>
+      <p>${d.reversed?d.card.rev:d.card.up}</p>
+      <p class="pos-read">In the place of <b style="color:var(--gold)">${s.positions[i].toLowerCase()}</b>: ${s.reads[i]}</p>`;
+    wrap.appendChild(m);
+  });
+  // synthesis
+  $("synthesis").classList.remove("hidden");
+  $("synthText").textContent=synth(s);
+}
+
+function synth(s){
+  const cards=state.drawn;
+  const revCount=cards.filter(c=>c.reversed).length;
+  const first=cards[0].card.name, last=cards[cards.length-1].card.name;
+  let line;
+  if(cards.length===1){
+    const c=cards[0].card;
+    const under = c.arcana==="major" ? `under ${c.astro}` : `in the suit of ${c.suit} (${c.element})`;
+    line=`Your single star is ${first}, drawn ${cards[0].reversed?"reversed":"upright"} ${under}. Sit with it the way you'd watch a single point of light: let one clear meaning surface rather than reaching for many.`;
+    return line;
+  }
+  const arc=`This reading opens with ${first} and arrives at ${last}.`;
+  const tone=revCount===0
+    ? " Every card fell upright — the energies here are flowing freely, asking you to act rather than untangle."
+    : revCount===cards.length
+      ? " Every card fell reversed — the whole spread points inward, toward what's blocked, held back, or waiting to be released before anything outward can move."
+      : ` With ${revCount} card${revCount>1?"s":""} reversed, the path mixes open momentum with knots to work loose; honor both.`;
+  // element balance across minors
+  const els={Fire:0,Water:0,Air:0,Earth:0};
+  cards.forEach(c=>{ if(c.card.element && els[c.card.element]!==undefined) els[c.card.element]++; });
+  const elTotal=Object.values(els).reduce((a,b)=>a+b,0);
+  const majors=cards.filter(c=>c.card.arcana==="major").length;
+  let texture="";
+  if(majors>=Math.ceil(cards.length/2)){
+    texture=` With ${majors} Major Arcana in play, this isn't small-weather — these are the larger forces and turning points of your life, not the day-to-day.`;
+  } else if(elTotal){
+    const top=Object.entries(els).sort((a,b)=>b[1]-a[1])[0];
+    const elVoice={Fire:"drive and creative heat",Water:"emotion and intuition",Air:"thought, truth and the mind",Earth:"the body, work and material life"};
+    texture=` The deck leans toward ${top[0]} — ${elVoice[top[0]]} — so that's the register this reading is really speaking in.`;
+  }
+  return arc+tone+texture;
+}
+
+</script>
+</body>
+</html>
