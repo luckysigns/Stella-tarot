@@ -139,7 +139,6 @@
   .pile{position:relative;width:var(--card-w);aspect-ratio:5/8;margin:0 auto;cursor:pointer}
   .pile .cardback{position:absolute;top:0;left:0;transform:none;cursor:pointer}
   .pile:hover .cardback:last-child{transform:translateY(-14px) rotate(1.5deg)}
-  .pile-tap{position:absolute;inset:0;z-index:5}
 
   /* drawn cards layout */
   .reading{margin-top:30px}
@@ -191,6 +190,27 @@
   .ctx-grid{padding:4px 16px 16px;display:grid;gap:12px}
   .ctx-label{font-family:"Trebuchet MS",sans-serif;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--rose);display:block;margin-bottom:3px}
   .ctx p{font-size:14px;line-height:1.55;color:var(--silver)}
+  /* go deeper — primary expandable */
+  .deeper{margin-top:16px}
+  .deeper > summary{
+    cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:9px;
+    font-family:"Trebuchet MS",sans-serif;font-size:11px;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--gold);border:1px solid var(--gold);border-radius:999px;padding:9px 18px;transition:.2s;user-select:none
+  }
+  .deeper > summary::-webkit-details-marker{display:none}
+  .deeper > summary::before{content:"✷";font-size:13px;line-height:1}
+  .deeper > summary:hover{background:var(--gold);color:var(--ink)}
+  .deeper[open] > summary{background:rgba(233,196,106,.1)}
+  .deeper .deeper-close{display:none}
+  .deeper[open] .deeper-open{display:none}
+  .deeper[open] .deeper-close{display:inline}
+  .deeper-body{
+    margin-top:14px;padding:20px 22px;border-left:2px solid var(--gold);
+    background:rgba(233,196,106,.04);border-radius:0 12px 12px 0
+  }
+  .deeper-body p{font-size:15px;line-height:1.7;color:var(--silver);margin-bottom:13px}
+  .deeper-body p:last-child{margin-bottom:0}
+  .deeper-body p:last-child{color:var(--mist);font-style:italic}
 
   .synthesis{margin-top:26px;border:1px solid var(--line);border-radius:14px;background:rgba(233,196,106,.05);padding:24px}
   .synthesis .step-label{margin-bottom:12px}
@@ -313,7 +333,9 @@
         <button data-m="fan" class="on">Fan & pick</button>
         <button data-m="pile">Cut from top</button>
       </div>
-      <button class="btn ghost" id="shuffleBtn">↺ Shuffle</button>
+      <button class="btn ghost" id="shuffleBtn">↺ Shuffle &amp; redeal</button>
+      <button class="btn ghost" id="resetPickBtn">⟲ Start this draw over</button>
+      <button class="btn ghost" id="changeSpreadBtn">← Change spread</button>
       <span class="hint" id="orientToggleWrap">
         <label style="cursor:pointer"><input type="checkbox" id="reversals" checked style="accent-color:var(--gold)"> allow reversed cards</label>
       </span>
@@ -672,6 +694,147 @@ function buildFullDeck(){
 }
 const DECK = buildFullDeck();
 
+/* ── deepened love / career / health, applied over the base deck ── */
+const DEEP_CONTEXT = {
+"The Voyager":{
+ love:"A romance in its first bright chapter, full of possibility and free of baggage; the giddy openness of meeting someone new or feeling a long bond turn young again. This is the card of saying yes to a person before you have all the answers, of weekend trips taken on a whim and feelings followed rather than analysed. Reversed, that same openness curdles into recklessness, leaping into something or someone without looking, ignoring red flags, or commitment-dodging dressed up as free-spiritedness.",
+ career:"The pull toward a bold new venture, a creative leap, or striking out on your own before the path is fully mapped. It favours the risk you've been circling, the pitch you keep talking yourself out of, the door that's open if you'll just walk through it. Reversed, it warns of leaping without preparation, restlessness that has you quitting before you've really started, or holding good ideas back out of self-doubt.",
+ health:"A fresh start for body and mind, often a burst of energy and the optimism to begin again after a flat stretch. A good omen for new routines, new practitioners, or simply a lighter mental outlook. Reversed, a caution not to be careless, to skip the basics, or to throw yourself into something physical without listening to your limits."},
+"The Magus":{
+ love:"Magnetic, intentional attraction, and the reminder that you have real power to shape the relationship you want rather than waiting to be chosen. Communication flows, chemistry is electric, and what you focus on tends to manifest. Reversed, that same magnetism turns slippery, mixed signals, manipulation, or someone presenting a polished version of themselves that doesn't match who they are.",
+ career:"Skill, initiative, and the rare alignment of having every tool you need to make something happen, ideal for launches, pitches, and projects that need you at full power. You are the one who can turn the idea into the thing. Reversed, it points to wasted talent, scattered focus, poor planning, or someone in the workplace using charm to deceive.",
+ health:"Vitality and the willpower to take genuine charge of your health, mind and body working as one toward a goal you set. A strong card for starting a regimen and actually sticking to it. Reversed, low energy, a scattered approach, or ignoring what your body is plainly telling you it needs."},
+"The High Priestess":{
+ love:"A connection with real depth, often intuitive and unspoken, where more is understood than said aloud; trust what you sense beneath a partner's words. It can mark a relationship still partly hidden, or feelings not yet voiced. Reversed, it warns of secrets, mixed messages, or a gut feeling about someone that you keep talking yourself out of believing.",
+ career:"A nudge to trust instinct over the spreadsheet, and a sign that hidden information may soon surface, so hold off on big declarations until you see the whole board. Quiet observation serves you better than loud moves now. Reversed, office secrets, hidden agendas, or a clear inner knowing you're overriding because it's inconvenient.",
+ health:"An invitation to tune into your body's quieter signals, the subtle symptoms and the role of stress and the subconscious in how you feel. Intuition is a real diagnostic tool here. Reversed, ignoring those signals, suppressing what you feel until it shows up physically, or staying disconnected from your own body."},
+"The Empress":{
+ love:"Warmth, sensuality, and nurturing love; a relationship that's ripening, deepening, and providing real comfort, and sometimes literal fertility or pregnancy. This is love as a garden well-tended, abundant and alive. Reversed, smothering or being smothered, neglect of the relationship or of yourself within it, or insecurity that keeps you from receiving the love that's there.",
+ career:"Creative projects flourish and collaborative, nurturing environments bring out your best; a fertile season for making and growing things. Ideas planted now bloom. Reversed, creative block, a project starved of the care it needs, or a workplace where you give endlessly and aren't replenished.",
+ health:"Fertility, vitality, and the deep importance of self-care and gentleness with your body; often tied to pregnancy and reproductive health. Rest and nourishment are medicine here. Reversed, neglecting self-care while tending everyone else, or worries around fertility and feeling depleted."},
+"The Emperor":{
+ love:"A stable, committed, protective partner, or a relationship that benefits from more structure, reliability, and clear agreements. Love built to last on solid ground. Reversed, a controlling or domineering dynamic, stubbornness that blocks closeness, or a coldness where warmth should be.",
+ career:"Strong leadership, structure, and authority working in your favour, good for advancement, taking charge, or building something that endures. You set the rules and others follow. Reversed, a domineering boss, rigid systems that stifle you, or a lack of direction leaving everything formless.",
+ health:"Discipline and routine bring real stability, the body responds well to structure, consistency, and a steady plan. Reversed, an overly rigid regimen that becomes its own stress, or stubbornly refusing sound advice from people who know better."},
+"The Hierophant":{
+ love:"Commitment, marriage, and shared values; a relationship that honours tradition, ritual, and building a life within a recognised framework. The card of long-term, conventional partnership. Reversed, an unconventional relationship that doesn't fit the usual mould, or pressure to conform to a template that isn't yours.",
+ career:"Learning from a mentor, thriving within an established institution, or earning a credential that opens doors; the value of doing things the proven way. Reversed, chafing against the rules, breaking from convention, or an environment whose orthodoxy no longer fits you.",
+ health:"Conventional, well-established treatment and trusted professional advice serve you well; this is not the moment to freelance your health. Reversed, being drawn to alternative approaches, or rejecting guidance that would actually help you."},
+"The Lovers":{
+ love:"Deep connection, harmony, and mutual attraction, sometimes a soulmate bond, and often a meaningful choice that defines the relationship's direction. Love as conscious alignment of two whole people. Reversed, disharmony, values out of sync, a relationship out of balance, or the pull of a tempting third option.",
+ career:"A values-aligned partnership or an important crossroads decision; choose the path that fits who you actually are, not just what pays. Collaboration based on genuine alignment thrives. Reversed, conflict between colleagues, or a choice that asks you to compromise something you shouldn't.",
+ health:"Harmony between mind and body, and choices, in diet, habits, and stress, that honour your wellbeing rather than fight it. Reversed, decisions that work against your health, or an inner split between what you want and what's good for you."},
+"The Chariot":{
+ love:"Pursuing what you want with focus and determination, and a relationship moving forward with real momentum when both people steer together. Drive that overcomes obstacles. Reversed, a relationship stalling, pulling in two directions, or one person forcing a pace the other can't match.",
+ career:"Drive, ambition, and victory through sheer focus; a project gaining speed and a strong time to push toward a goal you can almost touch. Reversed, obstacles, scattered effort, loss of momentum, or ambition with no clear direction behind it.",
+ health:"Strong willpower powering recovery and discipline; the determination to stick to a hard regimen and win. Reversed, low motivation, a setback in progress, or pushing so hard you lose control of the very thing you're steering."},
+"Strength":{
+ love:"Patient, compassionate love that weathers storms; the quiet courage to stay soft and open even when a relationship is tested. Strength here is gentleness, not grip. Reversed, insecurity, jealousy, or a bond straining your patience past where it should go.",
+ career:"Quiet confidence and persistence winning out, grace under pressure, and the calm that steadies a tense room. You lead the lion, not by force, but by composure. Reversed, self-doubt undercutting you, or workplace conflict you're meeting with too much force instead of poise.",
+ health:"Inner strength and resilience supporting healing, the deep reserves that carry you through a long recovery with patience. Reversed, low energy, faltering resolve, or struggling to find the will to keep going."},
+"The Hermit":{
+ love:"A reflective season, taking space to understand what you truly want, or a relationship that needs room to breathe more than constant togetherness. Solitude that clarifies the heart. Reversed, loneliness and isolation, or withdrawing so far from a partner that the distance itself becomes the problem.",
+ career:"Working independently, deep solo focus, or seeking out a wise mentor's counsel; the answers come from within and from quiet, not from the crowd. Reversed, isolating yourself at work, or refusing help and guidance you genuinely need.",
+ health:"Rest, retreat, and turning inward aid recovery, the healing that only comes when you step back from the noise and listen. Reversed, isolation that worsens your state, or ignoring your real need to withdraw and recharge."},
+"Wheel of Fortune":{
+ love:"A fateful turn in your love life, a relationship entering a new phase, or fortune shifting in your favour; what goes around is coming around. Reversed, a rough patch, bad timing, or feeling at the mercy of circumstances you can't control.",
+ career:"A lucky break, a promotion, or a clear turning point; the cycle is moving and momentum is with you, so act while the wheel is high. Reversed, setbacks, poor timing, or being caught in a downturn you have to ride out rather than fight.",
+ health:"A turn for the better, energy and cycles shifting upward after a low stretch. Reversed, a temporary downturn, with the reminder that the wheel always keeps turning and this too will pass."},
+"Justice":{
+ love:"Fairness, honesty, and balance in a relationship, and sometimes a clear commitment decision made with both head and heart. Accounts between you settle where they're earned. Reversed, imbalance, unfairness, dishonesty, or avoiding accountability for your part.",
+ career:"Fair outcomes, contracts signed, and legal or formal matters resolving in your favour when you've acted with integrity. Reversed, injustice at work, unfair treatment, or dishonest dealings catching up with someone.",
+ health:"Balance restored, and a plain view of cause and effect, the lifestyle choices that show up directly in how you feel. Reversed, an imbalance finally catching up with you, asking to be corrected."},
+"The Hanged Star":{
+ love:"A meaningful pause for perspective, or a willing sacrifice that deepens the bond; sometimes love asks you to stop pushing and simply see differently. Reversed, a relationship stuck in limbo, or one-sided sacrifice that's become martyrdom.",
+ career:"A holding pattern that's actually useful, a chance to see a project from a new angle, or a deliberate pause before the next move. Reversed, feeling genuinely stuck, stalled, or playing the martyr at work instead of shifting your view.",
+ health:"Rest and surrender aiding healing; the pause your body has been asking for. Reversed, resisting that needed rest and prolonging your own recovery by refusing to stop."},
+"Death":{
+ love:"A relationship transforming into something new, or an ending that clears space for renewal; what's truly over makes room for what's coming. Reversed, clinging to a relationship that has run its course, refusing to let the page turn.",
+ career:"A career transformation, the close of one role and the opening of another; necessary endings that free you to grow. Reversed, resisting a change that's already underway, or staying stuck in a role that's quietly died.",
+ health:"Renewal after a difficult passage, and transformation in habits, the old way of living giving way to something healthier. Reversed, resisting the very change your wellbeing depends on."},
+"Temperance":{
+ love:"Harmony, patience, and balance, two people blending their lives at a measured, sustainable pace. The slow alchemy of a good partnership. Reversed, imbalance, impatience, or trying to force a relationship faster than it can grow.",
+ career:"Cooperation, balance, and steady progress; good things come from blending efforts and not rushing the mix. Reversed, workplace friction, or a lack of balance that's quietly burning you out.",
+ health:"Balance and moderation restoring wellbeing, the middle path of food, rest, and activity. Reversed, excess or imbalance taking a toll, a reminder to watch what you take in and how much."},
+"The Devil":{
+ love:"Intense passion and magnetic attraction, or, in shadow, an unhealthy, codependent bond you know isn't good for you. The card names the chain so you can see it. Reversed, breaking free of a toxic dynamic and reclaiming yourself.",
+ career:"Feeling trapped by a job, a salary, or the pursuit of status, golden handcuffs that keep you somewhere your spirit has left. Reversed, escaping a draining situation or finally breaking an unhealthy work pattern.",
+ health:"Addiction, compulsion, or habits that quietly harm; the patterns you reach for that keep you stuck. Reversed, recovery, breaking the cycle, and reclaiming agency over your body."},
+"The Tower":{
+ love:"A sudden shake-up or revelation in a relationship, the lightning that exposes what wasn't solid; painful, but ultimately clearing. Reversed, narrowly avoiding a breakup, or delaying an ending that's already inevitable.",
+ career:"Sudden disruption, a layoff, a project's collapse, or a hard truth coming to light, followed by the chance to rebuild on honest ground. Reversed, a disaster narrowly averted, or instability you can feel coming and are bracing against.",
+ health:"A sudden health event or crisis, jarring but often the start of real renewal once the dust settles. Reversed, a crisis avoided, or stress quietly building toward a breaking point, take care of yourself now."},
+"The Star":{
+ love:"Renewed hope, healing, and optimism, often after heartbreak; faith in love restored and a sense of being exactly where you're meant to be. Reversed, discouragement, or a loss of faith in a relationship or in love itself.",
+ career:"Inspiration, renewed purpose, and bright prospects; work that reconnects you to why you started. Reversed, lost motivation, or a creeping sense that your work has stopped meaning anything.",
+ health:"Healing, renewal, and restored vitality, a deeply positive card for recovery and replenishment. Reversed, low spirits slowing your healing; tend your hope as carefully as your body."},
+"The Moon":{
+ love:"Uncertainty, mixed signals, or hidden feelings beneath the surface; not everything in this relationship is yet what it seems. Reversed, confusion clearing, or a deception finally coming to light.",
+ career:"Unclear situations, hidden information, or a need to trust intuition over appearances; don't commit to what you can't yet see clearly. Reversed, the fog lifting and clarity returning after a murky stretch.",
+ health:"Anxiety, sleep, and the subconscious are highlighted; mental health deserves real attention here. Reversed, fears easing, or a hidden issue finally surfacing where it can be treated."},
+"The Sun":{
+ love:"Joy, warmth, and a thriving relationship; ease, honesty, and happiness out in the open. One of the best cards to draw for love. Reversed, a temporary cloud over otherwise good things, or happiness that feels just out of reach for now.",
+ career:"Success, recognition, and genuinely rewarding work; things going right and being seen for it. Reversed, a project losing its shine, or success that somehow rings hollow.",
+ health:"Excellent vitality, energy, and recovery, a glowing card for wellbeing. Reversed, energy temporarily low but clearly on the way back up."},
+"Judgement":{
+ love:"A relationship reaching a moment of honest reckoning, forgiveness, or renewal; a chance to rise to something truer together. Reversed, harsh judgement between partners, or blame standing in for real communication.",
+ career:"A turning point, a well-earned evaluation, or a true calling answered; the moment you step into who the work has made you. Reversed, self-doubt, fear of being judged, or ignoring a clear sign you've already received.",
+ health:"Renewal, recovery, and a wake-up call heeded, the turning point where you answer what your body's been telling you. Reversed, ignoring symptoms, or being so hard on yourself that it impedes healing."},
+"The Cosmos":{
+ love:"A relationship reaching fulfilment, wholeness, or a happy milestone, the satisfying sense of a bond that has truly arrived. Reversed, something still incomplete, or a feeling that the relationship hasn't quite closed the circle.",
+ career:"Achievement, completion, and recognition, sometimes travel or expansion; the world genuinely at your feet after real work. Reversed, a project stalling just shy of the finish, or success that still needs one more honest push.",
+ health:"Wholeness and full recovery, the body integrated and well. Reversed, not quite over the line yet, a final stretch still to go, so keep going."}
+};
+
+/* deepened courts */
+Object.assign(DEEP_CONTEXT,{
+"The Page of Wands":{love:"A playful, exciting new attraction or a flirtation full of spark and curiosity; the early, adventurous days of something. Reversed, flakiness, enthusiasm that fizzles, or a connection with no staying power.",career:"An exciting opportunity, eager fresh energy, or good news about a creative venture worth exploring. Reversed, scattered focus, a false start, or restless energy with nowhere to land.",health:"Energetic, curious, and motivated to try new approaches to wellbeing. Reversed, starting routines with enthusiasm and abandoning them just as fast."},
+"The Knight of Wands":{love:"A passionate, adventurous, charismatic lover who sweeps in with heat and momentum; thrilling, if not always steady. Reversed, hot-and-cold behaviour, recklessness, or a charmer who won't commit.",career:"Bold action and ambitious drive, charging at a goal with real fire; great for momentum, less so for the long haul. Reversed, impulsive moves, half-finished ventures, or a temper that leaves wreckage.",health:"Energetic and active, often thriving on vigorous movement. Reversed, burning out by overdoing it or pushing the body too hard, too fast."},
+"The Queen of Wands":{love:"Confident, passionate, and magnetic, a relationship lit by warmth, self-assurance, and vivacity. Reversed, jealousy, a demanding streak, or confidence tipped into something domineering.",career:"A charismatic, inspiring presence who leads by warmth and draws others in; natural leadership that energises a room. Reversed, domineering energy, or insecurity hiding behind bravado.",health:"Vital, self-assured, and full of life-force. Reversed, burning the candle at both ends until the fire gutters."},
+"The King of Wands":{love:"A passionate, inspiring, devoted partner with vision and natural authority; love led boldly and generously. Reversed, domineering or hot-tempered behaviour, or vision untethered from responsibility.",career:"Visionary leadership and bold direction; the one who sees the horizon and gets others to follow. Reversed, an overbearing leader, ego-driven choices, or recklessness at the helm.",health:"Vigorous, driven, and strong. Reversed, pushing too hard in pursuit of a goal and risking burnout."},
+"The Page of Cups":{love:"A sweet new romance, a heartfelt message, or a tender, gentle beginning; the shy first opening of the heart. Reversed, emotional immaturity, moodiness, or mixed signals you're not sure how to read.",career:"A creative invitation, an intuitive idea worth following, or a gentle new opportunity. Reversed, oversensitivity to feedback, or a creative block that's hard to name.",health:"Emotional openness and gentleness with yourself aiding wellbeing. Reversed, moodiness or suppressed feelings quietly affecting you."},
+"The Knight of Cups":{love:"A romantic suitor, a heartfelt proposal, or a charming, idealistic lover who leads with the heart; the dreamer who offers love freely. Reversed, moodiness, unrealistic ideals, or feelings that promise more than they deliver.",career:"Following a creative or idealistic vision, work led by heart and imagination. Reversed, impractical dreams, or wavering commitment when reality sets in.",health:"Emotionally led and gentle, attuned to how you feel. Reversed, letting moods steer your choices and routines."},
+"The Queen of Cups":{love:"Deeply caring, intuitive, and emotionally attuned, a relationship held with real tenderness and empathy. Reversed, over-giving to the point of depletion, or emotional overwhelm dissolving your boundaries.",career:"An empathetic, supportive presence who reads the room and holds space for others. Reversed, absorbing everyone's burdens at your own cost.",health:"Emotionally nurturing of yourself, honouring feeling as part of health. Reversed, caring for everyone but yourself until you're empty."},
+"The King of Cups":{love:"Emotionally mature, supportive, and balanced, a partner who stays steady and kind even in rough water. Reversed, moodiness in a calm disguise, or emotional manipulation beneath a composed surface.",career:"Diplomatic, steady leadership, the calm depth that settles everyone around them. Reversed, passive control, moodiness, or feelings suppressed until they leak out as stress.",health:"Emotionally balanced and steady, composure supporting wellbeing. Reversed, suppressed feelings surfacing as physical stress."},
+"The Page of Swords":{love:"A lively, communicative new interest, full of wit and curiosity; talk that crackles. Reversed, gossip, suspicion, or sharp words that cut more than intended.",career:"Fresh ideas, quick thinking, and a hunger to learn; mental energy that gets things moving. Reversed, scattered thoughts, careless communication, or curiosity turned to snooping.",health:"Mentally alert and curious about how to feel better. Reversed, anxious overthinking that tires the mind."},
+"The Knight of Swords":{love:"Direct, intellectually exciting, and fast-moving, a connection driven by mental spark and bold pursuit. Reversed, harshness, arguments, or cold distance where warmth should be.",career:"Decisive, ambitious action, cutting straight to the goal with clear logic. Reversed, ruthlessness, haste, or charging in unprepared and leaving damage behind.",health:"Tackling health head-on with focus and resolve. Reversed, an aggressive, all-or-nothing approach that backfires."},
+"The Queen of Swords":{love:"Honest, independent, and clear-eyed, a partner who values truth and gives it straight; love without illusion. Reversed, coldness, harsh words, or emotional distance built from old hurt.",career:"Sharp, fair, and perceptive leadership; clarity that cuts through nonsense with kind precision. Reversed, cold judgement, cutting remarks, or isolation by intellect.",health:"Clear-headed and rational about your health, seeing the situation plainly. Reversed, overthinking or harsh self-criticism getting in the way."},
+"The King of Swords":{love:"Honest, intelligent, and principled, a partner who leads with clear ethics and straight talk. Reversed, coldness, control, or logic used as a weapon in the relationship.",career:"Authoritative, fair, and analytically sharp leadership; truth wielded with discipline. Reversed, ruthless or manipulative use of intellect, authority without conscience.",health:"Disciplined and rational about health, a clear, methodical approach. Reversed, an overly clinical, joyless regimen that forgets the person inside it."},
+"The Page of Pentacles":{love:"A grounded, dependable new interest taking shape slowly and sincerely; love built on real footing. Reversed, taking things so slowly it stalls, or unreliability undercutting the start.",career:"A practical new opportunity or a course of study worth committing to; steady, useful potential. Reversed, procrastination, or potential left unused in the ground.",health:"A practical, grounded new approach to health worth sticking with. Reversed, putting off the basics you already know you should do."},
+"The Knight of Pentacles":{love:"A dependable, steady, loyal partner, not flashy, but reliable and present, the one who shows up. Reversed, dullness, stubbornness, or a relationship settled into a rut.",career:"Reliable, methodical progress and dependable follow-through; the one who finishes what they start. Reversed, stagnation, or resistance to change keeping everything stuck.",health:"Steady, consistent habits that compound over time. Reversed, stuck in an unhelpful routine that no longer serves you."},
+"The Queen of Pentacles":{love:"Warm, nurturing, and dependable, a relationship grounded in care, comfort, and practical devotion. Reversed, smothering, or putting material things and status ahead of connection.",career:"Capable, generous, and grounded, the one who provides, organises, and grows things sustainably. Reversed, overwork, or neglecting yourself while you tend to everyone else.",health:"Nurturing of body and home, wellbeing through comfort and good care. Reversed, caring for everyone but yourself until your own health slips."},
+"The King of Pentacles":{love:"A stable, providing, dependable partner who builds security and shares it generously. Reversed, materialism, or controlling the relationship through money and provision.",career:"Successful, reliable, and prosperous leadership built on a secure foundation. Reversed, greed, stubbornness, or risk-aversion so strong that growth stops.",health:"Grounded and consistent about wellbeing, stability as the bedrock of health. Reversed, overwork in pursuit of security at the body's expense."}
+});
+
+/* enrich the 40 numbered minors: keep their specific line, add suit-flavoured depth */
+(function(){
+  const suitFlavour={
+    Wands:"This is the suit of fire, so the matter moves through energy, drive, and will, expect things here to be active and fast rather than slow and quiet.",
+    Cups:"This is the suit of water, so the matter lives in the realm of feeling, connection, and intuition, read it through the heart more than the head.",
+    Swords:"This is the suit of air, so the matter plays out in thought, words, and truth, often in the mind and in communication before anywhere else.",
+    Pentacles:"This is the suit of earth, so the matter is tangible and practical, money, work, body, and home, and it tends to unfold steadily over real time."
+  };
+  if(typeof DECK!=="undefined"){
+    DECK.forEach(c=>{
+      if(c.arcana==="minor"){
+        const f=suitFlavour[c.suit];
+        if(c.love)   c.love   = c.love   + " " + f;
+        if(c.career) c.career = c.career + " " + f;
+        if(c.health) c.health = c.health + " " + f;
+      }
+    });
+  }
+})();
+
+/* apply the deepened major/court overlay onto the deck */
+if(typeof DECK!=="undefined"){
+  DECK.forEach(c=>{
+    const o=DEEP_CONTEXT[c.name];
+    if(o){ if(o.love)c.love=o.love; if(o.career)c.career=o.career; if(o.health)c.health=o.health; }
+  });
+}
+
+
 
 
 /* ───────── SPREADS ───────── */
@@ -750,6 +913,12 @@ $("methodSeg").querySelectorAll("button").forEach(b=>{
   };
 });
 $("shuffleBtn").onclick=()=>{ if(state.spread) buildDeck(); };
+$("resetPickBtn").onclick=()=>{ if(state.spread) buildDeck(); };
+$("changeSpreadBtn").onclick=()=>{
+  $("step-draw").classList.add("hidden");
+  $("step-read").classList.add("hidden");
+  $("step-spread").scrollIntoView({behavior:"smooth",block:"start"});
+};
 $("reversals").onchange=e=>state.reversals=e.target.checked;
 $("againBtn").onclick=()=>{
   state.drawn=[];buildDeck();
@@ -765,6 +934,7 @@ function prepCapture(){
   document.querySelectorAll("#board .tcard").forEach(c=>c.classList.add("flipped"));
   // expand all life-area context panels so they appear in the export
   document.querySelectorAll("#capture .contexts").forEach(d=>d.open=true);
+  document.querySelectorAll("#capture .deeper").forEach(d=>d.open=true);
   // fold journal text into the printable block
   const txt=$("journalBox").value.trim();
   if(txt){
@@ -879,13 +1049,13 @@ function buildPile(stage){
   const pile=document.createElement("div");pile.className="pile";
   // render a stack of a dozen backs for depth
   for(let i=0;i<12;i++){
-    const c=document.createElement("div");c.className="cardback";
+    const c=document.createElement("div");c.className="cardback pile-back";
     c.style.transform=`translate(${(i-6)*0.6}px,${(i-6)*0.6}px) rotate(${(i-6)*0.4}deg)`;
     c.style.zIndex=i;c.innerHTML=backSVG;pile.appendChild(c);
   }
-  const tap=document.createElement("div");tap.className="pile-tap";
-  tap.onclick=()=>{ if(order.length) cutFromTop(pile); };
-  pile.appendChild(tap);
+  // click the whole pile to cut the top card
+  pile.style.cursor="pointer";
+  pile.onclick=()=>{ if(order.length && state.drawn.length<state.need) cutFromTop(pile); };
   const cap=document.createElement("p");cap.className="hint";
   cap.style.cssText="text-align:center;margin-top:18px";
   cap.textContent="Tap the deck to cut the top card.";
@@ -894,10 +1064,17 @@ function buildPile(stage){
 }
 
 function cutFromTop(pile){
+  if(!order.length || state.drawn.length>=state.need) return;
   const deckIdx=order.shift();
-  // little lift animation on top card
-  const top=pile.querySelector(".cardback:nth-last-child(2)");
-  if(top){top.style.transition="transform .35s,opacity .35s";top.style.transform="translateY(-40px) rotate(-3deg)";top.style.opacity="0";}
+  // lift the topmost visible back, then remove it so the next tap hits the new top
+  const backs=pile.querySelectorAll(".cardback");
+  const top=backs[backs.length-1];
+  if(top){
+    top.style.transition="transform .4s,opacity .4s";
+    top.style.transform="translateY(-46px) rotate(-3deg)";
+    top.style.opacity="0";
+    setTimeout(()=>{ if(top.parentNode) top.remove(); },360);
+  }
   registerDraw(deckIdx);
 }
 
@@ -937,6 +1114,7 @@ function cardBottomLabel(c){
 
 function reveal(){
   const s=SPREADS[state.spread];
+  $("step-draw").classList.add("hidden");
   $("step-read").classList.remove("hidden");
   const board=$("board");board.innerHTML="";
   state.drawn.forEach((d,i)=>{
@@ -967,6 +1145,59 @@ function reveal(){
   $("step-read").scrollIntoView({behavior:"smooth",block:"start"});
 }
 
+/* build an expanded, reflective reading from a card's structured data */
+function deepRead(d, position, posRead){
+  const c=d.card, rev=d.reversed;
+  const orient = rev?"reversed":"upright";
+
+  // 1) elemental / astrological nature
+  let nature;
+  if(c.arcana==="major"){
+    nature=`As a Major Arcana card, ${c.name} doesn't speak to the small weather of the day; it points to one of the larger forces and turning points of a life. Its sign is ${c.astro}, and that colouring runs through everything it touches here, lending the reading the particular character of ${c.astro}'s energy.`;
+  } else {
+    const suitVoice={
+      Wands:"the fire of drive, passion and creative will",
+      Cups:"the water of emotion, love and intuition",
+      Swords:"the air of thought, truth and the sometimes double-edged mind",
+      Pentacles:"the earth of work, money, body and the tangible world"
+    }[c.suit];
+    const rankVoice = c.arcana==="court"
+      ? `As a court card, it can describe a person in your life, an energy you're being asked to embody, or a role you're stepping into.`
+      : `As a numbered card, it marks a specific stage or event rather than a grand life-theme.`;
+    nature=`This card belongs to ${c.suit}, ${suitVoice}, tied to the signs ${c.astro}. ${rankVoice}`;
+  }
+
+  // 2) core meaning broadened by orientation
+  const core = rev
+    ? `Drawn reversed, its energy turns inward or runs against the grain. ${c.rev} Reversed cards aren't simply "bad" — often they show where something is blocked, internal, delayed, or still forming. The work this card asks for is quieter and more honest: less about acting outward, more about noticing what's been held back, avoided, or not yet faced.`
+    : `Drawn upright, its energy moves freely and outwardly. ${c.up} Upright, the card tends to describe things you can act on directly rather than untangle first — the invitation is to meet it openly.`;
+
+  // 3) how it lands in this position
+  const place = `Falling in the place of ${position.toLowerCase()}, this takes on a specific job in your reading. ${posRead} So read ${c.name} not as a free-floating symbol but as an answer to that exact question — its meaning bends to fit the role the position gives it.`;
+
+  // 4) life-area weave + reflective close — pick the clause matching orientation
+  const pick = (txt)=>{
+    if(!txt) return "";
+    const parts = txt.split(/\bReversed,\s*/);
+    let chosen = rev ? (parts[1]||parts[0]) : parts[0];
+    chosen = chosen.replace(/\.\s*$/,"").trim();
+    return chosen.charAt(0).toLowerCase()+chosen.slice(1);
+  };
+  const areas=[];
+  if(c.love) areas.push(`in matters of the heart, ${pick(c.love)}`);
+  if(c.career) areas.push(`in work and direction, ${pick(c.career)}`);
+  if(c.health) areas.push(`in body and wellbeing, ${pick(c.health)}`);
+  const weave = areas.length
+    ? `Across the different rooms of a life it shows up like this — ${areas.join("; ")}. Take whichever of those is live for you right now and let the rest sit quietly.`
+    : "";
+
+  const keys=(c.key||[]);
+  const close = keys.length
+    ? `If you want a single thread to carry away, sit with these words and notice which one tightens something in you: ${keys.join(", ")}. That flicker of recognition is usually where the card is actually pointing.`
+    : "";
+
+  return [nature, core, place, weave, close].filter(Boolean);
+}
 function renderDetail(){
   const s=SPREADS[state.spread];const wrap=$("readingDetail");wrap.innerHTML="";
   state.drawn.forEach((d,i)=>{
@@ -975,6 +1206,12 @@ function renderDetail(){
       ? `${d.card.sigil} ${d.card.astro} ${d.card.glyph}`
       : `${d.card.suitSigil} ${d.card.suit} · ${d.card.element} · ${d.card.astro}`;
     const keys = (d.card.key||[]).map(k=>`<span class="kw">${k}</span>`).join("");
+    const deepParas = deepRead(d, s.positions[i], s.reads[i]).map(p=>`<p>${p}</p>`).join("");
+    const deeper = `
+      <details class="deeper">
+        <summary><span class="deeper-open">Go deeper</span><span class="deeper-close">Show less</span></summary>
+        <div class="deeper-body">${deepParas}</div>
+      </details>`;
     const ctx = (d.card.love||d.card.career||d.card.health) ? `
       <details class="contexts">
         <summary>In love, career &amp; health</summary>
@@ -991,6 +1228,7 @@ function renderDetail(){
       <span class="orient">${d.reversed?"Reversed":"Upright"}</span>
       <p>${d.reversed?d.card.rev:d.card.up}</p>
       <p class="pos-read">In the place of <b style="color:var(--gold)">${s.positions[i].toLowerCase()}</b>: ${s.reads[i]}</p>
+      ${deeper}
       ${ctx}`;
     wrap.appendChild(m);
   });
