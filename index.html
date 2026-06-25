@@ -212,6 +212,20 @@
   .deeper-body p:last-child{margin-bottom:0}
   .deeper-body p:last-child{color:var(--mist);font-style:italic}
 
+  /* clarifier cards */
+  .clarifiers{margin-top:16px}
+  .clar-card{border:1px dashed var(--line);border-radius:12px;background:rgba(217,139,158,.05);padding:16px 18px;margin-bottom:12px}
+  .clar-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+  .clar-sigil{font-size:22px;color:var(--rose);line-height:1}
+  .clar-name{font-size:17px;color:#fff}
+  .clar-card .glyphline{color:var(--rose);font-size:13px;margin:2px 0 8px;font-style:italic}
+  .clar-card p{font-size:14px;line-height:1.6;color:var(--silver)}
+  .clar-note{color:var(--mist)!important;font-style:italic;font-size:13px!important;margin-top:8px}
+  .clar-btn{font-size:11px!important;padding:8px 16px!important}
+  .general-clar-wrap{margin-top:24px;border-top:1px solid var(--line);padding-top:20px}
+  #capture.exporting .clar-btn{display:none}
+  #capture.exporting .general-clar-empty{display:none}
+
   .synthesis{margin-top:26px;border:1px solid var(--line);border-radius:14px;background:rgba(233,196,106,.05);padding:24px}
   .synthesis .step-label{margin-bottom:12px}
   .synthesis p{line-height:1.7;font-size:15px;color:var(--silver)}
@@ -360,6 +374,7 @@
         <div class="step-label">The stars, taken together</div>
         <p id="synthText"></p>
       </div>
+      <div id="generalClarifier"></div>
       <!-- journal text rendered here for export only -->
       <div class="journal-print hidden" id="journalPrint">
         <div class="step-label">Journal</div>
@@ -878,7 +893,7 @@ const SPREADS = {
 };
 
 /* ───────── STATE ───────── */
-let state={spread:null,method:"fan",reversals:true,drawn:[],need:0};
+let state={spread:null,method:"fan",reversals:true,drawn:[],need:0,clarifiers:{}};
 const $=id=>document.getElementById(id);
 const backSVG=`<svg class="face" viewBox="0 0 100 160" preserveAspectRatio="none"><use href="#astrolabe"/></svg>`;
 
@@ -954,8 +969,11 @@ function stamp(){
 async function renderCanvas(){
   prepCapture();stamp();
   const node=$("capture");
+  node.classList.add("exporting");
   await new Promise(r=>setTimeout(r,120)); // let layout settle
-  return await html2canvas(node,{backgroundColor:"#0a0a1f",scale:2,useCORS:true});
+  const canvas=await html2canvas(node,{backgroundColor:"#0a0a1f",scale:2,useCORS:true});
+  node.classList.remove("exporting");
+  return canvas;
 }
 function fileStamp(){
   const s=SPREADS[state.spread].name.replace(/\s+/g,"-").toLowerCase();
@@ -1020,6 +1038,7 @@ let order=[];
 function buildDeck(){
   order=shuffled();
   state.drawn=[];
+  state.clarifiers={};
   const stage=$("stage");stage.innerHTML="";
   updateStatus();
   if(state.method==="fan") buildFan(stage);
@@ -1229,12 +1248,68 @@ function renderDetail(){
       <p>${d.reversed?d.card.rev:d.card.up}</p>
       <p class="pos-read">In the place of <b style="color:var(--gold)">${s.positions[i].toLowerCase()}</b>: ${s.reads[i]}</p>
       ${deeper}
-      ${ctx}`;
+      ${ctx}
+      ${clarifierHTML(String(i), s.positions[i])}`;
     wrap.appendChild(m);
   });
   // synthesis
   $("synthesis").classList.remove("hidden");
   $("synthText").textContent=synth(s);
+  // general "draw another card" for the whole reading
+  const hasGeneral=(state.clarifiers["general"]||[]).length>0;
+  $("generalClarifier").innerHTML=`
+    <div class="general-clar-wrap${hasGeneral?"":" general-clar-empty"}">
+      <div class="step-label" style="margin-bottom:10px">Need more?</div>
+      ${clarifierHTML("general", null)}
+    </div>`;
+}
+
+/* ───────── clarifier cards ───────── */
+function drawClarifier(key){
+  if(!order.length){
+    // extremely unlikely (only after drawing all 78), but guard anyway
+    return;
+  }
+  const deckIdx=order.shift();
+  const reversed=state.reversals && Math.random()<0.5;
+  if(!state.clarifiers[key]) state.clarifiers[key]=[];
+  state.clarifiers[key].push({card:DECK[deckIdx],reversed});
+  renderDetail();
+  // scroll the new clarifier into view
+  setTimeout(()=>{
+    const el=document.querySelector(`[data-clarifier-anchor="${key}"]`);
+    if(el) el.scrollIntoView({behavior:"smooth",block:"center"});
+  },80);
+}
+
+function clarifierHTML(key, forPosition){
+  const list=state.clarifiers[key]||[];
+  const cards=list.map((d,ci)=>{
+    const c=d.card;
+    const astroLine = c.arcana==="major"
+      ? `${c.sigil} ${c.astro} ${c.glyph}`
+      : `${c.suitSigil} ${c.suit} · ${c.element} · ${c.astro}`;
+    return `
+      <div class="clar-card">
+        <div class="clar-head">
+          <span class="clar-sigil">${c.sigil}</span>
+          <span class="clar-name">${c.name}</span>
+          <span class="orient">${d.reversed?"Reversed":"Upright"}</span>
+        </div>
+        <div class="glyphline">${astroLine}</div>
+        <p>${d.reversed?c.rev:c.up}</p>
+        <p class="clar-note">${forPosition
+          ? `Drawn to clarify <b style="color:var(--gold)">${forPosition.toLowerCase()}</b> — read it as a lens over that card, sharpening or qualifying what it said.`
+          : `An extra card for the reading as a whole — added context beyond the original spread.`}</p>
+      </div>`;
+  }).join("");
+  const label = forPosition ? "Draw a clarifier" : "Draw another card";
+  const more = list.length ? "Draw one more" : label;
+  return `
+    <div class="clarifiers" data-clarifier-anchor="${key}">
+      ${cards}
+      <button class="btn ghost clar-btn" onclick="drawClarifier('${key}')">${list.length?"+ "+more:"✦ "+label}</button>
+    </div>`;
 }
 
 function synth(s){
