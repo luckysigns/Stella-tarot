@@ -821,26 +821,6 @@ Object.assign(DEEP_CONTEXT,{
 "The King of Pentacles":{love:"A stable, providing, dependable partner who builds security and shares it generously. Reversed, materialism, or controlling the relationship through money and provision.",career:"Successful, reliable, and prosperous leadership built on a secure foundation. Reversed, greed, stubbornness, or risk-aversion so strong that growth stops.",health:"Grounded and consistent about wellbeing, stability as the bedrock of health. Reversed, overwork in pursuit of security at the body's expense."}
 });
 
-/* enrich the 40 numbered minors: keep their specific line, add suit-flavoured depth */
-(function(){
-  const suitFlavour={
-    Wands:"This is the suit of fire, so the matter moves through energy, drive, and will, expect things here to be active and fast rather than slow and quiet.",
-    Cups:"This is the suit of water, so the matter lives in the realm of feeling, connection, and intuition, read it through the heart more than the head.",
-    Swords:"This is the suit of air, so the matter plays out in thought, words, and truth, often in the mind and in communication before anywhere else.",
-    Pentacles:"This is the suit of earth, so the matter is tangible and practical, money, work, body, and home, and it tends to unfold steadily over real time."
-  };
-  if(typeof DECK!=="undefined"){
-    DECK.forEach(c=>{
-      if(c.arcana==="minor"){
-        const f=suitFlavour[c.suit];
-        if(c.love)   c.love   = c.love   + " " + f;
-        if(c.career) c.career = c.career + " " + f;
-        if(c.health) c.health = c.health + " " + f;
-      }
-    });
-  }
-})();
-
 /* apply the deepened major/court overlay onto the deck */
 if(typeof DECK!=="undefined"){
   DECK.forEach(c=>{
@@ -1164,59 +1144,118 @@ function reveal(){
   $("step-read").scrollIntoView({behavior:"smooth",block:"start"});
 }
 
-/* build an expanded, reflective reading from a card's structured data */
+/* ── position lenses: turn a card's meaning into an answer to THIS position ── */
+const POSITION_LENS = {
+  "The message":       "The one thing the cards want to put in front of you is",
+  "Past":              "What's behind you here, the ground this grew out of, is",
+  "The past":          "What's behind you here, already receding, is",
+  "Present":           "Right now, at the centre of things, sits",
+  "The heart":         "At the very heart of the matter is",
+  "Future":            "What's forming on the road ahead is",
+  "The future":        "What's coming into view next is",
+  "Near future":       "Just over the horizon, close enough to prepare for, is",
+  "The crossing":      "The thing cutting across your path, for you or against you, is",
+  "The obstacle":      "What's actually standing in your way is",
+  "What challenges":   "The friction between you, the thing that tests this, is",
+  "Challenge":         "The challenge to meet head-on is",
+  "The crossing":      "What crosses the matter, complicating or supporting it, is",
+  "The root":          "The root beneath all this, often out of sight, is",
+  "Root / Past":       "The foundation this all rests on is",
+  "Foundation":        "What this was built on, the bedrock underneath, is",
+  "The crown":         "What you're reaching for, the best this could become, is",
+  "The advice":        "The counsel the cards offer is",
+  "Advice":            "The guidance here is",
+  "Your stance":       "The way you're holding yourself in this is",
+  "Outer influences":  "The world around you, the people and forces at the edges, brings",
+  "Others' attitudes": "How others see this, the pressure they bring to bear, is",
+  "Outer influences":  "The environment surrounding this carries",
+  "Hopes & fears":     "What you're secretly hoping for, or quietly dreading, is",
+  "The outcome":       "Where this trajectory finally lands is",
+  "Outcome":           "The way this resolves is",
+  "Likely outcome":    "The most likely resolution, if nothing shifts, is",
+  "Mind":              "In your mind, in what you're thinking and turning over, is",
+  "Body":              "In your body, in how you physically feel and carry this, is",
+  "Spirit":            "In your spirit, in what you're reaching toward beneath it all, is",
+  "You":               "You, in this, are being shown as",
+  "You / the querent":  "You yourself, at the centre of this, are",
+  "Them":              "The other person here shows up as",
+  "The connection":    "The bond between you, as its own living thing, is",
+  "What unites":       "What draws the two of you together is",
+  "Where it's heading":"Where the two of you are headed is",
+  "The situation":     "The situation as it truly stands is"
+};
+function lensFor(position){
+  if(POSITION_LENS[position]) return POSITION_LENS[position];
+  if(/^Month\s+\d+/.test(position)) return `The theme colouring ${position.toLowerCase()} is`;
+  // sensible fallback
+  return `In the place of ${position.toLowerCase()}, what shows up is`;
+}
+
+/* one clean life-area line, matching orientation, no repetition */
+function areaClause(txt, rev){
+  if(!txt) return "";
+  const parts = txt.split(/\bReversed,\s*/);
+  let chosen = rev ? (parts[1]||parts[0]) : parts[0];
+  return chosen.replace(/\s+/g," ").replace(/\.\s*$/,"").trim();
+}
+
+/* build an interpretive, non-repetitive reading for a card in its position */
 function deepRead(d, position, posRead){
   const c=d.card, rev=d.reversed;
-  const orient = rev?"reversed":"upright";
+  const out=[];
 
-  // 1) elemental / astrological nature
-  let nature;
-  if(c.arcana==="major"){
-    nature=`As a Major Arcana card, ${c.name} doesn't speak to the small weather of the day; it points to one of the larger forces and turning points of a life. Its sign is ${c.astro}, and that colouring runs through everything it touches here, lending the reading the particular character of ${c.astro}'s energy.`;
+  // 1) THE interpretation: card meaning delivered AS the answer to the position's question
+  const lens = lensFor(position);
+  const meaning = rev ? c.rev : c.up;
+  out.push(`${lens} ${c.name} — ${meaning.charAt(0).toLowerCase()+meaning.slice(1)}`);
+
+  // 2) what that specifically means for this seat (woven as consequence, not "this card has a job")
+  const artLower = position.replace(/^The\s+/i,"").toLowerCase(); // avoid "the the root"
+  const read = posRead.replace(/\.$/,'').toLowerCase();
+  let bridge;
+  if(/outcome|future|heading|month/i.test(position)){
+    bridge = `As where things are heading, it points to ${read} — carried on the character of ${c.name}.`;
+  } else if(/hopes\s*&?\s*fears/i.test(position)){
+    bridge = `In this seat it surfaces ${read} — the wish and the worry are often the same card seen from two sides.`;
+  } else if(/obstacle|challeng|crossing/i.test(position)){
+    bridge = `Standing as the ${artLower}, it names ${read}, and asks you not to look away from it.`;
+  } else if(/stance/i.test(position)){
+    bridge = `As your stance, it mirrors ${read} — this is the posture you're bringing, worth seeing clearly.`;
+  } else if(/advice|crown/i.test(position)){
+    bridge = `Taken as ${artLower}, read it as guidance: ${read}.`;
+  } else if(/past|root|foundation/i.test(position)){
+    bridge = `As the ${artLower}, it shows ${read} — the part of the story that shaped where you now stand.`;
+  } else if(/them|you|connection|unites/i.test(position)){
+    bridge = `Here it describes ${read}.`;
   } else {
-    const suitVoice={
-      Wands:"the fire of drive, passion and creative will",
-      Cups:"the water of emotion, love and intuition",
-      Swords:"the air of thought, truth and the sometimes double-edged mind",
-      Pentacles:"the earth of work, money, body and the tangible world"
-    }[c.suit];
-    const rankVoice = c.arcana==="court"
-      ? `As a court card, it can describe a person in your life, an energy you're being asked to embody, or a role you're stepping into.`
-      : `As a numbered card, it marks a specific stage or event rather than a grand life-theme.`;
-    nature=`This card belongs to ${c.suit}, ${suitVoice}, tied to the signs ${c.astro}. ${rankVoice}`;
+    bridge = `In this seat it speaks to ${read}.`;
+  }
+  out.push(bridge);
+
+  // 3) the single most relevant life-area — chosen, not dumped
+  const areas=[
+    c.love   && {label:"in love", txt:areaClause(c.love,rev)},
+    c.career && {label:"in work", txt:areaClause(c.career,rev)},
+    c.health && {label:"in body and health", txt:areaClause(c.health,rev)}
+  ].filter(Boolean);
+  if(areas.length){
+    let pickIdx;
+    if(/them|connection|unites|heading|heart/i.test(position)) pickIdx=0;
+    else if(/advice|stance|outcome|obstacle|challenge|crown/i.test(position)) pickIdx=1;
+    else if(/body|health|mind|spirit/i.test(position)) pickIdx=2;
+    else pickIdx = c.suit==="Cups"?0 : c.suit==="Pentacles"?2 : 1;
+    const a=areas[Math.min(pickIdx,areas.length-1)];
+    if(a && a.txt) out.push(`If you're wondering where it lands ${a.label}: ${a.txt.charAt(0).toLowerCase()+a.txt.slice(1)}.`);
   }
 
-  // 2) core meaning broadened by orientation
-  const core = rev
-    ? `Drawn reversed, its energy turns inward or runs against the grain. ${c.rev} Reversed cards aren't simply "bad" — often they show where something is blocked, internal, delayed, or still forming. The work this card asks for is quieter and more honest: less about acting outward, more about noticing what's been held back, avoided, or not yet faced.`
-    : `Drawn upright, its energy moves freely and outwardly. ${c.up} Upright, the card tends to describe things you can act on directly rather than untangle first — the invitation is to meet it openly.`;
+  // 4) orientation nuance — once, brief, at the END, reversed only
+  if(rev){
+    out.push(`And since it fell reversed, hold it gently — that usually points to something internal, delayed, or not yet faced rather than a flat "no."`);
+  }
 
-  // 3) how it lands in this position
-  const place = `Falling in the place of ${position.toLowerCase()}, this takes on a specific job in your reading. ${posRead} So read ${c.name} not as a free-floating symbol but as an answer to that exact question — its meaning bends to fit the role the position gives it.`;
-
-  // 4) life-area weave + reflective close — pick the clause matching orientation
-  const pick = (txt)=>{
-    if(!txt) return "";
-    const parts = txt.split(/\bReversed,\s*/);
-    let chosen = rev ? (parts[1]||parts[0]) : parts[0];
-    chosen = chosen.replace(/\.\s*$/,"").trim();
-    return chosen.charAt(0).toLowerCase()+chosen.slice(1);
-  };
-  const areas=[];
-  if(c.love) areas.push(`in matters of the heart, ${pick(c.love)}`);
-  if(c.career) areas.push(`in work and direction, ${pick(c.career)}`);
-  if(c.health) areas.push(`in body and wellbeing, ${pick(c.health)}`);
-  const weave = areas.length
-    ? `Across the different rooms of a life it shows up like this — ${areas.join("; ")}. Take whichever of those is live for you right now and let the rest sit quietly.`
-    : "";
-
-  const keys=(c.key||[]);
-  const close = keys.length
-    ? `If you want a single thread to carry away, sit with these words and notice which one tightens something in you: ${keys.join(", ")}. That flicker of recognition is usually where the card is actually pointing.`
-    : "";
-
-  return [nature, core, place, weave, close].filter(Boolean);
+  return out;
 }
+
 function renderDetail(){
   const s=SPREADS[state.spread];const wrap=$("readingDetail");wrap.innerHTML="";
   state.drawn.forEach((d,i)=>{
