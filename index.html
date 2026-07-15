@@ -273,7 +273,7 @@
   .lib-card .lc-keys{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px}
   .lib-card .lc-keys span{font-family:"Trebuchet MS",sans-serif;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--mist);border:1px solid var(--line);border-radius:999px;padding:2px 8px}
   .lib-card .lc-body{font-size:13px;line-height:1.55;color:var(--silver);margin-top:10px;max-height:0;overflow:hidden;transition:max-height .35s ease}
-  .lib-card.open .lc-body{max-height:1400px}
+  .lib-card.open .lc-body{max-height:8000px}
   .lib-card .lc-body h6{font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--rose);margin:12px 0 3px}
   .lib-card .lc-body p{margin-bottom:4px}
   .lib-empty{color:var(--mist);font-style:italic;text-align:center;padding:30px;grid-column:1/-1}
@@ -410,6 +410,7 @@
         <button data-f="Cups">Cups</button>
         <button data-f="Swords">Swords</button>
         <button data-f="Pentacles">Pentacles</button>
+        <button data-f="court">Courts</button>
       </div>
       <input type="text" id="libSearch" placeholder="Search a card…" />
     </div>
@@ -927,7 +928,7 @@ function restoreDeckPref(){ try{ const v=localStorage.getItem("astra.deck"); if(
 function renderDeckPicker(){
   const seg=$("deckSeg"); if(!seg) return;
   seg.innerHTML=DECKS.map(dk=>`<button data-deck="${dk.id}" class="${state.deck===dk.id?'on':''}">${dk.id==='astro'?'✷ ':''}${dk.name}</button>`).join("");
-  seg.querySelectorAll("button").forEach(b=>{ b.onclick=()=>{ state.deck=b.dataset.deck; persistDeck(); renderDeckPicker(); if(state.drawn.length && !$("step-read").classList.contains("hidden")) renderDetail(); }; });
+  seg.querySelectorAll("button").forEach(b=>{ b.onclick=()=>{ state.deck=b.dataset.deck; persistDeck(); renderDeckPicker(); if(state.drawn.length && !$("step-read").classList.contains("hidden")) renderDetail(); if(typeof buildLibrary==='function') buildLibrary(); }; });
 }
 restoreDeckPref(); renderDeckPicker();
 $("againBtn").onclick=()=>{
@@ -1444,11 +1445,24 @@ function libSub(c){
   if(c.arcana==="major") return `${String(c.n).padStart(2,"0")} · Major · ${c.astro}`;
   return `${c.suit} · ${c.element} · ${c.astro}`;
 }
+function libDeckLayer(c){
+  const sel=state.deck, cid=c.id;
+  if(!sel||sel==="base"||!CONTENT[sel]||!CONTENT[sel][cid]||!CONTENT[sel][cid].detail) return "";
+  const dk=DECKS.find(x=>x.id===sel), dd=CONTENT[sel][cid].detail;
+  return `<div class="lib-deck-layer" style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line)">`
+    +`<h6 style="color:var(--gold)">${sel==="astro"?"✷ ":""}Through the ${dk?dk.name:sel} deck</h6>`
+    +(dd.astrology?`<p>${dd.astrology}</p>`:"")
+    +`<h6>Upright</h6><p>${dd.upright}</p><h6>Reversed</h6><p>${dd.reversed}</p>`
+    +(dd.love?`<h6>♡ Love</h6><p>${dd.love}</p>`:"")
+    +(dd.career?`<h6>✦ Career</h6><p>${dd.career}</p>`:"")
+    +(dd.health?`<h6>✚ Health</h6><p>${dd.health}</p>`:"")
+    +`</div>`;
+}
 function buildLibrary(){
   const grid=$("libGrid");grid.innerHTML="";
   const f=libState.filter, q=libState.query.trim().toLowerCase();
   const list=DECK.filter(c=>{
-    const passF = f==="all" || (f==="major"&&c.arcana==="major") || c.suit===f;
+    const passF = f==="all" || (f==="major"&&c.arcana==="major") || (f==="court"&&c.arcana==="court") || c.suit===f;
     const passQ = !q || c.name.toLowerCase().includes(q) || (c.key||[]).some(k=>k.includes(q)) || (c.astro||"").toLowerCase().includes(q);
     return passF && passQ;
   });
@@ -1468,6 +1482,7 @@ function buildLibrary(){
         ${c.love?`<h6>♡ Love</h6><p>${c.love}</p>`:""}
         ${c.career?`<h6>✦ Career</h6><p>${c.career}</p>`:""}
         ${c.health?`<h6>✚ Health</h6><p>${c.health}</p>`:""}
+        ${libDeckLayer(c)}
       </div>`;
     el.onclick=()=>el.classList.toggle("open");
     grid.appendChild(el);
