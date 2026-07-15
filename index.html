@@ -284,6 +284,14 @@
     .fan{height:240px}
     .controls{justify-content:center}
   }
+/* ===== selection gather + dissolve animation ===== */
+@keyframes astraBurstRing{0%{transform:translate(-50%,-50%) scale(.2);opacity:.9}70%{opacity:.5}100%{transform:translate(-50%,-50%) scale(2.6);opacity:0}}
+@keyframes astraSpark{0%{transform:translate(-50%,-50%);opacity:1}100%{transform:translate(-50%,-50%) translate(var(--dx),var(--dy)) scale(.2);opacity:0}}
+@keyframes astraMaterialize{0%{opacity:0;transform:scale(.62);filter:brightness(2) blur(4px)}60%{opacity:1;filter:brightness(1.25) blur(0)}100%{opacity:1;transform:scale(1);filter:none}}
+.spark-burst{position:absolute;left:50%;top:50%;width:0;height:0;pointer-events:none;z-index:60}
+.spark-burst .ring{position:absolute;left:50%;top:50%;width:120px;height:120px;border-radius:50%;border:2px solid var(--gold);box-shadow:0 0 24px 6px rgba(233,196,106,.55);animation:astraBurstRing .8s ease-out forwards}
+.spark-burst .spk{position:absolute;left:50%;top:50%;width:6px;height:6px;border-radius:50%;background:var(--gold);box-shadow:0 0 8px 2px rgba(233,196,106,.9);animation:astraSpark .8s ease-out forwards}
+.tcard.materialize{animation:astraMaterialize .7s cubic-bezier(.2,.7,.2,1) both}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -1103,10 +1111,10 @@ function chooseCard(deckIdx,el){
 
 function registerDraw(deckIdx){
   if(state.drawn.length>=state.need) return;
-  const reversed=state.reversals && Math.random()<0.5;
+  const reversed=state.reversals && Math.random()<0.2;
   state.drawn.push({card:DECK[deckIdx],reversed});
   updateStatus();
-  if(state.drawn.length===state.need) setTimeout(reveal,400);
+  if(state.drawn.length===state.need) setTimeout(gatherAndReveal,300);
 }
 
 function updateStatus(){
@@ -1127,6 +1135,36 @@ function cardBottomLabel(c){
   return c.suitSigil + " " + c.element;
 }
 
+function spawnBurst(stage){
+  var b=document.createElement("div");b.className="spark-burst";
+  var ring=document.createElement("div");ring.className="ring";b.appendChild(ring);
+  for(var i=0;i<16;i++){
+    var s=document.createElement("div");s.className="spk";
+    var ang=(i/16)*Math.PI*2, dist=60+Math.random()*70;
+    s.style.setProperty("--dx",(Math.cos(ang)*dist)+"px");
+    s.style.setProperty("--dy",(Math.sin(ang)*dist)+"px");
+    s.style.animationDelay=(Math.random()*0.12)+"s";
+    b.appendChild(s);
+  }
+  stage.appendChild(b);
+  setTimeout(function(){ if(b.parentNode) b.remove(); },1000);
+}
+function gatherAndReveal(){
+  var stage=$("stage");
+  if(!stage){ reveal(); return; }
+  var backs=stage.querySelectorAll(".cardback");
+  backs.forEach(function(b,i){
+    b.onmouseenter=null;b.onmouseleave=null;b.onclick=null;
+    b.style.transition="transform .72s cubic-bezier(.5,0,.2,1), opacity .72s ease, filter .72s ease";
+    b.style.transitionDelay=((i%14)*16)+"ms";
+    b.style.transform="translate(-50%,-50%) scale(.14) rotate("+(((i*53)%140)-70)+"deg)";
+    b.style.opacity="0";
+    b.style.filter="brightness(2.3) blur(3px)";
+    b.style.pointerEvents="none";
+  });
+  spawnBurst(stage);
+  setTimeout(reveal,760);
+}
 function reveal(){
   const s=SPREADS[state.spread];
   $("step-draw").classList.add("hidden");
@@ -1136,7 +1174,7 @@ function reveal(){
     const slot=document.createElement("div");slot.className="slot";
     slot.innerHTML=`<div class="pos">${s.positions[i]}</div>`;
     const card=document.createElement("div");
-    card.className="tcard"+(d.reversed?" rev":"");
+    card.className="tcard materialize"+(d.reversed?" rev":"");card.style.animationDelay=(i*0.1)+"s";
     card.innerHTML=`
       <div class="inner">
         <div class="side back">${backSVG}</div>
@@ -1366,7 +1404,7 @@ function drawClarifier(key){
     return;
   }
   const deckIdx=order.shift();
-  const reversed=state.reversals && Math.random()<0.5;
+  const reversed=state.reversals && Math.random()<0.2;
   if(!state.clarifiers[key]) state.clarifiers[key]=[];
   state.clarifiers[key].push({card:DECK[deckIdx],reversed});
   renderDetail();
