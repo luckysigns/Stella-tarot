@@ -1,0 +1,11 @@
+# Local build automation, source content, and backups (kept out of the public repo)
+astra-data/
+index.backup-*.html
+files.zip
+.claude/
+astra_run.sh
+com.lucky.astra-build.plist
+ASTRA_BUILD_PROMPT.md
+DECK_PICKER_SPEC.md
+SETUP.md
+astrology_tarot_claude_code_context.txt
