@@ -293,6 +293,30 @@
 .spark-burst .spk{position:absolute;left:50%;top:50%;width:6px;height:6px;border-radius:50%;background:var(--gold);box-shadow:0 0 8px 2px rgba(233,196,106,.9);animation:astraSpark .8s ease-out forwards}
 .tcard.materialize{animation:astraMaterialize .7s cubic-bezier(.2,.7,.2,1) both}
 </style>
+<style>
+  /* ── Ask a question mode ── */
+  #modeSeg button{padding:9px 22px}
+  textarea#askQ{width:100%;min-height:92px;resize:vertical;background:rgba(7,6,18,.6);border:1px solid var(--line);border-radius:10px;color:var(--silver);font-family:inherit;font-size:15px;line-height:1.6;padding:14px;margin-top:6px}
+  textarea#askQ:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 1px rgba(233,196,106,.3)}
+  textarea#askQ::placeholder{color:var(--mist);opacity:.7;font-style:italic}
+  .ask-meanings summary{cursor:pointer;color:var(--gold-soft);font-size:14px;margin-top:14px}
+  .ask-presets{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 4px}
+  .chip{background:rgba(10,9,28,.5);border:1px solid var(--line);color:var(--mist);border-radius:999px;padding:5px 13px;font-size:13px;cursor:pointer;font-family:inherit;transition:.15s}
+  .chip:hover{border-color:var(--gold);color:var(--gold)}
+  #askLabelInputs{margin-top:8px}
+  .ask-label-row{display:flex;align-items:center;gap:10px;margin:7px 0}
+  .ask-label-row .n{font-size:12px;color:var(--mist);min-width:56px;letter-spacing:.04em}
+  .ask-label-row input{flex:1;background:rgba(7,6,18,.6);border:1px solid var(--line);border-radius:8px;color:var(--silver);font-family:inherit;font-size:14px;padding:9px 12px}
+  .ask-label-row input:focus{outline:none;border-color:var(--gold)}
+  #askThread{margin-top:6px}
+  .ask-entry{position:relative;border-top:1px solid var(--line);margin-top:26px;padding-top:24px}
+  .ask-entry:first-child{border-top:none;margin-top:16px;padding-top:6px}
+  .ask-del{position:absolute;top:8px;right:2px;background:none;border:none;color:var(--mist);font-size:24px;line-height:1;cursor:pointer;padding:0 6px}
+  .ask-del:hover{color:var(--rose)}
+  .ask-q{border-left:3px solid var(--gold);padding:4px 0 4px 14px;margin:0 34px 8px 0;font-style:italic;color:var(--silver);font-size:1.06rem;line-height:1.5}
+  .ask-meta{font-size:12px;color:var(--mist);letter-spacing:.06em;text-transform:uppercase;margin-bottom:12px}
+  .ask-board{margin:6px 0 20px}
+</style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
@@ -340,6 +364,13 @@
     <h1>Stellar <em>Tarot</em></h1>
     <p class="tagline">Twenty-two Major Arcana as planets and signs, fifty-six Minor across the four classic suits — Wands, Cups, Swords, Pentacles. Choose how the heavens are dealt, then let them be read.</p>
   </header>
+
+  <div class="controls" style="justify-content:center;margin:2px 0 20px">
+    <div class="seg" id="modeSeg">
+      <button data-mode="guided" class="on">Guided spread</button>
+      <button data-mode="ask">Ask a question</button>
+    </div>
+  </div>
 
   <!-- STEP 1: spread -->
   <section class="panel" id="step-spread">
@@ -405,6 +436,32 @@
       <button class="btn" id="exportPdf">⤓ Save as PDF</button>
       <button class="btn solid" id="againBtn">Draw again</button>
     </div>
+  </section>
+
+  <!-- ASK A QUESTION -->
+  <section class="panel hidden" id="step-ask">
+    <div class="step-label">Ask the cards a question</div>
+    <textarea id="askQ" placeholder="Ask anything — “How do I move forward with…”, “What's really going on with…”, “Should I…”"></textarea>
+    <div class="step-label" style="margin-top:14px">How many cards</div>
+    <div class="controls"><div class="seg" id="askCountSeg"></div></div>
+    <details class="ask-meanings" id="askMeanings">
+      <summary>Assign a meaning to each card (optional)</summary>
+      <div class="ask-presets" id="askPresets">
+        <button class="chip" data-preset="timeline">Timeline</button>
+        <button class="chip" data-preset="ynm">Yes / No / Maybe</button>
+        <button class="chip" data-preset="options">Option A / B / C</button>
+        <button class="chip" data-preset="sao">Situation / Action / Outcome</button>
+        <button class="chip" data-preset="clear">Clear</button>
+      </div>
+      <div id="askLabelInputs"></div>
+    </details>
+    <div class="controls" style="margin-top:16px">
+      <button class="btn solid" id="askPull">✦ Pull cards</button>
+      <button class="btn ghost hidden" id="askClear">Clear thread</button>
+      <span class="hint"><label style="cursor:pointer"><input type="checkbox" id="askReversals" checked style="accent-color:var(--gold)"> allow reversed cards</label></span>
+      <div class="seg" id="askDeckSeg" style="margin-left:auto"></div>
+    </div>
+    <div id="askThread"></div>
   </section>
 
   <!-- CARD LIBRARY -->
@@ -934,9 +991,11 @@ $("reversals").onchange=e=>state.reversals=e.target.checked;
 function persistDeck(){ try{ localStorage.setItem("astra.deck", state.deck); }catch(e){} }
 function restoreDeckPref(){ try{ const v=localStorage.getItem("astra.deck"); if(v && DECKS.some(x=>x.id===v)) state.deck=v; }catch(e){} }
 function renderDeckPicker(){
-  const seg=$("deckSeg"); if(!seg) return;
-  seg.innerHTML=DECKS.map(dk=>`<button data-deck="${dk.id}" class="${state.deck===dk.id?'on':''}">${dk.id==='astro'?'✷ ':''}${dk.name}</button>`).join("");
-  seg.querySelectorAll("button").forEach(b=>{ b.onclick=()=>{ state.deck=b.dataset.deck; persistDeck(); renderDeckPicker(); if(state.drawn.length && !$("step-read").classList.contains("hidden")) renderDetail(); if(typeof buildLibrary==='function') buildLibrary(); }; });
+  ["deckSeg","askDeckSeg"].forEach(id=>{
+    const seg=$(id); if(!seg) return;
+    seg.innerHTML=DECKS.map(dk=>`<button data-deck="${dk.id}" class="${state.deck===dk.id?'on':''}">${dk.id==='astro'?'✷ ':''}${dk.name}</button>`).join("");
+    seg.querySelectorAll("button").forEach(b=>{ b.onclick=()=>{ state.deck=b.dataset.deck; persistDeck(); renderDeckPicker(); if(state.drawn.length && !$("step-read").classList.contains("hidden")) renderDetail(); if(typeof buildLibrary==='function') buildLibrary(); if(typeof renderAskThread==='function' && typeof askThread!=='undefined' && askThread.length) renderAskThread(); }; });
+  });
 }
 restoreDeckPref(); renderDeckPicker();
 $("againBtn").onclick=()=>{
@@ -1568,6 +1627,174 @@ $("libFilter").querySelectorAll("button").forEach(b=>{
 });
 $("libSearch").oninput=e=>{libState.query=e.target.value;buildLibrary();};
 buildLibrary();
+
+/* ═══════════ ASK A QUESTION MODE ═══════════
+   Threaded free-form questions built on the SAME CONTENT/deepRead system as the
+   guided spread. Each entry keeps its own shuffled pool so clarifiers never repeat a
+   card already in that question. Respects the deck picker (state.deck) and reversals. */
+var askThread=[];        // [{id,q,count,labels[],pool[deckIdx],cards[{deckIdx,reversed,clar[]}],time,_revealed}]
+var askCount=3, askId=0, askSavedGuided=null;
+const ASK_MAX=6;
+function escapeHTML(s){return String(s==null?"":s).replace(/[&<>"]/g,function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m];});}
+function entryLabel(entry,i){ var L=entry.labels&&entry.labels[i]?entry.labels[i]:""; return L||("Card "+(i+1)); }
+
+/* one flip-card, reusing the guided reveal markup */
+function tcardHTML(d,i){
+  return '<div class="tcard materialize'+(d.reversed?" rev":"")+'" style="animation-delay:'+(i*0.1)+'s"><div class="inner"><div class="side back">'+backSVG+'</div><div class="side front"><div class="front-art" data-arcana="'+d.card.arcana+'"><div class="num">'+cardTopLabel(d.card)+'</div><div class="sigil">'+d.card.sigil+'</div><div class="nm">'+d.card.name+'</div><div class="astro">'+cardBottomLabel(d.card)+'</div></div></div></div></div>';
+}
+
+/* one card's full reading in an ask entry — label as its position, deep read + contexts + clarifier */
+function askCardHTML(d,label,clarKey,clarList){
+  var c=d.card, rev=d.reversed, orient=rev?"reversed":"upright";
+  var astroLine = c.arcana==="major" ? (c.sigil+" "+c.astro+" "+c.glyph) : (c.suitSigil+" "+c.suit+" · "+c.element+" · "+c.astro);
+  var keys=(c.key||[]).map(function(k){return '<span class="kw">'+k+'</span>';}).join("");
+  var base = (CONTENT.base && CONTENT.base[c.id]) ? CONTENT.base[c.id] : null;
+  var known = base && base.positions && base.positions[label];
+  // the position line — a known lens uses the deck's own position text; anything freeform
+  // ("Yes", "what my sister thinks") reads through lensFor so it still lands sensibly
+  var posLine, posLabelHTML;
+  if(known){ posLine = known[orient]||known.upright; posLabelHTML='In the '+escapeHTML(label.toLowerCase())+' position:'; }
+  else { var mean=rev?c.rev:c.up; posLine = lensFor(label)+" "+c.name+" — "+(mean.charAt(0).toLowerCase()+mean.slice(1)); posLabelHTML='As '+escapeHTML(label)+':'; }
+  // deep read (traditional paragraphs + the active deck's layer) — identical to the guided reading
+  var dr=deepRead(d, label, "");
+  var tradParas=dr.trad.map(function(p){return "<p>"+p+"</p>";}).join("");
+  var deckLayer=dr.deck ? ('<details class="deeper deck-layer" style="margin-top:14px"><summary><span class="deeper-open">'+dr.deck.label+'</span><span class="deeper-close">Hide deck reading</span></summary><div class="deeper-body">'+dr.deck.paras.map(function(p){return "<p>"+p+"</p>";}).join("")+'</div></details>') : "";
+  var deeper='<details class="deeper"><summary><span class="deeper-open">Go deeper</span><span class="deeper-close">Show less</span></summary><div class="deeper-body">'+tradParas+deckLayer+'</div></details>';
+  // life-area contexts, exactly as the guided read builds them
+  var cd = base ? base.detail : null;
+  var pick=function(a){ return (a&&typeof a==="object")?(a[orient]||a.upright):(typeof a==="string"?a:""); };
+  var AREAS=[["love","♡ Love"],["career","✦ Career"],["money","◈ Money"],["health","✚ Health"],["spirituality","✷ Spirituality"]];
+  var ci=cd?AREAS.map(function(x){var t=pick(cd[x[0]]);return t?('<div class="ctx"><span class="ctx-label">'+x[1]+'</span><p>'+t+'</p></div>'):"";}).join(""):"";
+  var ctx = ci ? ('<details class="contexts"><summary>In love, career, money, health &amp; spirituality</summary><div class="ctx-grid">'+ci+'</div></details>') : "";
+  // clarifiers already drawn for this card (from the entry's own pool)
+  var clarCards=(clarList||[]).map(function(cl){
+    var cc=DECK[cl.deckIdx];
+    var ca = cc.arcana==="major" ? (cc.sigil+" "+cc.astro+" "+cc.glyph) : (cc.suitSigil+" "+cc.suit+" · "+cc.element+" · "+cc.astro);
+    return '<div class="clar-card"><div class="clar-head"><span class="clar-sigil">'+cc.sigil+'</span><span class="clar-name">'+cc.name+'</span><span class="orient">'+(cl.reversed?"Reversed":"Upright")+'</span></div><div class="glyphline">'+ca+'</div><p>'+(cl.reversed?cc.rev:cc.up)+'</p>'+richReadHTML({card:cc,reversed:cl.reversed}, null)+'<p class="clar-note">An extra card clarifying <b style="color:var(--gold)">'+escapeHTML(label)+'</b> — read it as a lens sharpening what that card said.</p></div>';
+  }).join("");
+  var clarBtn='<div class="clarifiers"><button class="btn ghost clar-btn" data-askclar="'+clarKey+'">'+((clarList&&clarList.length)?"+ Draw one more":"✦ Draw a clarifier")+'</button></div>';
+  return '<div class="meaning">'
+    + '<h4>'+c.name+' <span class="pos-tag">'+escapeHTML(label)+'</span></h4>'
+    + '<div class="glyphline">'+astroLine+'</div>'
+    + '<div class="kwrow">'+keys+'</div>'
+    + '<span class="orient">'+(rev?"Reversed":"Upright")+'</span>'
+    + '<p>'+(rev?c.rev:c.up)+'</p>'
+    + '<p class="pos-read"><b style="color:var(--gold)">'+posLabelHTML+'</b> '+posLine+'</p>'
+    + deeper + ctx + clarCards + clarBtn
+    + '</div>';
+}
+
+function askEntryHTML(entry){
+  var board=entry.cards.map(function(cc,i){
+    var d={card:DECK[cc.deckIdx],reversed:cc.reversed};
+    return '<div class="slot"><div class="pos">'+escapeHTML(entryLabel(entry,i))+'</div>'+tcardHTML(d,i)+'</div>';
+  }).join("");
+  var readings=entry.cards.map(function(cc,i){
+    var d={card:DECK[cc.deckIdx],reversed:cc.reversed};
+    return askCardHTML(d, entryLabel(entry,i), entry.id+":"+i, cc.clar);
+  }).join("");
+  return '<div class="ask-entry" data-entry="'+entry.id+'">'
+    + '<button class="ask-del" data-delentry="'+entry.id+'" title="Delete this question">×</button>'
+    + '<blockquote class="ask-q">'+escapeHTML(entry.q)+'</blockquote>'
+    + '<div class="ask-meta">'+entry.count+' card'+(entry.count>1?"s":"")+' · '+escapeHTML(entry.time)+'</div>'
+    + '<div class="board ask-board">'+board+'</div>'
+    + '<div class="reading">'+readings+'</div>'
+    + '</div>';
+}
+
+function renderAskThread(animateId){
+  var wrap=$("askThread"); if(!wrap) return;
+  wrap.innerHTML=askThread.map(askEntryHTML).join("");
+  askThread.forEach(function(entry){
+    var box=wrap.querySelector('.ask-entry[data-entry="'+entry.id+'"] .ask-board');
+    if(!box) return;
+    var cards=box.querySelectorAll(".tcard");
+    if(entry._revealed){ cards.forEach(function(cd){cd.classList.add("flipped");}); }
+    else { cards.forEach(function(cd,i){ setTimeout(function(){cd.classList.add("flipped");},300+i*260); }); entry._revealed=true; }
+  });
+  $("askClear").classList.toggle("hidden", askThread.length===0);
+  if(animateId){ var el=wrap.querySelector('.ask-entry[data-entry="'+animateId+'"]'); if(el) setTimeout(function(){el.scrollIntoView({behavior:"smooth",block:"start"});},70); }
+}
+
+function askDrawClarifier(entryId,cardIdx){
+  var entry=askThread.find(function(e){return e.id===entryId;});
+  if(!entry || !entry.pool.length) return;              // pool empty only after all 78 used in this question
+  var idx=entry.pool.shift();
+  var reversed=state.reversals && Math.random()<0.2;
+  entry.cards[cardIdx].clar.push({deckIdx:idx,reversed});
+  renderAskThread();
+}
+
+function askPull(){
+  var q=$("askQ").value.trim();
+  if(!q){ $("askQ").focus(); return; }
+  var labels=[].map.call($("askLabelInputs").querySelectorAll("input"), function(inp){return inp.value.trim();});
+  var pool=shuffled(), cards=[];
+  for(var i=0;i<askCount;i++){ var idx=pool.shift(); var reversed=state.reversals && Math.random()<0.2; cards.push({deckIdx:idx,reversed:reversed,clar:[]}); }
+  var now=new Date();
+  var time=now.toLocaleString(undefined,{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"});
+  askThread.push({id:++askId, q:q, count:askCount, labels:labels.slice(0,askCount), pool:pool, cards:cards, time:time, _revealed:false});
+  $("askQ").value="";
+  renderAskThread(askId);
+}
+
+function renderAskCount(){
+  var seg=$("askCountSeg");
+  seg.innerHTML=""; for(var n=1;n<=ASK_MAX;n++){ seg.innerHTML+='<button data-n="'+n+'" class="'+(n===askCount?"on":"")+'">'+n+'</button>'; }
+  seg.querySelectorAll("button").forEach(function(b){ b.onclick=function(){ askCount=+b.dataset.n; renderAskCount(); renderAskLabels(); }; });
+}
+function renderAskLabels(){
+  var box=$("askLabelInputs");
+  var prev=[].map.call(box.querySelectorAll("input"), function(i){return i.value;});
+  var eg=["Situation","Action","Outcome","Month 4","Option E","Card 6"];
+  var html=""; for(var i=0;i<askCount;i++){ html+='<div class="ask-label-row"><span class="n">Card '+(i+1)+'</span><input type="text" data-li="'+i+'" placeholder="e.g. '+(eg[i]||"a meaning")+'" value="'+(prev[i]?escapeHTML(prev[i]):"")+'"></div>'; }
+  box.innerHTML=html;
+}
+function applyPreset(kind){
+  var labels=[];
+  if(kind==="timeline"){ for(var i=0;i<askCount;i++) labels.push("Month "+(i+1)); }
+  else if(kind==="ynm"){ labels=["Yes","No","Maybe"]; }
+  else if(kind==="options"){ for(var j=0;j<askCount;j++) labels.push("Option "+String.fromCharCode(65+j)); }
+  else if(kind==="sao"){ labels=["Situation","Action","Outcome"]; }
+  // "clear" leaves labels empty
+  $("askMeanings").open=true;
+  renderAskLabels();
+  var inputs=$("askLabelInputs").querySelectorAll("input");
+  inputs.forEach(function(inp,i){ inp.value = labels[i]||""; });
+}
+
+function setMode(mode){
+  var ask = mode==="ask";
+  $("modeSeg").querySelectorAll("button").forEach(function(b){ b.classList.toggle("on", b.dataset.mode===mode); });
+  var guided=["step-spread","step-draw","step-read"];
+  if(ask){
+    askSavedGuided = guided.filter(function(id){ return !$(id).classList.contains("hidden"); });
+    guided.forEach(function(id){ $(id).classList.add("hidden"); });
+    $("step-ask").classList.remove("hidden");
+    $("askReversals").checked = state.reversals;   // reflect the shared reversals setting
+    renderDeckPicker();                             // paint the ask deck seg to the current deck
+    $("step-ask").scrollIntoView({behavior:"smooth",block:"start"});
+  } else {
+    $("step-ask").classList.add("hidden");
+    var restore = (askSavedGuided && askSavedGuided.length) ? askSavedGuided : ["step-spread"];
+    restore.forEach(function(id){ $(id).classList.remove("hidden"); });
+    $("step-spread").classList.remove("hidden");
+  }
+}
+
+/* wiring */
+$("modeSeg").querySelectorAll("button").forEach(function(b){ b.onclick=function(){ setMode(b.dataset.mode); }; });
+$("askPull").onclick=askPull;
+$("askClear").onclick=function(){ askThread=[]; renderAskThread(); };
+$("askReversals").onchange=function(e){ state.reversals=e.target.checked; var r=$("reversals"); if(r) r.checked=e.target.checked; };
+$("askPresets").querySelectorAll(".chip").forEach(function(b){ b.onclick=function(){ applyPreset(b.dataset.preset); }; });
+$("askThread").addEventListener("click",function(e){
+  var del=e.target.closest("[data-delentry]"); if(del){ var did=+del.dataset.delentry; askThread=askThread.filter(function(x){return x.id!==did;}); renderAskThread(); return; }
+  var cl=e.target.closest("[data-askclar]"); if(cl){ var parts=cl.dataset.askclar.split(":"); askDrawClarifier(+parts[0], +parts[1]); return; }
+  var tc=e.target.closest(".tcard"); if(tc){ tc.classList.toggle("flipped"); return; }
+});
+renderAskCount();
+renderAskLabels();
 
 </script>
 </body>
