@@ -319,6 +319,10 @@
   .ask-q{border-left:3px solid var(--gold);padding:4px 0 4px 14px;margin:0 34px 8px 0;font-style:italic;color:var(--silver);font-size:1.06rem;line-height:1.5}
   .ask-meta{font-size:12px;color:var(--mist);letter-spacing:.06em;text-transform:uppercase;margin-bottom:12px}
   .ask-board{margin:6px 0 20px}
+  .ask-addspread{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:18px;padding-top:16px;border-top:1px dashed var(--line)}
+  .ask-addlabel{flex:1;min-width:150px;background:rgba(7,6,18,.6);border:1px solid var(--line);border-radius:8px;color:var(--silver);font-family:inherit;font-size:14px;padding:9px 12px}
+  .ask-addlabel:focus{outline:none;border-color:var(--gold)}
+  .ask-threadfoot{margin-top:28px;text-align:center}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -1697,24 +1701,39 @@ function askEntryHTML(entry){
     var d={card:DECK[cc.deckIdx],reversed:cc.reversed};
     return askCardHTML(d, entryLabel(entry,i), entry.id+":"+i, cc.clar);
   }).join("");
+  var n=entry.cards.length;
+  // add ANOTHER position/layer to THIS spread — e.g. a 4th month onto a 3-month spread.
+  // draws from this question's own pool, so it never repeats a card already in it.
+  var addSpread = entry.pool.length
+    ? ('<div class="ask-addspread">'
+        + '<input class="ask-addlabel" type="text" placeholder="Name this next card (optional)" value="'+escapeHTML(smartNextLabel(entry))+'">'
+        + '<button class="btn ghost" type="button" data-addspread="'+entry.id+'">✦ Add a card to this spread</button>'
+        + '</div>')
+    : '<p class="hint" style="margin-top:16px;text-align:center">Every card has been drawn for this question.</p>';
   return '<div class="ask-entry" data-entry="'+entry.id+'">'
     + '<button class="ask-del" data-delentry="'+entry.id+'" title="Delete this question">×</button>'
     + '<blockquote class="ask-q">'+escapeHTML(entry.q)+'</blockquote>'
-    + '<div class="ask-meta">'+entry.count+' card'+(entry.count>1?"s":"")+' · '+escapeHTML(entry.time)+'</div>'
+    + '<div class="ask-meta">'+n+' card'+(n>1?"s":"")+' · '+escapeHTML(entry.time)+'</div>'
     + '<div class="board ask-board">'+board+'</div>'
     + '<div class="reading">'+readings+'</div>'
+    + addSpread
     + '</div>';
 }
 
 function renderAskThread(animateId){
   var wrap=$("askThread"); if(!wrap) return;
-  wrap.innerHTML=askThread.map(askEntryHTML).join("");
+  wrap.innerHTML=askThread.map(askEntryHTML).join("")
+    + (askThread.length ? '<div class="ask-threadfoot"><button class="btn ghost" type="button" id="askAnother">✦ Ask another question in this thread</button></div>' : "");
   askThread.forEach(function(entry){
     var box=wrap.querySelector('.ask-entry[data-entry="'+entry.id+'"] .ask-board');
     if(!box) return;
     var cards=box.querySelectorAll(".tcard");
-    if(entry._revealed){ cards.forEach(function(cd){cd.classList.add("flipped");}); }
-    else { cards.forEach(function(cd,i){ setTimeout(function(){cd.classList.add("flipped");},300+i*260); }); entry._revealed=true; }
+    var already=entry._flipped||0;                        // cards already revealed keep their face; only new ones flip in
+    cards.forEach(function(cd,i){
+      if(i<already){ cd.classList.add("flipped"); }
+      else { setTimeout(function(){cd.classList.add("flipped");}, 300+(i-already)*260); }
+    });
+    entry._flipped=cards.length;
   });
   $("askClear").classList.toggle("hidden", askThread.length===0);
   if(animateId){ var el=wrap.querySelector('.ask-entry[data-entry="'+animateId+'"]'); if(el) setTimeout(function(){el.scrollIntoView({behavior:"smooth",block:"start"});},70); }
@@ -1728,6 +1747,32 @@ function askDrawClarifier(entryId,cardIdx){
   entry.cards[cardIdx].clar.push({deckIdx:idx,reversed});
   renderAskThread();
 }
+/* suggest the next position label when extending a spread (Month 3 -> Month 4, Option C -> D, …) */
+function smartNextLabel(entry){
+  var labs=(entry.labels||[]).filter(function(l){return l && l.trim();});
+  var last=labs.length?labs[labs.length-1].trim():"";
+  var m=/^Month\s+(\d+)/i.exec(last);   if(m) return "Month "+(parseInt(m[1],10)+1);
+  var w=/^Week\s+(\d+)/i.exec(last);    if(w) return "Week "+(parseInt(w[1],10)+1);
+  var y=/^Year\s+(\d+)/i.exec(last);    if(y) return "Year "+(parseInt(y[1],10)+1);
+  var o=/^Option\s+([A-Za-z])/i.exec(last); if(o) return "Option "+String.fromCharCode(o[1].toUpperCase().charCodeAt(0)+1);
+  return labs.length ? "" : ("Card "+(entry.cards.length+1));   // freeform labels → let them name it; unlabelled → next number
+}
+/* add one more card/position to an existing spread, from that question's own pool */
+function addToSpread(entryId,label){
+  var entry=askThread.find(function(e){return e.id===entryId;});
+  if(!entry || !entry.pool.length) return;
+  var idx=entry.pool.shift();
+  var reversed=state.reversals && Math.random()<0.2;
+  entry.cards.push({deckIdx:idx,reversed:reversed,clar:[]});
+  entry.labels=entry.labels||[];
+  entry.labels[entry.cards.length-1]=(label&&label.trim())?label.trim():"";
+  entry.count=entry.cards.length;
+  renderAskThread();
+  setTimeout(function(){
+    var slots=document.querySelectorAll('.ask-entry[data-entry="'+entryId+'"] .ask-board .slot');
+    var last=slots[slots.length-1]; if(last) last.scrollIntoView({behavior:"smooth",block:"center"});
+  },90);
+}
 
 function askPull(){
   var q=$("askQ").value.trim();
@@ -1737,7 +1782,7 @@ function askPull(){
   for(var i=0;i<askCount;i++){ var idx=pool.shift(); var reversed=state.reversals && Math.random()<0.2; cards.push({deckIdx:idx,reversed:reversed,clar:[]}); }
   var now=new Date();
   var time=now.toLocaleString(undefined,{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"});
-  askThread.push({id:++askId, q:q, count:askCount, labels:labels.slice(0,askCount), pool:pool, cards:cards, time:time, _revealed:false});
+  askThread.push({id:++askId, q:q, count:askCount, labels:labels.slice(0,askCount), pool:pool, cards:cards, time:time, _flipped:0});
   $("askQ").value="";
   renderAskThread(askId);
 }
@@ -1814,6 +1859,8 @@ $("askLabelInputs").addEventListener("click",function(e){
 });
 $("askThread").addEventListener("click",function(e){
   var del=e.target.closest("[data-delentry]"); if(del){ var did=+del.dataset.delentry; askThread=askThread.filter(function(x){return x.id!==did;}); renderAskThread(); return; }
+  var addsp=e.target.closest("[data-addspread]"); if(addsp){ var inp=addsp.parentNode.querySelector(".ask-addlabel"); addToSpread(+addsp.dataset.addspread, inp?inp.value:""); return; }
+  if(e.target.closest("#askAnother")){ var qa=$("askQ"); if(qa){ qa.scrollIntoView({behavior:"smooth",block:"center"}); setTimeout(function(){qa.focus();},250); } return; }
   var cl=e.target.closest("[data-askclar]"); if(cl){ var parts=cl.dataset.askclar.split(":"); askDrawClarifier(+parts[0], +parts[1]); return; }
   var tc=e.target.closest(".tcard"); if(tc){ tc.classList.toggle("flipped"); return; }
 });
