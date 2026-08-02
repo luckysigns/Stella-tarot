@@ -1722,6 +1722,7 @@ function askEntryHTML(entry){
 
 function renderAskThread(animateId){
   var wrap=$("askThread"); if(!wrap) return;
+  var sy=window.pageYOffset||document.documentElement.scrollTop||0;   // hold scroll across the rebuild
   wrap.innerHTML=askThread.map(askEntryHTML).join("")
     + (askThread.length ? '<div class="ask-threadfoot"><button class="btn ghost" type="button" id="askAnother">✦ Ask another question in this thread</button></div>' : "");
   askThread.forEach(function(entry){
@@ -1737,6 +1738,7 @@ function renderAskThread(animateId){
   });
   $("askClear").classList.toggle("hidden", askThread.length===0);
   if(animateId){ var el=wrap.querySelector('.ask-entry[data-entry="'+animateId+'"]'); if(el) setTimeout(function(){el.scrollIntoView({behavior:"smooth",block:"start"});},70); }
+  else { window.scrollTo(0,sy); requestAnimationFrame(function(){ window.scrollTo(0,sy); }); }   // clarifier / add-a-card / delete: stay put
 }
 
 function askDrawClarifier(entryId,cardIdx){
@@ -1767,11 +1769,7 @@ function addToSpread(entryId,label){
   entry.labels=entry.labels||[];
   entry.labels[entry.cards.length-1]=(label&&label.trim())?label.trim():"";
   entry.count=entry.cards.length;
-  renderAskThread();
-  setTimeout(function(){
-    var slots=document.querySelectorAll('.ask-entry[data-entry="'+entryId+'"] .ask-board .slot');
-    var last=slots[slots.length-1]; if(last) last.scrollIntoView({behavior:"smooth",block:"center"});
-  },90);
+  renderAskThread();   // scroll is preserved; the new card flips in where you are
 }
 
 function askPull(){
