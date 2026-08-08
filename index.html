@@ -259,6 +259,11 @@
   /* card library */
   .lib-controls{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:20px}
   .lib-controls .seg{flex-wrap:wrap}
+  .lib-filtergroups{display:flex;flex-direction:column;gap:9px;width:100%}
+  .lib-fgroup{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .lib-fglabel{font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-soft);min-width:52px}
+  .seg.multi button.dim{opacity:.3}
+  .lib-clearf{font-size:12px;padding:6px 13px;align-self:flex-start}
   .lib-controls input{flex:1;min-width:160px;background:rgba(7,6,18,.6);border:1px solid var(--line);border-radius:999px;
     color:var(--silver);font-family:inherit;font-size:14px;padding:10px 18px}
   .lib-controls input:focus{outline:none;border-color:var(--gold)}
@@ -480,14 +485,25 @@
     <div class="step-label" style="margin-bottom:4px">Card Library · all 78 meanings</div>
     <p class="hint" style="margin-bottom:14px">Search or tap any card for its full reading — the same depth a drawn card gets. Drew from a physical deck? Look it up here, and reveal the reversed reading if it came out upside down.</p>
     <div class="lib-controls">
-      <div class="seg" id="libFilter">
-        <button data-f="all" class="on">All</button>
-        <button data-f="major">Major</button>
-        <button data-f="Wands">Wands</button>
-        <button data-f="Cups">Cups</button>
-        <button data-f="Swords">Swords</button>
-        <button data-f="Pentacles">Pentacles</button>
-        <button data-f="court">Courts</button>
+      <div class="lib-filtergroups">
+        <div class="lib-fgroup">
+          <span class="lib-fglabel">Arcana</span>
+          <div class="seg multi" id="libTypeSeg">
+            <button data-type="major">Major</button>
+            <button data-type="court">Courts</button>
+            <button data-type="minor">Numbers</button>
+          </div>
+        </div>
+        <div class="lib-fgroup">
+          <span class="lib-fglabel">Suit</span>
+          <div class="seg multi" id="libSuitSeg">
+            <button data-suit="Wands">Wands</button>
+            <button data-suit="Cups">Cups</button>
+            <button data-suit="Swords">Swords</button>
+            <button data-suit="Pentacles">Pentacles</button>
+          </div>
+        </div>
+        <button class="btn ghost lib-clearf hidden" id="libClearFilter">Clear filters</button>
       </div>
       <input type="text" id="libSearch" placeholder="Search a card…" />
     </div>
@@ -1630,11 +1646,12 @@ function libFullReading(c){
 }
 function buildLibrary(){
   const grid=$("libGrid");grid.innerHTML="";
-  const f=libState.filter, q=libState.query.trim().toLowerCase();
+  const q=libState.query.trim().toLowerCase();
   const list=DECK.filter(c=>{
-    const passF = f==="all" || (f==="major"&&c.arcana==="major") || (f==="court"&&c.arcana==="court") || c.suit===f;
+    const passType = libState.types.size===0 || libState.types.has(c.arcana);       // Major/Courts/Numbers (OR within group)
+    const passSuit = libState.suits.size===0 || (c.suit && libState.suits.has(c.suit)); // Wands/Cups/… (OR within group)
     const passQ = !q || c.name.toLowerCase().includes(q) || (c.key||[]).some(k=>k.includes(q)) || (c.astro||"").toLowerCase().includes(q);
-    return passF && passQ;
+    return passType && passSuit && passQ;   // groups AND together, e.g. Courts + Wands = Wands courts
   });
   if(!list.length){grid.innerHTML='<div class="lib-empty">No cards match that search.</div>';return;}
   list.forEach(c=>{
@@ -1654,13 +1671,36 @@ function buildLibrary(){
     grid.appendChild(el);
   });
 }
-const libState={filter:"all",query:""};
-$("libFilter").querySelectorAll("button").forEach(b=>{
-  b.onclick=()=>{
-    $("libFilter").querySelectorAll("button").forEach(x=>x.classList.remove("on"));
-    b.classList.add("on");libState.filter=b.dataset.f;buildLibrary();
-  };
-});
+const libState={types:new Set(),suits:new Set(),query:""};
+/* two multi-select groups (Arcana above, Suit below). Groups AND together; within a group
+   it's OR. Major has no suit, so Major and any suit are mutually exclusive — selecting one
+   clears the other, and the incompatible buttons are dimmed as a hint. */
+function applyLibFilterUI(){
+  var hasMajor=libState.types.has("major"), hasSuit=libState.suits.size>0;
+  document.querySelectorAll("#libTypeSeg button").forEach(function(b){
+    b.classList.toggle("on", libState.types.has(b.dataset.type));
+    b.classList.toggle("dim", b.dataset.type==="major" && hasSuit);
+  });
+  document.querySelectorAll("#libSuitSeg button").forEach(function(b){
+    b.classList.toggle("on", libState.suits.has(b.dataset.suit));
+    b.classList.toggle("dim", hasMajor);
+  });
+  var clr=$("libClearFilter"); if(clr) clr.classList.toggle("hidden", !(libState.types.size||libState.suits.size));
+  buildLibrary();
+}
+document.querySelectorAll("#libTypeSeg button").forEach(function(b){ b.onclick=function(){
+  var t=b.dataset.type;
+  if(libState.types.has(t)) libState.types.delete(t);
+  else { libState.types.add(t); if(t==="major") libState.suits.clear(); }   // Major can't pair with a suit
+  applyLibFilterUI();
+};});
+document.querySelectorAll("#libSuitSeg button").forEach(function(b){ b.onclick=function(){
+  var s=b.dataset.suit;
+  if(libState.suits.has(s)) libState.suits.delete(s);
+  else { libState.suits.add(s); libState.types.delete("major"); }
+  applyLibFilterUI();
+};});
+$("libClearFilter").onclick=function(){ libState.types.clear(); libState.suits.clear(); applyLibFilterUI(); };
 $("libSearch").oninput=e=>{libState.query=e.target.value;buildLibrary();};
 buildLibrary();
 
