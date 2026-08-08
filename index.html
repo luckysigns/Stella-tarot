@@ -272,8 +272,12 @@
   .lib-card .lc-sub{font-family:"Trebuchet MS",sans-serif;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-soft);margin-top:2px}
   .lib-card .lc-keys{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px}
   .lib-card .lc-keys span{font-family:"Trebuchet MS",sans-serif;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--mist);border:1px solid var(--line);border-radius:999px;padding:2px 8px}
-  .lib-card .lc-body{font-size:13px;line-height:1.55;color:var(--silver);margin-top:10px;max-height:0;overflow:hidden;transition:max-height .35s ease}
-  .lib-card.open .lc-body{max-height:8000px}
+  .lib-card .lc-body{font-size:13px;line-height:1.55;color:var(--silver);margin-top:10px;max-height:0;overflow:hidden;transition:max-height .4s ease}
+  .lib-card.open .lc-body{max-height:24000px}
+  .lc-revwrap{margin-top:16px;padding-top:12px;border-top:1px dashed var(--line)}
+  .lc-revbtn{font-size:12px;padding:7px 13px}
+  .lc-rev{display:none;margin-top:10px}
+  .lib-card.show-rev .lc-rev{display:block}
   .lib-card .lc-body h6{font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--rose);margin:12px 0 3px}
   .lib-card .lc-body p{margin-bottom:4px}
   .lib-empty{color:var(--mist);font-style:italic;text-align:center;padding:30px;grid-column:1/-1}
@@ -473,7 +477,8 @@
 
   <!-- CARD LIBRARY -->
   <section class="panel" id="library">
-    <div class="step-label" style="margin-bottom:14px">Card Library · all 78 meanings</div>
+    <div class="step-label" style="margin-bottom:4px">Card Library · all 78 meanings</div>
+    <p class="hint" style="margin-bottom:14px">Search or tap any card for its full reading — the same depth a drawn card gets. Drew from a physical deck? Look it up here, and reveal the reversed reading if it came out upside down.</p>
     <div class="lib-controls">
       <div class="seg" id="libFilter">
         <button data-f="all" class="on">All</button>
@@ -1595,6 +1600,34 @@ function libDeckLayer(c){
     +(dd.health?`<h6>✚ Health</h6><p>${dd.health}</p>`:"")
     +`</div>`;
 }
+/* the full "big reading" for a card, straight from CONTENT.base detail — the same depth a
+   drawn card gets. Upright is shown; the reversed reading is tucked behind a button so you
+   can reveal it only if your physical card came out reversed. */
+function libFullReading(c){
+  var base=(CONTENT.base && CONTENT.base[c.id])?CONTENT.base[c.id]:null;
+  var det=base&&base.detail;
+  var AREAS=[["love","♡ Love"],["career","✦ Career"],["money","◈ Money"],["health","✚ Health"],["spirituality","✷ Spirituality"]];
+  // upright (always shown)
+  var up='<h6>Upright</h6><p>'+((det&&det.upright)||c.up)+'</p>';
+  if(det&&det.astrology) up+='<h6>✷ Astrology</h6><p>'+det.astrology+'</p>';
+  up+=AREAS.map(function(x){
+    var v=det?det[x[0]]:null;
+    if(!v){ var fb=(x[0]==="love"?c.love:x[0]==="career"?c.career:x[0]==="health"?c.health:""); return fb?('<h6>'+x[1]+'</h6><p>'+fb+'</p>'):""; }
+    if(typeof v==="string") return '<h6>'+x[1]+'</h6><p>'+v+'</p>';
+    return v.upright?('<h6>'+x[1]+'</h6><p>'+v.upright+'</p>'):"";
+  }).join("");
+  // reversed (hidden until revealed)
+  var rev='<h6>Reversed</h6><p>'+((det&&det.reversed)||c.rev)+'</p>';
+  rev+=AREAS.map(function(x){
+    var v=det?det[x[0]]:null;
+    if(!v||typeof v==="string"||!v.reversed) return "";
+    return '<h6>'+x[1]+' · reversed</h6><p>'+v.reversed+'</p>';
+  }).join("");
+  return up
+    + '<div class="lc-revwrap"><button class="btn ghost lc-revbtn" type="button">↺ Drew it reversed? Show the reversed reading</button>'
+    + '<div class="lc-rev">'+rev+'</div></div>'
+    + libDeckLayer(c);
+}
 function buildLibrary(){
   const grid=$("libGrid");grid.innerHTML="";
   const f=libState.filter, q=libState.query.trim().toLowerCase();
@@ -1613,15 +1646,11 @@ function buildLibrary(){
         <div><div class="lc-name">${c.name}</div><div class="lc-sub">${libSub(c)}</div></div>
       </div>
       <div class="lc-keys">${keys}</div>
-      <div class="lc-body">
-        <h6>Upright</h6><p>${c.up}</p>
-        <h6>Reversed</h6><p>${c.rev}</p>
-        ${c.love?`<h6>♡ Love</h6><p>${c.love}</p>`:""}
-        ${c.career?`<h6>✦ Career</h6><p>${c.career}</p>`:""}
-        ${c.health?`<h6>✚ Health</h6><p>${c.health}</p>`:""}
-        ${libDeckLayer(c)}
-      </div>`;
+      <div class="lc-body">${libFullReading(c)}</div>`;
     el.onclick=()=>el.classList.toggle("open");
+    const rb=el.querySelector(".lc-revbtn");
+    if(rb) rb.onclick=(ev)=>{ ev.stopPropagation(); el.classList.toggle("show-rev");
+      rb.textContent = el.classList.contains("show-rev") ? "↺ Hide the reversed reading" : "↺ Drew it reversed? Show the reversed reading"; };
     grid.appendChild(el);
   });
 }
