@@ -16,7 +16,41 @@
     --rose:#d98b9e;
     --line:rgba(233,196,106,.22);
     --card-w:clamp(96px,22vw,150px);
+    /* semantic surface/text tokens — re-valued for light mode below. Shared convention with Stellar. */
+    --text-strong:#fff;
+    --panel-grad:linear-gradient(180deg,rgba(28,26,64,.6),rgba(12,11,32,.5));
+    --surface:rgba(10,9,28,.5);
+    --surface-2:rgba(10,9,28,.4);
+    --field-bg:rgba(7,6,18,.6);
   }
+  /* ── LIGHT MODE ──────────────────────────────────────────────────
+     Same token names, re-valued. Switch with <html data-theme="light">.
+     Mirror this block in Stellar Astro so the two sites share the palette. */
+  :root[data-theme="light"]{
+    --silver:#332f47;
+    --mist:#6d6780;
+    --gold:#b07d1e;
+    --gold-soft:#8a6420;
+    --rose:#b04d66;
+    --line:rgba(120,86,20,.30);
+    --text-strong:#231d3a;
+    --panel-grad:linear-gradient(180deg,rgba(255,252,244,.9),rgba(247,240,227,.85));
+    --surface:rgba(255,252,245,.78);
+    --surface-2:rgba(255,251,243,.62);
+    --field-bg:rgba(255,255,255,.85);
+  }
+  :root[data-theme="light"] body{
+    background:
+      radial-gradient(120% 80% at 50% -10%,#fff7e6 0%,transparent 55%),
+      radial-gradient(90% 70% at 80% 110%,#f7ecd8 0%,transparent 50%),
+      #f2e8d5;
+  }
+  :root[data-theme="light"] .stars{display:none}
+  /* the theme toggle, top-right */
+  .theme-toggle{position:fixed;top:14px;right:14px;z-index:60;width:40px;height:40px;border-radius:50%;
+    border:1px solid var(--line);background:var(--surface);color:var(--gold);font-size:18px;line-height:1;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);transition:.2s}
+  .theme-toggle:hover{border-color:var(--gold);transform:scale(1.06)}
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{height:100%}
   body{
@@ -58,7 +92,7 @@
   }
   h1{
     font-size:clamp(40px,9vw,82px);font-weight:400;line-height:.92;
-    letter-spacing:.01em;color:#fff;
+    letter-spacing:.01em;color:var(--text-strong);
     text-shadow:0 0 30px rgba(233,196,106,.25)
   }
   h1 em{font-style:italic;color:var(--gold)}
@@ -67,7 +101,7 @@
   /* ── panel shell ── */
   .panel{
     border:1px solid var(--line);border-radius:18px;
-    background:linear-gradient(180deg,rgba(28,26,64,.6),rgba(12,11,32,.5));
+    background:var(--panel-grad);
     backdrop-filter:blur(6px);
     padding:clamp(20px,4vw,34px);margin-top:26px;
     box-shadow:0 20px 60px -30px rgba(0,0,0,.9),inset 0 1px 0 rgba(255,255,255,.04)
@@ -83,20 +117,20 @@
   .spreads{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}
   .spread{
     text-align:left;border:1px solid var(--line);border-radius:14px;
-    background:rgba(10,9,28,.5);color:var(--silver);
+    background:var(--surface);color:var(--silver);
     padding:18px 18px 16px;cursor:pointer;transition:.25s;font-family:inherit;
     position:relative;overflow:hidden
   }
   .spread:hover{border-color:var(--gold);transform:translateY(-3px);box-shadow:0 14px 30px -18px rgba(233,196,106,.6)}
   .spread.active{border-color:var(--gold);background:rgba(233,196,106,.08)}
   .spread .glyph{font-size:22px;color:var(--gold);margin-bottom:10px;letter-spacing:2px}
-  .spread h3{font-size:19px;font-weight:400;color:#fff;margin-bottom:4px}
+  .spread h3{font-size:19px;font-weight:400;color:var(--text-strong);margin-bottom:4px}
   .spread .count{font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold-soft);margin-bottom:9px}
   .spread p{font-size:13px;color:var(--mist);line-height:1.5}
 
   /* ── controls row ── */
   .controls{display:flex;flex-wrap:wrap;gap:14px;align-items:center}
-  .seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:rgba(10,9,28,.5)}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--surface)}
   .seg button{
     font-family:"Trebuchet MS",sans-serif;font-size:12px;letter-spacing:.12em;text-transform:uppercase;
     background:none;border:none;color:var(--mist);padding:11px 20px;cursor:pointer;transition:.2s
@@ -173,14 +207,14 @@
 
   /* meaning blocks */
   .meaning{margin-top:14px;border-top:1px solid var(--line);padding-top:20px}
-  .meaning h4{font-size:20px;font-weight:400;color:#fff;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .meaning h4{font-size:20px;font-weight:400;color:var(--text-strong);display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
   .meaning h4 .pos-tag{font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
   .meaning .glyphline{color:var(--rose);font-size:14px;margin:4px 0 10px;font-style:italic}
   .meaning .orient{font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-soft);border:1px solid var(--line);border-radius:999px;padding:3px 10px;display:inline-block;margin-bottom:10px}
   .meaning p{color:var(--silver);line-height:1.65;font-size:15px}
   .meaning .pos-read{color:var(--mist);font-size:14px;line-height:1.6;margin-top:8px;font-style:italic}
   /* life-area contexts */
-  .contexts{margin-top:14px;border:1px solid var(--line);border-radius:10px;background:rgba(10,9,28,.4);overflow:hidden}
+  .contexts{margin-top:14px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);overflow:hidden}
   .contexts summary{cursor:pointer;list-style:none;padding:11px 16px;font-family:"Trebuchet MS",sans-serif;
     font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold-soft);user-select:none}
   .contexts summary::-webkit-details-marker{display:none}
@@ -217,7 +251,7 @@
   .clar-card{border:1px dashed var(--line);border-radius:12px;background:rgba(217,139,158,.05);padding:16px 18px;margin-bottom:12px}
   .clar-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px}
   .clar-sigil{font-size:22px;color:var(--rose);line-height:1}
-  .clar-name{font-size:17px;color:#fff}
+  .clar-name{font-size:17px;color:var(--text-strong)}
   .clar-card .glyphline{color:var(--rose);font-size:13px;margin:2px 0 8px;font-style:italic}
   .clar-card p{font-size:14px;line-height:1.6;color:var(--silver)}
   .clar-note{color:var(--mist)!important;font-style:italic;font-size:13px!important;margin-top:8px}
@@ -233,10 +267,10 @@
   .center{text-align:center;margin-top:30px}
 
   /* journal */
-  .journal{margin-top:26px;border:1px solid var(--line);border-radius:14px;background:rgba(10,9,28,.4);padding:20px}
+  .journal{margin-top:26px;border:1px solid var(--line);border-radius:14px;background:var(--surface-2);padding:20px}
   .journal textarea{
     width:100%;min-height:120px;resize:vertical;margin-top:6px;
-    background:rgba(7,6,18,.6);border:1px solid var(--line);border-radius:10px;
+    background:var(--field-bg);border:1px solid var(--line);border-radius:10px;
     color:var(--silver);font-family:inherit;font-size:15px;line-height:1.6;padding:14px;
   }
   .journal textarea:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 1px rgba(233,196,106,.3)}
@@ -249,10 +283,10 @@
   /* capture header — only meaningful in the exported image/pdf */
   #capture{padding:2px}
   .capture-head{text-align:center;margin-bottom:20px}
-  .cap-title{font-size:24px;color:#fff;letter-spacing:.02em}
+  .cap-title{font-size:24px;color:var(--text-strong);letter-spacing:.02em}
   .cap-title em{color:var(--gold);font-style:italic}
   .cap-meta{font-family:"Trebuchet MS",sans-serif;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold-soft);margin-top:6px}
-  .journal-print{margin-top:26px;border:1px solid var(--line);border-radius:14px;background:rgba(10,9,28,.4);padding:24px}
+  .journal-print{margin-top:26px;border:1px solid var(--line);border-radius:14px;background:var(--surface-2);padding:24px}
   .journal-print p{white-space:pre-wrap;line-height:1.7;font-size:15px;color:var(--silver)}
   .upload-note{margin-top:34px;font-size:12px;color:var(--mist);text-align:center;font-style:italic;line-height:1.6}
 
@@ -264,16 +298,16 @@
   .lib-fglabel{font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-soft);min-width:52px}
   .seg.multi button.dim{opacity:.3}
   .lib-clearf{font-size:12px;padding:6px 13px;align-self:flex-start}
-  .lib-controls input{flex:1;min-width:160px;background:rgba(7,6,18,.6);border:1px solid var(--line);border-radius:999px;
+  .lib-controls input{flex:1;min-width:160px;background:var(--field-bg);border:1px solid var(--line);border-radius:999px;
     color:var(--silver);font-family:inherit;font-size:14px;padding:10px 18px}
   .lib-controls input:focus{outline:none;border-color:var(--gold)}
   .lib-controls input::placeholder{color:var(--mist);font-style:italic}
   .lib-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
-  .lib-card{border:1px solid var(--line);border-radius:12px;background:rgba(10,9,28,.5);padding:16px;cursor:pointer;transition:.2s}
+  .lib-card{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:16px;cursor:pointer;transition:.2s}
   .lib-card:hover{border-color:var(--gold);transform:translateY(-2px)}
   .lib-card .lc-head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
   .lib-card .lc-sigil{font-size:24px;color:var(--gold);line-height:1}
-  .lib-card .lc-name{font-size:16px;color:#fff}
+  .lib-card .lc-name{font-size:16px;color:var(--text-strong)}
   .lib-card .lc-sub{font-family:"Trebuchet MS",sans-serif;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-soft);margin-top:2px}
   .lib-card .lc-keys{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px}
   .lib-card .lc-keys span{font-family:"Trebuchet MS",sans-serif;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--mist);border:1px solid var(--line);border-radius:999px;padding:2px 8px}
@@ -305,17 +339,17 @@
 <style>
   /* ── Ask a question mode ── */
   #modeSeg button{padding:9px 22px}
-  textarea#askQ{width:100%;min-height:92px;resize:vertical;background:rgba(7,6,18,.6);border:1px solid var(--line);border-radius:10px;color:var(--silver);font-family:inherit;font-size:15px;line-height:1.6;padding:14px;margin-top:6px}
+  textarea#askQ{width:100%;min-height:92px;resize:vertical;background:var(--field-bg);border:1px solid var(--line);border-radius:10px;color:var(--silver);font-family:inherit;font-size:15px;line-height:1.6;padding:14px;margin-top:6px}
   textarea#askQ:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 1px rgba(233,196,106,.3)}
   textarea#askQ::placeholder{color:var(--mist);opacity:.7;font-style:italic}
   .ask-meanings summary{cursor:pointer;color:var(--gold-soft);font-size:14px;margin-top:14px}
   .ask-presets{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 4px}
-  .chip{background:rgba(10,9,28,.5);border:1px solid var(--line);color:var(--mist);border-radius:999px;padding:5px 13px;font-size:13px;cursor:pointer;font-family:inherit;transition:.15s}
+  .chip{background:var(--surface);border:1px solid var(--line);color:var(--mist);border-radius:999px;padding:5px 13px;font-size:13px;cursor:pointer;font-family:inherit;transition:.15s}
   .chip:hover{border-color:var(--gold);color:var(--gold)}
   #askLabelInputs{margin-top:8px}
   .ask-label-row{display:flex;align-items:center;gap:10px;margin:7px 0}
   .ask-label-row .n{font-size:12px;color:var(--mist);min-width:56px;letter-spacing:.04em}
-  .ask-label-row input{flex:1;background:rgba(7,6,18,.6);border:1px solid var(--line);border-radius:8px;color:var(--silver);font-family:inherit;font-size:14px;padding:9px 12px}
+  .ask-label-row input{flex:1;background:var(--field-bg);border:1px solid var(--line);border-radius:8px;color:var(--silver);font-family:inherit;font-size:14px;padding:9px 12px}
   .ask-label-row input:focus{outline:none;border-color:var(--gold)}
   .ask-rowdel{background:none;border:none;color:var(--mist);font-size:19px;line-height:1;cursor:pointer;padding:0 2px;flex:0 0 auto}
   .ask-rowdel:hover{color:var(--rose)}
@@ -329,15 +363,24 @@
   .ask-meta{font-size:12px;color:var(--mist);letter-spacing:.06em;text-transform:uppercase;margin-bottom:12px}
   .ask-board{margin:6px 0 20px}
   .ask-addspread{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:18px;padding-top:16px;border-top:1px dashed var(--line)}
-  .ask-addlabel{flex:1;min-width:150px;background:rgba(7,6,18,.6);border:1px solid var(--line);border-radius:8px;color:var(--silver);font-family:inherit;font-size:14px;padding:9px 12px}
+  .ask-addlabel{flex:1;min-width:150px;background:var(--field-bg);border:1px solid var(--line);border-radius:8px;color:var(--silver);font-family:inherit;font-size:14px;padding:9px 12px}
   .ask-addlabel:focus{outline:none;border-color:var(--gold)}
   .ask-threadfoot{margin-top:28px;text-align:center}
 </style>
+<script>
+  /* set the theme before first paint (no flash): saved choice, else system preference */
+  (function(){try{
+    var t=localStorage.getItem("astra.theme");
+    if(t!=="light"&&t!=="dark") t=(window.matchMedia&&matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";
+    document.documentElement.setAttribute("data-theme",t);
+  }catch(e){document.documentElement.setAttribute("data-theme","dark");}})();
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
 <div class="stars"></div>
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle light / dark">☀</button>
 
 <svg width="0" height="0" style="position:absolute">
   <!-- shared card-back design: astrolabe -->
@@ -1703,6 +1746,22 @@ document.querySelectorAll("#libSuitSeg button").forEach(function(b){ b.onclick=f
 $("libClearFilter").onclick=function(){ libState.types.clear(); libState.suits.clear(); applyLibFilterUI(); };
 $("libSearch").oninput=e=>{libState.query=e.target.value;buildLibrary();};
 buildLibrary();
+
+/* ── light / dark theme toggle ── */
+function applyThemeBtn(){
+  var t=document.documentElement.getAttribute("data-theme")==="light"?"light":"dark";
+  var b=$("themeToggle"); if(!b) return;
+  b.textContent = t==="light" ? "☾" : "☀";            // shows what you'll switch to
+  b.title = t==="light" ? "Switch to dark" : "Switch to light";
+}
+$("themeToggle") && ($("themeToggle").onclick=function(){
+  var cur=document.documentElement.getAttribute("data-theme")==="light"?"light":"dark";
+  var next=cur==="light"?"dark":"light";
+  document.documentElement.setAttribute("data-theme",next);
+  try{localStorage.setItem("astra.theme",next);}catch(e){}
+  applyThemeBtn();
+});
+applyThemeBtn();
 
 /* ═══════════ ASK A QUESTION MODE ═══════════
    Threaded free-form questions built on the SAME CONTENT/deepRead system as the
