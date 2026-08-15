@@ -79,7 +79,8 @@
   }
   .wrap{max-width:880px;margin:0 auto;padding:clamp(28px,6vw,64px) clamp(16px,4vw,28px) 90px;position:relative;z-index:1}
 
-  header{text-align:center;margin-bottom:clamp(24px,5vw,44px)}
+  header{text-align:center;margin-bottom:14px}
+  .homehead{text-align:center;margin-bottom:clamp(20px,4vw,36px)}
   .eyebrow{
     font-family:"Trebuchet MS",sans-serif;font-size:11px;letter-spacing:.34em;text-transform:uppercase;
     color:var(--rose);margin-bottom:20px;
@@ -494,10 +495,13 @@
 </div>
 
 <div class="wrap">
-  <div id="page-home">
   <header>
     <div class="eyebrow" style="color:var(--gold-soft)">The Astra Deck · 78 Cards · Major &amp; Minor Arcana</div>
     <h1>Stellar <em>Tarot</em></h1>
+  </header>
+
+  <div id="page-home">
+  <div class="homehead">
     <p class="tagline">Twenty-two Major Arcana as planets and signs, fifty-six Minor across the four classic suits — Wands, Cups, Swords, Pentacles. Choose how the heavens are dealt, then let them be read.</p>
     <div class="modeswitch">
       <div class="seg" role="group" aria-label="Reading mode">
@@ -505,7 +509,7 @@
         <button type="button" class="on">Ask a Question</button>
       </div>
     </div>
-  </header>
+  </div>
 
   <!-- ————————————— HOME, AS IT IS TODAY ————————————— -->
   <section class="panel">
