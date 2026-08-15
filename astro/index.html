@@ -684,7 +684,8 @@
 
   <!-- ————————————— ACCOUNT ————————————— -->
   <section class="panel" id="account">
-    <div class="step-label">Account <span class="spec" style="margin-left:auto">New · Stellar's existing Supabase auth, second app surface</span></div>
+    <div class="step-label">Account <span class="spec" style="margin-left:auto">Shown only on the free plan</span> <button class="spec" id="selldemo" type="button" style="cursor:pointer">demo · see member view</button></div>
+    <div id="sellpage">
     <h2>One account across the constellation</h2>
     <p class="lede">Sign in with the same Stellar account. The chart flows one way, the journal flows both ways, and Arcana bills as an add-on through the account you already have. Guests keep everything on-device; signing in lifts local history to the account.</p>
 
@@ -727,7 +728,7 @@
         </ul>
         <div style="text-align:center;margin-top:16px">
           <div class="seg mini" role="group" aria-label="Pricing basis">
-            <button type="button" id="price-with" class="on">With Stellar Premium</button>
+            <button type="button" id="price-with" class="on">With Plus / Premium</button>
             <button type="button" id="price-solo">On its own</button>
           </div>
         </div>
@@ -736,7 +737,7 @@
           <button class="plan on" type="button"><span class="per">Yearly</span><span class="amt" data-with="$34.99" data-solo="$54.99">$34.99</span><span class="note">two months free</span></button>
           <button class="plan" type="button"><span class="per">Lifetime</span><span class="amt" data-with="$79.99" data-solo="$129">$79.99</span><span class="note">once, forever</span></button>
         </div>
-        <p class="hint" id="price-note" style="text-align:center;margin-top:10px">Member rate — your Stellar Premium is active.</p>
+        <p class="hint" id="price-note" style="text-align:center;margin-top:10px">Member rate — for Stellar Plus &amp; Premium members.</p>
         <div style="text-align:center;margin-top:12px"><button class="btn solid sm" type="button">Unlock Arcana</button></div>
       </div>
     </div>
@@ -752,6 +753,10 @@
         <span><b>$199</b> lifetime</span>
       </div>
       <button class="btn sm" type="button">Get the bundle</button>
+    </div>
+    </div>
+    <div id="paidnote" hidden>
+      <p class="lede" style="text-align:center;max-width:none">✷ &nbsp;Arcana is active on this account — yearly, renews 14 Aug 2027 &nbsp;<button class="linkbtn" type="button">manage</button></p>
     </div>
   </section>
   </div>
@@ -877,10 +882,17 @@
       document.querySelectorAll('.plan .amt').forEach(function(a){
         a.textContent=withSub?a.getAttribute('data-with'):a.getAttribute('data-solo');
       });
-      note.textContent=withSub?'Member rate — your Stellar Premium is active.':'Standalone rate — no Stellar subscription needed.';
+      note.textContent=withSub?'Member rate — for Stellar Plus & Premium members.':'Standalone rate — no Stellar subscription needed.';
     }
     w.addEventListener('click',function(){basis(true)});
     s.addEventListener('click',function(){basis(false)});
+    var demo=document.getElementById('selldemo');
+    var sell=document.getElementById('sellpage'),paid=document.getElementById('paidnote');
+    demo.addEventListener('click',function(){
+      var showMember=paid.hidden;
+      paid.hidden=!showMember;sell.hidden=showMember;
+      demo.textContent=showMember?'demo · see free view':'demo · see member view';
+    });
   })();
 </script>
 
