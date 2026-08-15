@@ -28,27 +28,7 @@
     --stars-opacity:.7;
     --good:#9ed8a8;
   }
-  @media (prefers-color-scheme: light){
-    :root:not([data-theme="dark"]){
-      --silver:#332f47;
-      --mist:#6d6780;
-      --gold:#b07d1e;
-      --gold-soft:#8a6420;
-      --rose:#b04d66;
-      --line:rgba(120,86,20,.30);
-      --text-strong:#231d3a;
-      --panel-grad:linear-gradient(180deg,rgba(255,252,244,.9),rgba(247,240,227,.85));
-      --surface:rgba(255,252,245,.78);
-      --surface-2:rgba(255,251,243,.62);
-      --field-bg:rgba(255,255,255,.85);
-      --page-bg:
-        radial-gradient(120% 80% at 50% -10%,#fff7e6 0%,transparent 55%),
-        radial-gradient(90% 70% at 80% 110%,#f7ecd8 0%,transparent 50%),
-        #f2e8d5;
-      --stars-opacity:0;
-      --good:#3f7c4c;
-    }
-  }
+  /* always loads dark; light is an explicit choice from the profile menu */
   :root[data-theme="light"]{
     --silver:#332f47;
     --mist:#6d6780;
@@ -116,7 +96,7 @@
   .modeswitch{display:flex;justify-content:center;margin-top:30px}
 
   /* ————— profile, top right like Stellar ————— */
-  .profile-btn{position:fixed;top:14px;right:64px;z-index:60;width:40px;height:40px;border-radius:50%;
+  .profile-btn{position:fixed;top:14px;right:14px;z-index:60;width:40px;height:40px;border-radius:50%;
     border:1px solid var(--gold-soft);background:radial-gradient(circle at 35% 30%,#2a2762,#0e0d2c);
     color:#e9c46a;font-size:17px;line-height:1;cursor:pointer;
     display:flex;align-items:center;justify-content:center;transition:.2s}
@@ -419,13 +399,6 @@
   .tier li.dim{color:var(--mist)}
   .tier .price{font-size:12.5px;color:var(--mist);font-style:italic;margin-top:4px}
 
-  /* ————— theme toggle (mirrors the app's) ————— */
-  .theme-toggle{position:fixed;top:14px;right:14px;z-index:60;width:40px;height:40px;border-radius:50%;
-    border:1px solid var(--line);background:var(--surface);color:var(--gold);font-size:18px;line-height:1;cursor:pointer;
-    display:flex;align-items:center;justify-content:center;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);transition:.2s}
-  .theme-toggle:hover{border-color:var(--gold)}
-  .theme-toggle:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
-
   /* ————— mode switch + split menu ————— */
   .seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--surface)}
   .seg button{
@@ -451,7 +424,6 @@
   footer .glyphline{color:var(--gold-soft);letter-spacing:.6em;margin-bottom:12px;font-style:normal}
 </style>
 
-<button class="theme-toggle" id="themebtn" type="button" aria-label="Switch between dark and light mode">☾</button>
 <button class="profile-btn" id="profilebtn" type="button" aria-label="Profile" aria-expanded="false">☉</button>
 <div class="profile-pop" id="profilepop" hidden>
   <div class="who">Lucky</div>
@@ -465,6 +437,7 @@
   <div class="row">
     <button class="rowbtn" type="button">✷ &nbsp;Arcana — yearly, renews 14 Aug 2027</button>
     <button class="rowbtn" type="button">Deck: Base · Astra</button>
+    <button class="rowbtn" id="themebtn" type="button">☀ &nbsp;Light mode</button>
     <button class="rowbtn" type="button">Sign out</button>
   </div>
   <hr>
@@ -850,14 +823,11 @@
   (function(){
     var root=document.documentElement;
     var tbtn=document.getElementById('themebtn');
-    function isLight(){
-      var t=root.getAttribute('data-theme');
-      if(t)return t==='light';
-      return window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches;
-    }
-    function paint(){tbtn.textContent=isLight()?'☾':'☀';}
-    tbtn.addEventListener('click',function(){
-      root.setAttribute('data-theme',isLight()?'dark':'light');
+    function isLight(){return root.getAttribute('data-theme')==='light'}
+    function paint(){tbtn.innerHTML=isLight()?'☾ &nbsp;Dark mode':'☀ &nbsp;Light mode'}
+    tbtn.addEventListener('click',function(e){
+      e.stopPropagation();
+      if(isLight()){root.removeAttribute('data-theme')}else{root.setAttribute('data-theme','light')}
       paint();
     });
     paint();
