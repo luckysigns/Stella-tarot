@@ -512,10 +512,12 @@
 <button class="profile-btn" id="profilebtn" type="button" aria-label="Profile" aria-expanded="false">☉</button>
 <button class="themebtn" id="themebtn" type="button" aria-label="Switch to light theme" title="Switch theme">☀︎</button>
 <div class="profile-pop" id="profilepop">
-  <div class="pophead"><span class="who">Your charts</span><button class="popclose" id="popclose" type="button" aria-label="Close">✕</button></div>
-  <p class="hint" style="padding:4px 8px 10px">No charts yet — sign in with Stellar to bring your birth chart across.</p>
+  <div class="pophead"><span class="who">Your account</span><button class="popclose" id="popclose" type="button" aria-label="Close">✕</button></div>
+  <p class="hint" id="acctNote" style="padding:4px 8px 12px">You're not signed in. Sign in with Stellar to bring your chart and journal across.</p>
+  <button class="btn solid sm" id="signinbtn" type="button" style="width:100%">✷ &nbsp;Sign in with Stellar</button>
   <hr>
-  <button class="btn solid sm" id="journalbtn" type="button" style="width:100%">☽ &nbsp;Journal</button>
+  <button class="btn ghost sm" id="journalbtn" type="button" style="width:100%">☽ &nbsp;Journal</button>
+  <button class="btn ghost sm" id="planbtn" type="button" style="width:100%;margin-top:8px">Manage plan</button>
   <a class="btn ghost sm" href="/" style="width:100%;margin-top:8px;text-align:center;text-decoration:none;display:block">← &nbsp;Tarot readings</a>
 </div>
 
@@ -537,19 +539,19 @@
     <div class="tabs" role="group" aria-label="Reading type">
       <button class="tab active" data-view="cards">Your Cards <span class="tabico">✦</span></button>
       <button class="tab" data-view="big3">Big Three</button>
-      <button class="tab" data-view="houses">The Houses</button>
-      <button class="tab" data-view="year">Year Ahead</button>
+      <button class="tab" data-view="houses" data-locked="1">The Houses <span class="tabico">✷</span></button>
+      <button class="tab" data-view="year" data-locked="1">Year Ahead <span class="tabico">✷</span></button>
     </div>
   </section>
 
   <section class="panel" id="signin">
     <div class="step-label">Link your chart</div>
     <h2>Sign in with Stellar</h2>
-    <p class="lede">Your birth chart lives in your Stellar account. Sign in and the tarot reads from it — your birth cards, your houses, your year ahead — and anything you save is kept in the same journal both apps share.</p>
-    <p class="hint" style="margin-top:14px">Accounts are being wired up now. Until then nothing is stored here, and no chart is loaded.</p>
+    <p class="lede">Your birth chart lives in your Stellar account. Once you're signed in here, the tarot reads from it — your birth cards, your houses, your year ahead — and anything you save is kept in the journal both apps share.</p>
     <div style="margin-top:18px">
-      <a class="btn ghost sm" href="https://www.stellarastro.app" target="_blank" rel="noopener" style="text-decoration:none">Open Stellar ↗</a>
+      <button class="btn solid sm" id="signinbtn2" type="button">✷ &nbsp;Sign in with Stellar</button>
     </div>
+    <p class="hint" id="signinNote" style="margin-top:14px">Being signed into Stellar in this browser doesn't carry over yet — the tarot app is a separate site, and account linking is still being built. Nothing is stored here in the meantime.</p>
   </section>
 
   <!-- ————————————— YOUR CARDS ————————————— -->
@@ -577,8 +579,10 @@
     <p class="hint" style="margin-top:14px">Needs your birth chart — sign in with Stellar to link it.</p>
   </section>
 
-  <section class="panel" id="account">
-    <div class="step-label">Account</div>
+  <section class="panel" id="account" hidden>
+    <div class="step-label">Arcana
+      <button class="btn ghost sm" id="planclose" type="button" style="margin-left:auto">✕ &nbsp;Close</button>
+    </div>
     <h2>One account across the constellation</h2>
     <p class="lede">Sign in with the same Stellar account. The chart flows one way, the journal flows both ways, and Arcana bills as an add-on through the account you already have. Guests keep everything on-device; signing in lifts local history to the account.</p>
 
@@ -711,18 +715,43 @@
     });
   })();
   (function(){
-    var tabs=document.querySelectorAll('.tab');
+    var tabs=[].slice.call(document.querySelectorAll('.tab'));
     var views={cards:'rv-cards',big3:'rv-big3',houses:'rv-houses',year:'rv-year'};
+    var plan=document.getElementById('account');
+    function hideAllViews(){ Object.keys(views).forEach(function(k){ document.getElementById(views[k]).hidden=true; }); }
+    function showPlan(show){ plan.hidden=!show; if(show){ plan.scrollIntoView({behavior:'smooth',block:'nearest'}); } }
     tabs.forEach(function(t){
       t.addEventListener('click',function(){
         tabs.forEach(function(x){x.classList.remove('active')});
         t.classList.add('active');
-        var pick=t.getAttribute('data-view');
-        Object.keys(views).forEach(function(k){
-          document.getElementById(views[k]).hidden=(k!==pick);
-        });
+        hideAllViews();
+        if(t.getAttribute('data-locked')){ showPlan(true); return; }
+        showPlan(false);
+        document.getElementById(views[t.getAttribute('data-view')]).hidden=false;
       });
     });
+    document.getElementById('planbtn').addEventListener('click',function(){
+      document.getElementById('profilepop').hidden=true;
+      showPlan(true);
+    });
+    document.getElementById('planclose').addEventListener('click',function(){
+      showPlan(false);
+      var act=tabs.filter(function(x){return x.classList.contains('active')})[0];
+      if(act&&act.getAttribute('data-locked')){
+        tabs.forEach(function(x){x.classList.remove('active')});
+        tabs[0].classList.add('active');
+        hideAllViews();
+        document.getElementById('rv-cards').hidden=false;
+      }
+    });
+    function signinPending(noteId){
+      return function(){
+        document.getElementById(noteId).textContent="Account linking isn't live yet — it's the next thing being built. When it lands, this will pull in the chart you already have in Stellar.";
+        this.disabled=true;
+      };
+    }
+    document.getElementById('signinbtn').addEventListener('click',signinPending('acctNote'));
+    document.getElementById('signinbtn2').addEventListener('click',signinPending('signinNote'));
   })();
   (function(){
     var btn=document.getElementById('profilebtn');
