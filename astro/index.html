@@ -386,6 +386,17 @@
   .synclink small{display:block;font-family:"Trebuchet MS",sans-serif;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--mist);margin-top:2px}
   @media (max-width:560px){.synccols{grid-template-columns:1fr}.synclink{transform:rotate(90deg);padding:4px 0}}
 
+  .plans{display:flex;gap:8px;margin-top:16px}
+  .plan{
+    flex:1;border:1px solid var(--line);border-radius:10px;padding:12px 6px;text-align:center;
+    background:none;cursor:pointer;font-family:inherit;color:var(--silver);transition:.15s;position:relative;
+  }
+  .plan:hover{border-color:var(--gold-soft)}
+  .plan.on{border-color:var(--gold);background:rgba(233,196,106,.08)}
+  .plan:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  .plan .per{font-family:"Trebuchet MS",sans-serif;font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--mist);display:block}
+  .plan .amt{font-size:19px;color:var(--text-strong);display:block;margin-top:4px;font-variant-numeric:tabular-nums}
+  .plan .note{font-size:10.5px;color:var(--gold-soft);font-style:italic;display:block;margin-top:2px}
   .tiers{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin-top:18px}
   .tier{border:1px solid var(--line);border-radius:14px;padding:20px;background:var(--surface-2)}
   .tier.pro{border-color:var(--gold-soft);box-shadow:0 0 40px -18px rgba(233,196,106,.5)}
@@ -440,7 +451,7 @@
   </div>
   <hr>
   <div class="row">
-    <button class="rowbtn" type="button">✷ &nbsp;Stellar Premium — active</button>
+    <button class="rowbtn" type="button">✷ &nbsp;Arcana — yearly, renews 14 Aug 2027</button>
     <button class="rowbtn" type="button">Deck: Base · Astra</button>
     <button class="rowbtn" type="button">Sign out</button>
   </div>
@@ -493,7 +504,7 @@
         <p>Your birthday spread: twelve cards, one for each month of your new solar year.</p>
         <div class="foot">
           <span class="cards-n">12 cards · ~15 min</span>
-          <span class="lock">✷ Premium</span>
+          <span class="lock">✷ Arcana</span>
           <button class="btn sm solid" type="button">Begin</button>
         </div>
       </div>
@@ -512,7 +523,7 @@
         <p>Three cards: what's being tested, what holds, and what this pressure is quietly building.</p>
         <div class="foot">
           <span class="cards-n">3 cards · 8 min</span>
-          <span class="lock">✷ Premium</span>
+          <span class="lock">✷ Arcana</span>
           <button class="btn sm ghost" type="button">Begin</button>
         </div>
       </div>
@@ -631,7 +642,7 @@
   </section>
 
   <section class="panel">
-    <div class="step-label">Chart-aware spreads <span class="spec" style="margin-left:auto">Premium · house data from Stellar's natal engine</span></div>
+    <div class="step-label">Chart-aware spreads <span class="spec" style="margin-left:auto">Arcana · house data from Stellar's natal engine</span></div>
     <h2>The Houses Spread</h2>
     <p class="lede">Twelve cards laid around your own wheel — one for each house, using <em>your</em> house cusps, with your natal planets marked where they actually sit.</p>
 
@@ -660,7 +671,7 @@
   </section>
 
   <section class="panel">
-    <div class="step-label">Chart-aware spreads <span class="spec" style="margin-left:auto">Premium · content already written — all 78 × Months 1–12</span></div>
+    <div class="step-label">Chart-aware spreads <span class="spec" style="margin-left:auto">Arcana · content already written — all 78 × Months 1–12</span></div>
     <h2>Year Ahead — the Solar Return spread</h2>
     <p class="lede">Offered in your birthday week. Twelve cards fan out, one per month of your new solar year, starting from today.</p>
     <div class="yearstrip" tabindex="0" aria-label="Twelve month cards, scroll horizontally">
@@ -727,7 +738,7 @@
     </div>
 
     <div style="margin-top:26px">
-      <div class="step-label">Patterns <span class="spec" style="margin-left:auto">Premium · computed from saved readings</span></div>
+      <div class="step-label">Patterns <span class="spec" style="margin-left:auto">Arcana · computed from saved readings</span></div>
       <div class="pattern">
         <div class="pips"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
         <p>The <b>Queen of Cups</b> has visited four times this month — she tends to find you when your Pisces Moon is running the show.</p>
@@ -747,12 +758,12 @@
   <section class="panel" id="account">
     <div class="step-label">Account <span class="spec" style="margin-left:auto">New · Stellar's existing Supabase auth, second app surface</span></div>
     <h2>One account across the constellation</h2>
-    <p class="lede">Sign in with the same Stellar account. The chart flows one way, the journal flows both ways, and premium unlocks in both apps at once. Guests keep everything on-device; signing in lifts local history to the account.</p>
+    <p class="lede">Sign in with the same Stellar account. The chart flows one way, the journal flows both ways, and Arcana bills as an add-on through the account you already have. Guests keep everything on-device; signing in lifts local history to the account.</p>
 
     <div class="synccols">
       <div class="syncbox">
         <div class="app">Stellar</div>
-        <div class="what">natal chart · houses ·<br>live transits · premium status</div>
+        <div class="what">natal chart · houses ·<br>live transits · billing</div>
       </div>
       <div class="synclink">⟷<small>one account</small></div>
       <div class="syncbox">
@@ -765,7 +776,7 @@
     <div class="tiers">
       <div class="tier">
         <h3>Free</h3>
-        <p class="price">with a Stellar account</p>
+        <p class="price">with any Stellar account</p>
         <ul>
           <li>Daily pull, framed by the day's ruler</li>
           <li>Your Birth Cards page</li>
@@ -776,8 +787,8 @@
         </ul>
       </div>
       <div class="tier pro">
-        <h3>Stellar Premium <span class="lock">✷ shared</span></h3>
-        <p class="price">the same subscription, now in two apps</p>
+        <h3>✷ Arcana</h3>
+        <p class="price">the astrology wing, unlocked — an add-on to your Stellar account</p>
         <ul>
           <li>Everything in Free</li>
           <li>Transit-timed suggestion shelf</li>
@@ -786,6 +797,12 @@
           <li>Chart-woven deep readings</li>
           <li>Patterns across your journal</li>
         </ul>
+        <div class="plans" role="group" aria-label="Arcana plans">
+          <button class="plan" type="button"><span class="per">Monthly</span><span class="amt">$3.99</span></button>
+          <button class="plan on" type="button"><span class="per">Yearly</span><span class="amt">$24.99</span><span class="note">two months free</span></button>
+          <button class="plan" type="button"><span class="per">Lifetime</span><span class="amt">$59.99</span><span class="note">once, forever</span></button>
+        </div>
+        <div style="text-align:center;margin-top:16px"><button class="btn solid sm" type="button">Unlock Arcana</button></div>
       </div>
     </div>
   </section>
@@ -833,6 +850,15 @@
     });
     document.addEventListener('click',function(e){
       if(!pop.hidden&&!pop.contains(e.target)){pop.hidden=true;btn.setAttribute('aria-expanded','false');}
+    });
+  })();
+  (function(){
+    var plans=document.querySelectorAll('.plan');
+    plans.forEach(function(p){
+      p.addEventListener('click',function(){
+        plans.forEach(function(q){q.classList.remove('on')});
+        p.classList.add('on');
+      });
     });
   })();
   (function(){
