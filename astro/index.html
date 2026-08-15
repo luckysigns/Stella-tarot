@@ -118,6 +118,21 @@
   .tab.active{background:var(--gold);color:var(--ink);border-color:var(--gold)}
   .tabico{font-size:11px}
 
+  /* ————— card library ————— */
+  .lib-controls{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-bottom:16px}
+  .lib-fgroup{display:flex;flex-direction:column;gap:6px}
+  .lib-fglabel{font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold-soft)}
+  .lib-search{flex:1;min-width:180px;border:1px solid var(--line);border-radius:999px;background:var(--field-bg);
+    color:var(--silver);font-family:inherit;font-size:14px;padding:11px 18px}
+  .lib-search::placeholder{color:var(--mist);font-style:italic}
+  .lib-search:focus{outline:none;border-color:var(--gold)}
+  .lib-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:8px}
+  .lib-card{border:1px solid var(--line);border-radius:10px;background:var(--surface-2);padding:11px 13px;
+    display:flex;align-items:baseline;gap:8px;cursor:pointer;transition:.15s}
+  .lib-card:hover{border-color:var(--gold);background:var(--surface)}
+  .lib-card .lg{color:var(--gold);font-size:13px;flex:none}
+  .lib-card .ln{font-size:13.5px;color:var(--silver)}
+
   /* ————— faux home-screen controls ————— */
   .fauxfield{
     border:1px solid var(--line);border-radius:12px;background:var(--field-bg);
@@ -758,6 +773,33 @@
     <div id="paidnote" hidden>
       <p class="lede" style="text-align:center;max-width:none">✷ &nbsp;Arcana is active on this account — yearly, renews 14 Aug 2027 &nbsp;<button class="linkbtn" type="button">manage</button></p>
     </div>
+  </section>
+
+  <section class="panel">
+    <div class="step-label" style="margin-bottom:4px">Card Library · all 78 meanings</div>
+    <p class="hint" style="margin-bottom:14px">Search or tap any card for its full reading — the same depth a drawn card gets. Drew from a physical deck? Look it up here, and reveal the reversed reading if it came out upside down.</p>
+    <div class="lib-controls">
+      <div class="lib-fgroup">
+        <span class="lib-fglabel">Arcana</span>
+        <div class="seg multi"><button type="button">Major</button><button type="button">Courts</button><button type="button">Numbers</button></div>
+      </div>
+      <div class="lib-fgroup">
+        <span class="lib-fglabel">Suit</span>
+        <div class="seg multi"><button type="button">Wands</button><button type="button">Cups</button><button type="button">Swords</button><button type="button">Pentacles</button></div>
+      </div>
+      <input class="lib-search" type="text" placeholder="Search a card…" aria-label="Search a card">
+    </div>
+    <div class="lib-grid">
+      <div class="lib-card"><span class="lg">♌</span><span class="ln">Strength</span></div>
+      <div class="lib-card"><span class="lg">♓</span><span class="ln">The Moon</span></div>
+      <div class="lib-card"><span class="lg">♐</span><span class="ln">Temperance</span></div>
+      <div class="lib-card"><span class="lg">☿</span><span class="ln">The Magician</span></div>
+      <div class="lib-card"><span class="lg">☸</span><span class="ln">Wheel of Fortune</span></div>
+      <div class="lib-card"><span class="lg">♂</span><span class="ln">Seven of Wands</span></div>
+      <div class="lib-card"><span class="lg">♄</span><span class="ln">Seven of Pentacles</span></div>
+      <div class="lib-card"><span class="lg">♓</span><span class="ln">Knight of Cups</span></div>
+    </div>
+    <p class="hint" style="text-align:center;margin-top:14px">The same library that sits under the tarot readings — it follows you here.</p>
   </section>
   </div>
 
