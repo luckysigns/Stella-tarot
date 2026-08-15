@@ -144,6 +144,7 @@
   .lib-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:8px}
   .lib-card{border:1px solid var(--line);border-radius:10px;background:var(--surface-2);padding:11px 13px;
     display:flex;align-items:baseline;gap:8px;cursor:pointer;transition:.15s}
+  .lib-card{text-decoration:none}
   .lib-card:hover{border-color:var(--gold);background:var(--surface)}
   .lib-card .lg{color:var(--gold);font-size:13px;flex:none}
   .lib-card .ln{font-size:13.5px;color:var(--silver)}
@@ -513,21 +514,17 @@
 <div class="profile-pop" id="profilepop">
   <div class="pophead"><span class="who">Your charts</span><button class="popclose" id="popclose" type="button" aria-label="Close">✕</button></div>
   <div class="pm-row active">
-    <span class="avatar-sm">☉</span>
-    <span><span style="color:var(--text-strong)">Lucky</span><br><span class="pm-sub">Leo · Pisces · Sagittarius</span></span>
-    <span class="pm-actions"><button class="linkbtn" type="button">rename</button>·<button class="linkbtn" type="button">icon</button>·<button class="linkbtn" type="button" style="color:var(--rose)">remove</button></span>
+    <span class="avatar-sm" id="pmAvatar">☉</span>
+    <span><span style="color:var(--text-strong)" id="pmName">Lucky</span><br><span class="pm-sub">Leo · Pisces · Sagittarius</span></span>
+    <span class="pm-actions"><button class="linkbtn" id="pmRename" type="button">rename</button>·<button class="linkbtn" id="pmIcon" type="button">icon</button></span>
   </div>
   <div class="pm-row">
     <span class="avatar-sm">☽</span>
     <span><span style="color:var(--text-strong)">Mum</span><br><span class="pm-sub">Virgo · Taurus · Cancer</span></span>
   </div>
-  <button class="pm-add" type="button">+ &nbsp;Add a chart</button>
-  <hr>
-  <div class="pm-row"><span class="hint" style="font-style:normal">Plan · <b style="color:var(--gold)">Arcana</b></span><button class="linkbtn" type="button" style="margin-left:auto">manage</button></div>
   <hr>
   <button class="btn solid sm" id="journalbtn" type="button" style="width:100%">☽ &nbsp;Journal</button>
-  <div class="row" style="margin-top:10px"><button class="rowbtn" type="button">Sign out</button></div>
-  <span class="spec" style="display:block;margin-top:14px;text-align:center">Opens on arrival when you're signed into Stellar</span>
+  <a class="btn ghost sm" href="/" style="width:100%;margin-top:8px;text-align:center;text-decoration:none;display:block">← &nbsp;Tarot readings</a>
 </div>
 
 <a class="backbtn" href="/">← &nbsp;Tarot readings</a>
@@ -560,7 +557,7 @@
 
   <!-- ————————————— YOUR CARDS ————————————— -->
   <section class="panel" id="rv-cards">
-    <div class="step-label">Your cards <span class="spec" style="margin-left:auto">New · computed once from the chart, no drawing</span></div>
+    <div class="step-label">Your cards</div>
     <h2>The cards you were born holding</h2>
     <p class="lede">No shuffle here. These are fixed by your chart — the Majors that rule your Big Three, the pair hidden in your birthdate, and the minor card of your Sun's exact degree.</p>
 
@@ -604,7 +601,7 @@
 
   <!-- ————————————— SPREADS ————————————— -->
   <section class="panel" id="rv-big3" hidden>
-    <div class="step-label">Chart-aware spreads <span class="spec" style="margin-left:auto">New · interpretations woven with natal placements</span></div>
+    <div class="step-label">Chart-aware spreads</div>
     <h2>The Big Three Spread</h2>
     <p class="lede">Three cards, one for each pillar of the chart. The reading isn't generic — it names <em>your</em> placements and reads the card against them.</p>
 
@@ -640,7 +637,7 @@
   </section>
 
   <section class="panel" id="rv-houses" hidden>
-    <div class="step-label">Chart-aware spreads <span class="spec" style="margin-left:auto">Arcana · house data from Stellar's natal engine</span></div>
+    <div class="step-label">Chart-aware spreads</div>
     <h2>The Houses Spread</h2>
     <p class="lede">Twelve cards laid around your own wheel — one for each house, using <em>your</em> house cusps, with your natal planets marked where they actually sit.</p>
 
@@ -669,7 +666,7 @@
   </section>
 
   <section class="panel" id="rv-year" hidden>
-    <div class="step-label">Chart-aware spreads <span class="spec" style="margin-left:auto">Arcana · content already written — all 78 × Months 1–12</span></div>
+    <div class="step-label">Chart-aware spreads</div>
     <h2>Year Ahead — the Solar Return spread</h2>
     <p class="lede">Offered in your birthday week. Twelve cards fan out, one per month of your new solar year, starting from today.</p>
     <div class="yearstrip" tabindex="0" aria-label="Twelve month cards, scroll horizontally">
@@ -690,8 +687,7 @@
 
   <!-- ————————————— ACCOUNT ————————————— -->
   <section class="panel" id="account">
-    <div class="step-label">Account <span class="spec" style="margin-left:auto">Shown only on the free plan</span> <button class="spec" id="selldemo" type="button" style="cursor:pointer">demo · see member view</button></div>
-    <div id="sellpage">
+    <div class="step-label">Account</div>
     <h2>One account across the constellation</h2>
     <p class="lede">Sign in with the same Stellar account. The chart flows one way, the journal flows both ways, and Arcana bills as an add-on through the account you already have. Guests keep everything on-device; signing in lifts local history to the account.</p>
 
@@ -744,7 +740,7 @@
           <button class="plan" type="button"><span class="per">Lifetime</span><span class="amt" data-with="$79.99" data-solo="$129">$79.99</span><span class="note" style="color:var(--gold)">founding · ends 11/11</span></button>
         </div>
         <p class="hint" id="price-note" style="text-align:center;margin-top:10px">Member rate — for Stellar Plus &amp; Premium members.</p>
-        <div style="text-align:center;margin-top:12px"><button class="btn solid sm" type="button">Unlock Arcana</button></div>
+        <p class="hint" style="text-align:center;margin-top:12px">Arcana unlocks when Stellar accounts arrive in the tarot app.</p>
       </div>
     </div>
 
@@ -758,11 +754,6 @@
         <span><b>$119.99</b>/yr</span>
         <span><b>$199</b> once · until 11/11</span>
       </div>
-      <button class="btn sm" type="button">Get the bundle</button>
-    </div>
-    </div>
-    <div id="paidnote" hidden>
-      <p class="lede" style="text-align:center;max-width:none">✷ &nbsp;Arcana is active on this account — yearly, renews 14 Aug 2027 &nbsp;<button class="linkbtn" type="button">manage</button></p>
     </div>
   </section>
 
@@ -772,25 +763,16 @@
     <div class="lib-controls">
       <div class="lib-fgroup">
         <span class="lib-fglabel">Arcana</span>
-        <div class="seg multi"><button type="button">Major</button><button type="button">Courts</button><button type="button">Numbers</button></div>
+        <div class="seg multi" id="libType"><button type="button" data-type="major">Major</button><button type="button" data-type="court">Courts</button><button type="button" data-type="number">Numbers</button></div>
       </div>
       <div class="lib-fgroup">
         <span class="lib-fglabel">Suit</span>
-        <div class="seg multi"><button type="button">Wands</button><button type="button">Cups</button><button type="button">Swords</button><button type="button">Pentacles</button></div>
+        <div class="seg multi" id="libSuit"><button type="button" data-suit="Wands">Wands</button><button type="button" data-suit="Cups">Cups</button><button type="button" data-suit="Swords">Swords</button><button type="button" data-suit="Pentacles">Pentacles</button></div>
       </div>
-      <input class="lib-search" type="text" placeholder="Search a card…" aria-label="Search a card">
+      <input class="lib-search" id="libSearch" type="text" placeholder="Search a card…" aria-label="Search a card">
     </div>
-    <div class="lib-grid">
-      <div class="lib-card"><span class="lg">♌</span><span class="ln">Strength</span></div>
-      <div class="lib-card"><span class="lg">♓</span><span class="ln">The Moon</span></div>
-      <div class="lib-card"><span class="lg">♐</span><span class="ln">Temperance</span></div>
-      <div class="lib-card"><span class="lg">☿</span><span class="ln">The Magician</span></div>
-      <div class="lib-card"><span class="lg">☸</span><span class="ln">Wheel of Fortune</span></div>
-      <div class="lib-card"><span class="lg">♂</span><span class="ln">Seven of Wands</span></div>
-      <div class="lib-card"><span class="lg">♄</span><span class="ln">Seven of Pentacles</span></div>
-      <div class="lib-card"><span class="lg">♓</span><span class="ln">Knight of Cups</span></div>
-    </div>
-    <p class="hint" style="text-align:center;margin-top:14px">The same library that sits under the tarot readings — it follows you here.</p>
+    <div class="lib-grid" id="libGrid"></div>
+    <p class="hint" id="libCount" style="text-align:center;margin-top:14px"></p>
   </section>
   </div>
 
@@ -838,7 +820,7 @@
 
   <footer>
     <div class="glyphline">✷ ☽ ✷</div>
-    <p>Preview mockup — sample chart &amp; pulls. The Astra deck's correspondences (signs, decans, rulers) already live in astra-content.json.</p>
+    <p>Astrology readings read your chart from your Stellar account. Readings are for reflection, not prediction.</p>
   </footer>
 </div>
 
@@ -914,13 +896,67 @@
     }
     w.addEventListener('click',function(){basis(true)});
     s.addEventListener('click',function(){basis(false)});
-    var demo=document.getElementById('selldemo');
-    var sell=document.getElementById('sellpage'),paid=document.getElementById('paidnote');
-    demo.addEventListener('click',function(){
-      var showMember=paid.hidden;
-      paid.hidden=!showMember;sell.hidden=showMember;
-      demo.textContent=showMember?'demo · see free view':'demo · see member view';
+  })();
+
+  /* profile name + glyph, shared with the app */
+  (function(){
+    var GLYPHS=["☉","☽","✦","✷","♀","♃","♄","☿"];
+    var NK="astra.profile.name", GK="astra.profile.glyph";
+    var nameEl=document.getElementById('pmName'), avEl=document.getElementById('pmAvatar');
+    var btn=document.getElementById('profilebtn');
+    function get(k,d){ try{ return localStorage.getItem(k)||d; }catch(e){ return d; } }
+    function set(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+    function paint(){ var n=get(NK,"Lucky"), g=get(GK,"☉"); nameEl.textContent=n; avEl.textContent=g; btn.textContent=g; }
+    document.getElementById('pmRename').addEventListener('click',function(e){
+      e.stopPropagation();
+      var v=prompt("What should the cards call you?", get(NK,"Lucky"));
+      if(v!==null&&v.trim()){ set(NK,v.trim().slice(0,24)); paint(); }
     });
+    document.getElementById('pmIcon').addEventListener('click',function(e){
+      e.stopPropagation();
+      var i=GLYPHS.indexOf(get(GK,"☉"));
+      set(GK,GLYPHS[(i+1)%GLYPHS.length]); paint();
+    });
+    paint();
+  })();
+
+  /* card library — all 78, searchable */
+  (function(){
+    var MAJORS=["The Voyager","The Magician","The High Priestess","The Empress","The Emperor","The Hierophant","The Lovers","The Chariot","Strength","The Hermit","Wheel of Fortune","Justice","The Hanged Star","Death","Temperance","The Devil","The Tower","The Star","The Moon","The Sun","Judgement","The Cosmos"];
+    var RANKS=["Ace","Two","Three","Four","Five","Six","Seven","Eight","Nine","Ten","Page","Knight","Queen","King"];
+    var SUITS=["Wands","Cups","Swords","Pentacles"];
+    var CARDS=MAJORS.map(function(n){return {name:n,type:"major",suit:""}});
+    SUITS.forEach(function(su){
+      RANKS.forEach(function(r,i){
+        CARDS.push({name:r+" of "+su,type:(i>9?"court":"number"),suit:su});
+      });
+    });
+    var grid=document.getElementById('libGrid'), count=document.getElementById('libCount');
+    var search=document.getElementById('libSearch');
+    var types=[].slice.call(document.querySelectorAll('#libType button'));
+    var suits=[].slice.call(document.querySelectorAll('#libSuit button'));
+    function activeVals(list,attr){
+      return list.filter(function(b){return b.classList.contains('on')}).map(function(b){return b.getAttribute(attr)});
+    }
+    function render(){
+      var q=search.value.trim().toLowerCase();
+      var t=activeVals(types,'data-type'), su=activeVals(suits,'data-suit');
+      var rows=CARDS.filter(function(c){
+        if(q&&c.name.toLowerCase().indexOf(q)===-1) return false;
+        if(t.length&&t.indexOf(c.type)===-1) return false;
+        if(su.length&&(!c.suit||su.indexOf(c.suit)===-1)) return false;
+        return true;
+      });
+      grid.innerHTML=rows.map(function(c){
+        return '<a class="lib-card" href="/"><span class="ln">'+c.name+'</span></a>';
+      }).join('');
+      count.textContent=rows.length+" of 78 cards — tap one to open its full reading in the app.";
+    }
+    types.concat(suits).forEach(function(b){
+      b.addEventListener('click',function(){ b.classList.toggle('on'); render(); });
+    });
+    search.addEventListener('input',render);
+    render();
   })();
 </script>
 
