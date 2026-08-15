@@ -448,7 +448,6 @@
   footer .glyphline{color:var(--gold-soft);letter-spacing:.6em;margin-bottom:12px;font-style:normal}
 </style>
 
-<button class="obs-btn" id="obsbtn" type="button" aria-label="The Observatory — astrology" aria-expanded="false">✷</button>
 <button class="profile-btn" id="profilebtn" type="button" aria-label="Profile" aria-expanded="false">☉</button>
 <div class="profile-pop" id="profilepop" hidden>
   <div class="who">Lucky</div>
@@ -460,6 +459,7 @@
   </div>
   <hr>
   <div class="row">
+    <button class="rowbtn" id="obsrow" type="button" style="color:var(--gold)">✷ &nbsp;The Observatory</button>
     <button class="rowbtn" type="button">✷ &nbsp;Arcana — yearly, renews 14 Aug 2027</button>
     <button class="rowbtn" type="button">Deck: Base · Astra</button>
     <button class="rowbtn" id="themebtn" type="button">☀ &nbsp;Light mode</button>
@@ -500,14 +500,16 @@
     </div>
     <button class="whisper" id="whisper" type="button"><b>✷</b> New Moon in Leo tonight — a two-card intention pull would suit it</button>
   </section>
-  <p style="text-align:center;margin-top:14px"><span class="spec">The home never changes — astrology waits behind the small ✷ up top; the whisper line shows only for signed-in chart folk, and is the only trace of it here</span></p>
+  <p style="text-align:center;margin-top:14px"><span class="spec">The home never changes — astrology lives inside the profile menu (☉ → The Observatory); the whisper line shows only for signed-in chart folk, and is the only trace of it here</span></p>
 
   <!-- ————————————— THE OBSERVATORY (opens from the ✷) ————————————— -->
   <div id="view-astro" hidden>
 
   <section class="panel">
     <div class="step-label">The Observatory</div>
-    <h2>For the stellar nerds ✷</h2>
+    <h2 style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap">For the stellar nerds ✷
+      <button class="btn ghost sm" id="wingclose" type="button" style="margin-left:auto">✕ &nbsp;Back to the cards</button>
+    </h2>
   </section>
 
   <!-- ————————————— TODAY ————————————— -->
@@ -867,18 +869,21 @@
     paint();
   })();
   (function(){
-    var obs=document.getElementById('obsbtn');
     var wing=document.getElementById('view-astro');
     var whisper=document.getElementById('whisper');
+    var obsrow=document.getElementById('obsrow');
+    var close=document.getElementById('wingclose');
+    var pop=document.getElementById('profilepop');
     function open(){
-      wing.hidden=false;obs.classList.add('on');obs.setAttribute('aria-expanded','true');
+      wing.hidden=false;
+      pop.hidden=true;
       wing.scrollIntoView({behavior:'smooth',block:'start'});
     }
-    obs.addEventListener('click',function(){
-      if(wing.hidden){open()}
-      else{wing.hidden=true;obs.classList.remove('on');obs.setAttribute('aria-expanded','false');window.scrollTo({top:0,behavior:'smooth'});}
-    });
+    obsrow.addEventListener('click',open);
     whisper.addEventListener('click',open);
+    close.addEventListener('click',function(){
+      wing.hidden=true;window.scrollTo({top:0,behavior:'smooth'});
+    });
   })();
   (function(){
     var btn=document.getElementById('profilebtn');
