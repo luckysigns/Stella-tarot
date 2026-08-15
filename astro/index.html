@@ -486,14 +486,10 @@
     <span style="color:var(--text-strong)">Lucky</span>
     <span class="pm-actions"><button class="linkbtn" type="button">rename</button>·<button class="linkbtn" type="button">icon</button></span>
   </div>
-  <div class="chiprow" style="padding:0 8px">
-    <span class="chip">☉ <b>Leo Sun</b></span>
-    <span class="chip">☽ <b>Pisces Moon</b></span>
-    <span class="chip">↑ <b>Sag Rising</b></span>
-  </div>
-  <hr>
   <div class="pm-row"><span class="hint" style="font-style:normal">Plan · <b style="color:var(--gold)">Arcana</b></span><button class="linkbtn" type="button" style="margin-left:auto">manage</button></div>
-  <div class="row"><button class="rowbtn" type="button">Sign out</button></div>
+  <hr>
+  <button class="btn solid sm" id="astrobtn" type="button" style="width:100%">✷ &nbsp;Astrology Readings</button>
+  <div class="row" style="margin-top:10px"><button class="rowbtn" type="button">Sign out</button></div>
 </div>
 
 <div class="wrap">
@@ -526,8 +522,7 @@
       </div>
     </div>
   </section>
-  <a class="astro-applink" id="astrolink" href="#view-astro">✷ Know your chart? Try an astrology reading →</a>
-  <p style="text-align:center;margin-top:12px"><span class="spec">Same pattern as Stellar's “visit our tarot app →” link — the only astrology entry on the home</span></p>
+  <p style="text-align:center;margin-top:14px"><span class="spec">Home stays pure tarot — astrology opens from the clear button in the profile menu</span></p>
 
   <!-- ————————————— THE OBSERVATORY (opens from the ✷) ————————————— -->
   <div id="view-astro" hidden>
@@ -535,6 +530,11 @@
   <section class="panel">
     <div class="step-label">Astrology readings
       <button class="btn ghost sm" id="wingclose" type="button" style="margin-left:auto">✕ &nbsp;Back to the cards</button>
+    </div>
+    <div class="chiprow" style="justify-content:center;margin-bottom:14px">
+      <span class="chip">☉ <b>Leo Sun</b></span>
+      <span class="chip">☽ <b>Pisces Moon</b></span>
+      <span class="chip">↑ <b>Sag Rising</b></span>
     </div>
     <div class="tabs" role="group" aria-label="Reading type">
       <button class="tab active" data-view="cards">Your Cards <span class="tabico">✦</span></button>
@@ -768,10 +768,10 @@
   })();
   (function(){
     var wing=document.getElementById('view-astro');
-    var link=document.getElementById('astrolink');
+    var abtn=document.getElementById('astrobtn');
     var close=document.getElementById('wingclose');
-    link.addEventListener('click',function(e){
-      e.preventDefault();
+    abtn.addEventListener('click',function(){
+      document.getElementById('profilepop').hidden=true;
       wing.hidden=false;
       wing.scrollIntoView({behavior:'smooth',block:'start'});
     });
