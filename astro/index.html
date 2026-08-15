@@ -1,0 +1,828 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Stellar Tarot</title>
+<style>
+  :root{
+    --void:#0a0a1f;
+    --void-2:#11102e;
+    --ink:#070612;
+    --gold:#e9c46a;
+    --gold-soft:#c9a24b;
+    --silver:#cdd6f4;
+    --mist:#8b8fb5;
+    --rose:#d98b9e;
+    --line:rgba(233,196,106,.22);
+    --text-strong:#fff;
+    --panel-grad:linear-gradient(180deg,rgba(28,26,64,.6),rgba(12,11,32,.5));
+    --surface:rgba(10,9,28,.5);
+    --surface-2:rgba(10,9,28,.4);
+    --field-bg:rgba(7,6,18,.6);
+    --page-bg:
+      radial-gradient(120% 80% at 50% -10%,#1a1840 0%,transparent 55%),
+      radial-gradient(90% 70% at 80% 110%,#1b1230 0%,transparent 50%),
+      #0a0a1f;
+    --stars-opacity:.7;
+    --good:#9ed8a8;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --silver:#332f47;
+      --mist:#6d6780;
+      --gold:#b07d1e;
+      --gold-soft:#8a6420;
+      --rose:#b04d66;
+      --line:rgba(120,86,20,.30);
+      --text-strong:#231d3a;
+      --panel-grad:linear-gradient(180deg,rgba(255,252,244,.9),rgba(247,240,227,.85));
+      --surface:rgba(255,252,245,.78);
+      --surface-2:rgba(255,251,243,.62);
+      --field-bg:rgba(255,255,255,.85);
+      --page-bg:
+        radial-gradient(120% 80% at 50% -10%,#fff7e6 0%,transparent 55%),
+        radial-gradient(90% 70% at 80% 110%,#f7ecd8 0%,transparent 50%),
+        #f2e8d5;
+      --stars-opacity:0;
+      --good:#3f7c4c;
+    }
+  }
+  :root[data-theme="light"]{
+    --silver:#332f47;
+    --mist:#6d6780;
+    --gold:#b07d1e;
+    --gold-soft:#8a6420;
+    --rose:#b04d66;
+    --line:rgba(120,86,20,.30);
+    --text-strong:#231d3a;
+    --panel-grad:linear-gradient(180deg,rgba(255,252,244,.9),rgba(247,240,227,.85));
+    --surface:rgba(255,252,245,.78);
+    --surface-2:rgba(255,251,243,.62);
+    --field-bg:rgba(255,255,255,.85);
+    --page-bg:
+      radial-gradient(120% 80% at 50% -10%,#fff7e6 0%,transparent 55%),
+      radial-gradient(90% 70% at 80% 110%,#f7ecd8 0%,transparent 50%),
+      #f2e8d5;
+    --stars-opacity:0;
+    --good:#3f7c4c;
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto}
+    *,*::before,*::after{animation:none!important;transition:none!important}
+  }
+  body{
+    font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    background:var(--page-bg);
+    background-attachment:fixed;
+    color:var(--silver);
+    min-height:100vh;
+    line-height:1.55;
+    position:relative;
+  }
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+    opacity:var(--stars-opacity);
+    background-image:
+      radial-gradient(1px 1px at 12% 18%, #fff 50%, transparent 51%),
+      radial-gradient(1.5px 1.5px at 78% 8%, #e9c46a 50%, transparent 51%),
+      radial-gradient(1px 1px at 88% 42%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 33% 61%, #cdd6f4 50%, transparent 51%),
+      radial-gradient(1.5px 1.5px at 61% 83%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 8% 88%, #e9c46a 50%, transparent 51%),
+      radial-gradient(1px 1px at 47% 33%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 95% 71%, #cdd6f4 50%, transparent 51%);
+  }
+  .wrap{max-width:880px;margin:0 auto;padding:clamp(28px,6vw,64px) clamp(16px,4vw,28px) 90px;position:relative;z-index:1}
+
+  header{text-align:center;margin-bottom:clamp(24px,5vw,44px)}
+  .eyebrow{
+    font-family:"Trebuchet MS",sans-serif;font-size:11px;letter-spacing:.34em;text-transform:uppercase;
+    color:var(--rose);margin-bottom:20px;
+  }
+  h1{
+    font-size:clamp(40px,9vw,78px);font-weight:400;line-height:.92;
+    letter-spacing:.01em;color:var(--text-strong);
+    text-shadow:0 0 30px rgba(233,196,106,.25);
+    text-wrap:balance;
+  }
+  h1 em{font-style:italic;color:var(--gold)}
+  .tagline{color:var(--mist);margin-top:16px;font-size:clamp(14px,2.4vw,17px);font-style:italic}
+
+  nav{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:26px}
+  nav a{
+    text-decoration:none;
+    background:var(--surface);border:1px solid var(--line);color:var(--mist);
+    border-radius:999px;padding:6px 15px;font-size:13px;transition:.15s;
+  }
+  nav a:hover,nav a:focus-visible{border-color:var(--gold);color:var(--gold);outline:none}
+
+  .panel{
+    border:1px solid var(--line);border-radius:18px;
+    background:var(--panel-grad);
+    -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+    padding:clamp(20px,4vw,34px);margin-top:30px;
+    box-shadow:0 20px 60px -30px rgba(0,0,0,.9),inset 0 1px 0 rgba(255,255,255,.04);
+  }
+  .step-label{
+    font-family:"Trebuchet MS",sans-serif;font-size:11px;letter-spacing:.3em;
+    text-transform:uppercase;color:var(--gold-soft);margin-bottom:18px;
+    display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  }
+  .step-label::before{content:"";width:26px;height:1px;background:var(--gold-soft);opacity:.6}
+  h2{font-weight:400;font-size:clamp(22px,4vw,30px);color:var(--text-strong);margin-bottom:8px;text-wrap:balance}
+  h3{font-weight:400;font-size:18px;color:var(--text-strong);margin-bottom:6px}
+  .hint{font-size:13px;color:var(--mist);font-style:italic}
+  .lede{color:var(--silver);font-size:15px;max-width:62ch;margin-bottom:6px}
+
+  .spec{
+    display:inline-block;
+    font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--rose);border:1px dashed var(--rose);border-radius:6px;
+    padding:3px 9px;opacity:.85;
+  }
+  .spec + .spec{margin-left:6px}
+
+  .btn{
+    font-family:"Trebuchet MS",sans-serif;font-size:12px;letter-spacing:.18em;text-transform:uppercase;
+    border:1px solid var(--gold);color:var(--gold);background:none;border-radius:999px;
+    padding:13px 28px;cursor:pointer;transition:.25s;
+  }
+  .btn:hover{background:var(--gold);color:var(--ink)}
+  .btn:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+  .btn.solid{background:var(--gold);color:var(--ink);font-weight:600}
+  .btn.ghost{border-color:var(--line);color:var(--mist)}
+  .btn.ghost:hover{border-color:var(--silver);color:var(--silver);background:none}
+  .btn.sm{padding:8px 18px;font-size:11px}
+
+  .chip{
+    background:var(--surface);border:1px solid var(--line);color:var(--mist);
+    border-radius:999px;padding:5px 13px;font-size:13px;font-family:inherit;
+    display:inline-flex;align-items:center;gap:6px;
+  }
+  .chip b{color:var(--gold);font-weight:400}
+  .chiprow{display:flex;flex-wrap:wrap;gap:8px}
+
+  /* ————— identity strip ————— */
+  .identity{
+    display:flex;flex-wrap:wrap;align-items:center;gap:14px;
+    border:1px solid var(--line);border-radius:999px;background:var(--surface);
+    padding:10px 18px;margin-top:30px;
+  }
+  .identity .avatar{
+    width:38px;height:38px;border-radius:50%;flex:none;
+    background:radial-gradient(circle at 35% 30%,#2a2762,#0e0d2c);
+    border:1px solid var(--gold-soft);color:#e9c46a;
+    display:flex;align-items:center;justify-content:center;font-size:17px;
+  }
+  .identity .who{color:var(--text-strong);font-size:15px}
+  .identity .placements{display:flex;flex-wrap:wrap;gap:6px;margin-left:auto}
+
+  /* ————— tarot cards ————— */
+  .tcard{
+    width:var(--tw,132px);aspect-ratio:3/5;flex:none;
+    border-radius:11px;position:relative;overflow:hidden;
+    background:
+      radial-gradient(90% 60% at 50% 28%,rgba(90,70,180,.45),transparent 70%),
+      linear-gradient(165deg,#181545 0%,#0b0a26 60%,#070618 100%);
+    border:1px solid #c9a24b;
+    box-shadow:0 12px 30px -14px rgba(0,0,0,.85);
+    display:flex;flex-direction:column;align-items:center;justify-content:space-between;
+    padding:10px 8px;text-align:center;
+    color:#cdd6f4;
+  }
+  .tcard::before{
+    content:"";position:absolute;inset:4px;border:1px solid rgba(233,196,106,.45);
+    border-radius:8px;pointer-events:none;
+  }
+  .tcard::after{
+    content:"";position:absolute;inset:0;pointer-events:none;opacity:.8;
+    background-image:
+      radial-gradient(1px 1px at 22% 20%,#fff 50%,transparent 51%),
+      radial-gradient(1px 1px at 76% 14%,#e9c46a 50%,transparent 51%),
+      radial-gradient(1px 1px at 64% 74%,#fff 50%,transparent 51%),
+      radial-gradient(1px 1px at 30% 82%,#e9c46a 50%,transparent 51%);
+  }
+  .tcard .num{
+    font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.24em;
+    color:#e9c46a;position:relative;z-index:1;
+  }
+  .tcard .glyph{
+    font-size:clamp(28px,7vw,40px);line-height:1;color:#e9c46a;position:relative;z-index:1;
+    text-shadow:0 0 18px rgba(233,196,106,.65);
+  }
+  .tcard .nm{
+    font-size:11.5px;letter-spacing:.06em;color:#cdd6f4;position:relative;z-index:1;
+    font-variant:small-caps;
+  }
+  .tcard.rev{transform:rotate(180deg)}
+  .tcard.rev > *{transform:rotate(180deg)}
+  .tcard.mini{--tw:74px;border-radius:8px;padding:6px 4px}
+  .tcard.mini .glyph{font-size:22px}
+  .tcard.mini .nm{font-size:8.5px}
+  .tcard.mini .num{font-size:8px}
+
+  .cardrow{display:flex;flex-wrap:wrap;gap:clamp(12px,3vw,24px);justify-content:center;margin:22px 0 8px}
+  .cardslot{display:flex;flex-direction:column;align-items:center;gap:10px;max-width:170px}
+  .pos-tag{
+    font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--gold-soft);
+  }
+  .cardslot .why{font-size:12.5px;color:var(--mist);text-align:center;font-style:italic}
+
+  /* ————— today shelf ————— */
+  .shelf{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-top:18px}
+  .suggest{
+    border:1px solid var(--line);border-radius:14px;background:var(--surface-2);
+    padding:18px;display:flex;flex-direction:column;gap:10px;transition:.2s;
+  }
+  .suggest:hover{border-color:var(--gold)}
+  .suggest .because{
+    font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--rose);
+  }
+  .suggest h3{font-size:17px}
+  .suggest p{font-size:13.5px;color:var(--mist)}
+  .suggest .foot{margin-top:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .suggest .cards-n{font-size:12px;color:var(--gold-soft);font-style:italic}
+  .lock{
+    font-family:"Trebuchet MS",sans-serif;font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--gold);border:1px solid var(--line);border-radius:999px;padding:3px 9px;
+  }
+
+  /* ————— daily flip ————— */
+  .daily{display:flex;flex-wrap:wrap;gap:clamp(18px,4vw,34px);align-items:center;margin-top:18px}
+  .flip{perspective:900px;width:132px;aspect-ratio:3/5;flex:none;cursor:pointer;border:none;background:none;padding:0}
+  .flip .inner{position:relative;width:100%;height:100%;transition:transform .7s;transform-style:preserve-3d}
+  .flip.flipped .inner{transform:rotateY(180deg)}
+  .flip:focus-visible{outline:2px solid var(--gold);outline-offset:4px;border-radius:11px}
+  .flip .side{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+  .flip .side.back-face{transform:rotateY(180deg)}
+  .cardback{
+    width:100%;height:100%;border-radius:11px;
+    background:
+      radial-gradient(circle at 50% 50%,rgba(233,196,106,.16) 0%,transparent 45%),
+      repeating-conic-gradient(from 0deg,#12103a 0deg 30deg,#0c0b28 30deg 60deg);
+    border:1px solid #c9a24b;position:relative;overflow:hidden;
+  }
+  .cardback::before{content:"✷";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    font-size:34px;color:#e9c46a;text-shadow:0 0 20px rgba(233,196,106,.7)}
+  .cardback::after{content:"";position:absolute;inset:5px;border:1px solid rgba(233,196,106,.4);border-radius:7px}
+  .daily-copy{flex:1;min-width:240px}
+  .daily-copy p{font-size:14.5px;max-width:52ch}
+  .daily-copy .revealed{display:none;margin-top:10px;color:var(--silver)}
+  .daily.done .revealed{display:block}
+  .daily.done .tap-hint{display:none}
+
+  /* ————— reading blocks ————— */
+  .reading{margin-top:20px;display:flex;flex-direction:column;gap:16px}
+  .pos-read{
+    border-left:2px solid var(--line);padding:2px 0 2px 16px;
+  }
+  .pos-read p{font-size:14.5px;color:var(--silver);max-width:62ch;margin-top:4px}
+  .orient{font-style:italic;color:var(--rose);font-size:12.5px;margin-left:8px}
+
+  /* ————— houses wheel ————— */
+  .wheelwrap{display:flex;flex-direction:column;align-items:center;gap:16px;margin-top:10px}
+  .wheel{
+    position:relative;width:min(88vw,480px);height:min(88vw,480px);flex:none;
+    border:1px solid var(--line);border-radius:50%;
+    background:radial-gradient(circle,var(--surface-2) 0%,transparent 72%);
+  }
+  .wheel::before{
+    content:"";position:absolute;inset:17%;border:1px dashed var(--line);border-radius:50%;
+  }
+  .wheel .hub{
+    position:absolute;inset:33%;border-radius:50%;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;text-align:center;gap:4px;
+  }
+  .hub .glyph{font-size:26px;color:var(--gold);text-shadow:0 0 16px rgba(233,196,106,.5)}
+  .hub .t{font-size:14px;color:var(--text-strong)}
+  .hub .hint{font-size:11.5px}
+  .house{
+    position:absolute;top:50%;left:50%;width:74px;margin:-34px 0 0 -37px;
+    display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center;
+  }
+  .house .cell{
+    width:44px;height:62px;border-radius:6px;flex:none;
+    background:linear-gradient(165deg,#181545,#0b0a26);
+    border:1px solid #c9a24b;color:#e9c46a;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+    font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.08em;
+  }
+  .house .cell .rn{font-size:12px}
+  .house .lbl{font-size:10.5px;color:var(--mist);line-height:1.25}
+  .house .natal{font-size:9.5px;color:var(--rose);font-style:italic;line-height:1.2}
+
+  /* ————— year strip ————— */
+  .yearstrip{
+    display:flex;gap:10px;overflow-x:auto;padding:14px 4px 18px;margin-top:14px;
+    scrollbar-width:thin;
+  }
+  .month{display:flex;flex-direction:column;align-items:center;gap:6px;flex:none}
+  .month .mo{
+    font-family:"Trebuchet MS",sans-serif;font-size:9.5px;letter-spacing:.2em;color:var(--gold-soft);
+  }
+
+  /* ————— journal ————— */
+  .entry{
+    border:1px solid var(--line);border-radius:14px;background:var(--surface-2);
+    padding:18px;margin-top:14px;display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;
+  }
+  .entry .when{
+    flex:none;width:64px;text-align:center;
+    font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--gold-soft);padding-top:2px;
+  }
+  .entry .when b{display:block;font-size:20px;color:var(--text-strong);font-weight:400;font-family:"Iowan Old Style",Palatino,Georgia,serif}
+  .entry .body{flex:1;min-width:220px}
+  .entry .body p{font-size:14px;color:var(--silver);max-width:60ch;margin-top:6px}
+  .entry .src{
+    font-family:"Trebuchet MS",sans-serif;font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;
+    border:1px solid var(--line);border-radius:999px;padding:2px 8px;color:var(--mist);margin-left:8px;
+  }
+  .skystamp{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+  .skystamp .chip{font-size:11.5px;padding:3px 10px}
+  .minirow{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+
+  .pattern{display:flex;align-items:center;gap:14px;border-top:1px solid var(--line);padding:14px 0;flex-wrap:wrap}
+  .pattern:first-of-type{border-top:none}
+  .pattern .pips{display:flex;gap:4px}
+  .pattern .pip{width:16px;height:26px;border-radius:3px;background:linear-gradient(165deg,#181545,#0b0a26);border:1px solid #c9a24b}
+  .pattern p{font-size:14px;flex:1;min-width:200px}
+  .pattern p b{color:var(--gold);font-weight:400}
+
+  /* ————— account ————— */
+  .synccols{display:grid;grid-template-columns:1fr auto 1fr;gap:14px;align-items:center;margin:20px 0}
+  .syncbox{
+    border:1px solid var(--line);border-radius:14px;background:var(--surface-2);
+    padding:16px;text-align:center;
+  }
+  .syncbox .app{color:var(--text-strong);font-size:16px}
+  .syncbox .what{font-size:12.5px;color:var(--mist);margin-top:6px;line-height:1.5}
+  .synclink{text-align:center;color:var(--gold);font-size:20px;line-height:1.2}
+  .synclink small{display:block;font-family:"Trebuchet MS",sans-serif;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--mist);margin-top:2px}
+  @media (max-width:560px){.synccols{grid-template-columns:1fr}.synclink{transform:rotate(90deg);padding:4px 0}}
+
+  .tiers{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin-top:18px}
+  .tier{border:1px solid var(--line);border-radius:14px;padding:20px;background:var(--surface-2)}
+  .tier.pro{border-color:var(--gold-soft);box-shadow:0 0 40px -18px rgba(233,196,106,.5)}
+  .tier h3{display:flex;align-items:center;gap:10px}
+  .tier ul{list-style:none;margin-top:12px;display:flex;flex-direction:column;gap:8px}
+  .tier li{font-size:13.5px;color:var(--silver);padding-left:20px;position:relative}
+  .tier li::before{content:"✷";position:absolute;left:0;color:var(--gold-soft);font-size:11px;top:3px}
+  .tier li.dim{color:var(--mist)}
+  .tier .price{font-size:12.5px;color:var(--mist);font-style:italic;margin-top:4px}
+
+  /* ————— theme toggle (mirrors the app's) ————— */
+  .theme-toggle{position:fixed;top:14px;right:14px;z-index:60;width:40px;height:40px;border-radius:50%;
+    border:1px solid var(--line);background:var(--surface);color:var(--gold);font-size:18px;line-height:1;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);transition:.2s}
+  .theme-toggle:hover{border-color:var(--gold)}
+  .theme-toggle:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+
+  /* ————— mode switch + split menu ————— */
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--surface)}
+  .seg button{
+    font-family:"Trebuchet MS",sans-serif;font-size:12px;letter-spacing:.16em;text-transform:uppercase;
+    border:none;background:none;color:var(--mist);padding:12px 26px;cursor:pointer;transition:.2s;
+  }
+  .seg button.on{background:var(--gold);color:var(--ink);font-weight:600}
+  .seg button:focus-visible{outline:2px solid var(--gold);outline-offset:-2px}
+  .menucols{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin-top:22px}
+  .menucol{border:1px solid var(--line);border-radius:14px;background:var(--surface-2);padding:20px}
+  .menucol.astro-side{border-color:var(--gold-soft);box-shadow:0 0 40px -18px rgba(233,196,106,.5)}
+  .menucol .colhead{display:flex;align-items:baseline;gap:10px;margin-bottom:6px;flex-wrap:wrap}
+  .menucol ul{list-style:none;margin-top:12px;display:flex;flex-direction:column;gap:2px}
+  .menucol li{
+    display:flex;align-items:baseline;gap:12px;padding:9px 10px;border-radius:9px;font-size:15px;
+    color:var(--silver);transition:.15s;
+  }
+  .menucol li:hover{background:var(--surface)}
+  .menucol li .mglyph{color:var(--gold-soft);font-size:13px;flex:none;width:18px;text-align:center}
+  .menucol li .mhint{margin-left:auto;font-size:11.5px;color:var(--mist);font-style:italic;text-align:right}
+
+  footer{margin-top:56px;text-align:center;color:var(--mist);font-size:12.5px;font-style:italic}
+  footer .glyphline{color:var(--gold-soft);letter-spacing:.6em;margin-bottom:12px;font-style:normal}
+</style>
+
+<button class="theme-toggle" id="themebtn" type="button" aria-label="Switch between dark and light mode">☾</button>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Feature Preview · Stellar Tarot</div>
+    <h1>Stellar <em>Tarot</em></h1>
+    <p class="tagline">…now it reads your sky. The cards you pull, met by the chart you were born with.</p>
+    <nav aria-label="Sections">
+      <a href="#menu">Menu</a>
+      <a href="#today">Today</a>
+      <a href="#yourcards">Your Cards</a>
+      <a href="#spreads">Chart Spreads</a>
+      <a href="#journal">Journal</a>
+      <a href="#account">Account</a>
+    </nav>
+  </header>
+
+  <!-- signed-in identity strip -->
+  <div class="identity">
+    <div class="avatar" aria-hidden="true">☉</div>
+    <div class="who">Lucky <span class="hint">· signed in with Stellar</span></div>
+    <div class="placements">
+      <span class="chip">☉ <b>Leo Sun</b></span>
+      <span class="chip">☽ <b>Pisces Moon</b></span>
+      <span class="chip">↑ <b>Sag Rising</b></span>
+    </div>
+  </div>
+  <p style="margin-top:10px"><span class="spec">New · natal chart read from the Stellar account, no re-entry</span></p>
+
+  <!-- ————————————— SPLIT MENU ————————————— -->
+  <section class="panel" id="menu">
+    <div class="step-label">Menu <span class="spec" style="margin-left:auto">New · try the switch</span></div>
+
+    <div style="text-align:center">
+      <div class="seg" role="group" aria-label="App mode">
+        <button type="button" id="mode-readings">✦ &nbsp;Readings</button>
+        <button type="button" id="mode-astro" class="on">☉ &nbsp;Astrology</button>
+      </div>
+    </div>
+
+    <div class="menucols" style="grid-template-columns:1fr;max-width:440px;margin-left:auto;margin-right:auto">
+      <div class="menucol" id="menu-readings" hidden>
+        <ul>
+          <li><span class="mglyph">?</span>Ask a question<span class="mhint">threads &amp; clarifiers</span></li>
+          <li><span class="mglyph">⚏</span>Draw a spread<span class="mhint">1 · 3 · Celtic Cross…</span></li>
+          <li><span class="mglyph">❦</span>Card Library<span class="mhint">all 78, filters</span></li>
+          <li><span class="mglyph">✷</span>Deck<span class="mhint">Base · <b style="color:var(--gold);font-weight:400">Astra</b></span></li>
+        </ul>
+      </div>
+      <div class="menucol astro-side" id="menu-astro">
+        <ul>
+          <li><span class="mglyph">☼</span>Today's Sky<span class="mhint">suggested pulls</span></li>
+          <li><span class="mglyph">♌</span>Your Cards<span class="mhint">born, not drawn</span></li>
+          <li><span class="mglyph">◯</span>Chart Spreads<span class="mhint">Big Three · Houses · Year Ahead</span></li>
+          <li><span class="mglyph">☽</span>Cosmic Journal<span class="mhint">shared with Stellar</span></li>
+          <li><span class="mglyph">✷</span>Deck<span class="mhint">Base · <b style="color:var(--gold);font-weight:400">Astra</b></span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ————————————— TODAY ————————————— -->
+  <section class="panel" id="today">
+    <div class="step-label">Suggested for you today <span class="spec" style="margin-left:auto">New · driven by Stellar's live transits</span></div>
+    <h2>Friday, 14 August</h2>
+    <p class="hint">Each suggestion says <em>why</em> — the sky condition in your chart that called for it.</p>
+
+    <div class="shelf">
+      <div class="suggest">
+        <div class="because">Because the Sun returns to its natal place today</div>
+        <h3>Happy Solar Return</h3>
+        <p>Your birthday spread: twelve cards, one for each month of your new solar year.</p>
+        <div class="foot">
+          <span class="cards-n">12 cards · ~15 min</span>
+          <span class="lock">✷ Premium</span>
+          <button class="btn sm solid" type="button">Begin</button>
+        </div>
+      </div>
+      <div class="suggest">
+        <div class="because">Because Wednesday's New Moon fell in your 9th house</div>
+        <h3>New Moon Intention</h3>
+        <p>Two cards — the seed and the soil. This lunation stirs your house of horizons: study, travel, belief.</p>
+        <div class="foot">
+          <span class="cards-n">2 cards · 5 min</span>
+          <button class="btn sm ghost" type="button">Begin</button>
+        </div>
+      </div>
+      <div class="suggest">
+        <div class="because">Because Saturn squares your natal Sun — exact next week</div>
+        <h3>Pressure &amp; Foundation</h3>
+        <p>Three cards: what's being tested, what holds, and what this pressure is quietly building.</p>
+        <div class="foot">
+          <span class="cards-n">3 cards · 8 min</span>
+          <span class="lock">✷ Premium</span>
+          <button class="btn sm ghost" type="button">Begin</button>
+        </div>
+      </div>
+      <div class="suggest">
+        <div class="because">Because your chart runs hot — fire in Sun and Rising</div>
+        <h3>Water the Garden</h3>
+        <p>A Cups-only pull. One card of the element your chart carries least, to balance the week.</p>
+        <div class="foot">
+          <span class="cards-n">1 card · 2 min</span>
+          <button class="btn sm ghost" type="button">Begin</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="daily" id="daily">
+      <button class="flip" id="flipbtn" type="button" aria-label="Reveal today's card">
+        <div class="inner">
+          <div class="side"><div class="cardback"></div></div>
+          <div class="side back-face">
+            <div class="tcard" style="width:100%;height:100%">
+              <span class="num">VI · WANDS</span>
+              <span class="glyph">♌</span>
+              <span class="nm">Six of Wands</span>
+            </div>
+          </div>
+        </div>
+      </button>
+      <div class="daily-copy">
+        <div class="step-label" style="margin-bottom:10px">Card of the day</div>
+        <p>Friday belongs to Venus, and today she's moving through your tenth house — the work you're seen for.</p>
+        <p class="hint tap-hint" style="margin-top:8px">Tap the card to draw.</p>
+        <p class="revealed"><em>Six of Wands.</em> Recognition arrives while Venus lights your career house — a strong day to let good work be visible instead of quietly filed away. Second decan of Leo: the parade, not the battle.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ————————————— YOUR CARDS ————————————— -->
+  <section class="panel" id="yourcards">
+    <div class="step-label">Your cards <span class="spec" style="margin-left:auto">New · computed once from the chart, no drawing</span></div>
+    <h2>The cards you were born holding</h2>
+    <p class="lede">No shuffle here. These are fixed by your chart — the Majors that rule your Big Three, the pair hidden in your birthdate, and the minor card of your Sun's exact degree.</p>
+
+    <div class="cardrow">
+      <div class="cardslot">
+        <span class="pos-tag">☉ Sun · Leo</span>
+        <div class="tcard"><span class="num">VIII</span><span class="glyph">♌</span><span class="nm">Strength</span></div>
+        <span class="why">How your light burns: warm, proud, steadied by gentleness.</span>
+      </div>
+      <div class="cardslot">
+        <span class="pos-tag">☽ Moon · Pisces</span>
+        <div class="tcard"><span class="num">XVIII</span><span class="glyph">♓</span><span class="nm">The Moon</span></div>
+        <span class="why">Your tides — literally. Deep feeling, dream logic, porous edges.</span>
+      </div>
+      <div class="cardslot">
+        <span class="pos-tag">↑ Rising · Sagittarius</span>
+        <div class="tcard"><span class="num">XIV</span><span class="glyph">♐</span><span class="nm">Temperance</span></div>
+        <span class="why">The mask that meets the world: the optimist, mid-pour, mixing fire and water.</span>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:clamp(16px,4vw,40px);justify-content:center;margin-top:26px">
+      <div>
+        <h3 style="text-align:center">Birth card pair</h3>
+        <p class="hint" style="text-align:center;margin-bottom:12px">from your birthdate's numerology</p>
+        <div class="minirow" style="justify-content:center">
+          <div class="tcard mini"><span class="num">X</span><span class="glyph">☸</span><span class="nm">Wheel of Fortune</span></div>
+          <div class="tcard mini"><span class="num">I</span><span class="glyph">☿</span><span class="nm">The Magician</span></div>
+        </div>
+      </div>
+      <div>
+        <h3 style="text-align:center">Your decan card</h3>
+        <p class="hint" style="text-align:center;margin-bottom:12px">Sun at 21° Leo · third decan, ruled by Mars</p>
+        <div class="minirow" style="justify-content:center">
+          <div class="tcard mini"><span class="num">VII · WANDS</span><span class="glyph">♂</span><span class="nm">Seven of Wands</span></div>
+        </div>
+      </div>
+    </div>
+    <p class="hint" style="text-align:center;margin-top:20px">Each card opens its full deep reading, written as an <em>identity</em> card — who you are, not what's coming. ✷ Shareable as an image.</p>
+  </section>
+
+  <!-- ————————————— SPREADS ————————————— -->
+  <section class="panel" id="spreads">
+    <div class="step-label">Chart-aware spreads <span class="spec" style="margin-left:auto">New · interpretations woven with natal placements</span></div>
+    <h2>The Big Three Spread</h2>
+    <p class="lede">Three cards, one for each pillar of the chart. The reading isn't generic — it names <em>your</em> placements and reads the card against them.</p>
+
+    <div class="cardrow">
+      <div class="cardslot">
+        <span class="pos-tag">Your light · ☉ Leo</span>
+        <div class="tcard"><span class="num">VII · PENT</span><span class="glyph">♄</span><span class="nm">Seven of Pentacles</span></div>
+      </div>
+      <div class="cardslot">
+        <span class="pos-tag">Your tides · ☽ Pisces</span>
+        <div class="tcard"><span class="num">KNIGHT · CUPS</span><span class="glyph">♓</span><span class="nm">Knight of Cups</span></div>
+      </div>
+      <div class="cardslot">
+        <span class="pos-tag">Your mask · ↑ Sag</span>
+        <div class="tcard rev"><span class="num">IX</span><span class="glyph">♍</span><span class="nm">The Hermit</span></div>
+      </div>
+    </div>
+
+    <div class="reading">
+      <div class="pos-read">
+        <span class="pos-tag">Your light</span>
+        <p>The Seven of Pentacles is a slow harvest — and it lands on a Leo Sun that would rather be applauded now. That's the tension to sit with this season: the work is growing, it just isn't ripe. Leaning on the patience your Sun doesn't naturally carry is the whole assignment.</p>
+      </div>
+      <div class="pos-read">
+        <span class="pos-tag">Your tides</span>
+        <p>The Knight of Cups arrives in the Moon's seat, and for a Pisces Moon he's practically family — the feeling-led romantic who trusts the current. Your instincts are running true right now. When something moves you this week, it's information, not noise.</p>
+      </div>
+      <div class="pos-read">
+        <span class="pos-tag">Your mask <span class="orient">reversed</span></span>
+        <p>The Hermit reversed on a Sagittarius Rising: the world expects your bright, outward face, but the lantern's been left inside. Some of the tiredness you're carrying is the cost of performing openness. Let the mask slip with one or two people and the rest gets easier.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="step-label">Chart-aware spreads <span class="spec" style="margin-left:auto">Premium · house data from Stellar's natal engine</span></div>
+    <h2>The Houses Spread</h2>
+    <p class="lede">Twelve cards laid around your own wheel — one for each house, using <em>your</em> house cusps, with your natal planets marked where they actually sit.</p>
+
+    <div class="wheelwrap">
+      <div class="wheel" role="img" aria-label="Twelve-card spread arranged as an astrological house wheel">
+        <div class="hub">
+          <span class="glyph">✷</span>
+          <span class="t">Your wheel</span>
+          <span class="hint">tap a house to draw</span>
+        </div>
+        <div class="house" style="transform:rotate(180deg) translate(min(33vw,180px)) rotate(-180deg)"><div class="cell"><span class="rn">I</span></div><span class="lbl">Self</span><span class="natal">↑ Sag rising</span></div>
+        <div class="house" style="transform:rotate(210deg) translate(min(33vw,180px)) rotate(-210deg)"><div class="cell"><span class="rn">II</span></div><span class="lbl">Money</span></div>
+        <div class="house" style="transform:rotate(240deg) translate(min(33vw,180px)) rotate(-240deg)"><div class="cell"><span class="rn">III</span></div><span class="lbl">Voice</span></div>
+        <div class="house" style="transform:rotate(270deg) translate(min(33vw,180px)) rotate(-270deg)"><div class="cell"><span class="rn">IV</span></div><span class="lbl">Home</span><span class="natal">☽ Moon here</span></div>
+        <div class="house" style="transform:rotate(300deg) translate(min(33vw,180px)) rotate(-300deg)"><div class="cell"><span class="rn">V</span></div><span class="lbl">Play</span></div>
+        <div class="house" style="transform:rotate(330deg) translate(min(33vw,180px)) rotate(-330deg)"><div class="cell"><span class="rn">VI</span></div><span class="lbl">Health</span></div>
+        <div class="house" style="transform:rotate(0deg) translate(min(33vw,180px)) rotate(0deg)"><div class="cell"><span class="rn">VII</span></div><span class="lbl">Partners</span><span class="natal">♀ Venus here</span></div>
+        <div class="house" style="transform:rotate(30deg) translate(min(33vw,180px)) rotate(-30deg)"><div class="cell"><span class="rn">VIII</span></div><span class="lbl">Depths</span></div>
+        <div class="house" style="transform:rotate(60deg) translate(min(33vw,180px)) rotate(-60deg)"><div class="cell"><span class="rn">IX</span></div><span class="lbl">Horizons</span><span class="natal">☉ Sun here</span></div>
+        <div class="house" style="transform:rotate(90deg) translate(min(33vw,180px)) rotate(-90deg)"><div class="cell"><span class="rn">X</span></div><span class="lbl">Career</span></div>
+        <div class="house" style="transform:rotate(120deg) translate(min(33vw,180px)) rotate(-120deg)"><div class="cell"><span class="rn">XI</span></div><span class="lbl">Community</span></div>
+        <div class="house" style="transform:rotate(150deg) translate(min(33vw,180px)) rotate(-150deg)"><div class="cell"><span class="rn">XII</span></div><span class="lbl">Dreams</span></div>
+      </div>
+      <p class="hint" style="max-width:52ch;text-align:center">A card drawn into House VII reads differently when the app knows your natal Venus lives there — “the Ten of Cups falls where your Venus already sits” is a sentence no generic spread can say.</p>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="step-label">Chart-aware spreads <span class="spec" style="margin-left:auto">Premium · content already written — all 78 × Months 1–12</span></div>
+    <h2>Year Ahead — the Solar Return spread</h2>
+    <p class="lede">Offered in your birthday week. Twelve cards fan out, one per month of your new solar year, starting from today.</p>
+    <div class="yearstrip" tabindex="0" aria-label="Twelve month cards, scroll horizontally">
+      <div class="month"><span class="mo">AUG</span><div class="tcard mini"><span class="num">III</span><span class="glyph">♀</span><span class="nm">The Empress</span></div></div>
+      <div class="month"><span class="mo">SEP</span><div class="tcard mini"><span class="num">VIII · PENT</span><span class="glyph">☉</span><span class="nm">Eight of Pentacles</span></div></div>
+      <div class="month"><span class="mo">OCT</span><div class="tcard mini"><span class="num">II · SWORDS</span><span class="glyph">☽</span><span class="nm">Two of Swords</span></div></div>
+      <div class="month"><span class="mo">NOV</span><div class="tcard mini"><span class="num">XIII</span><span class="glyph">♏</span><span class="nm">Death</span></div></div>
+      <div class="month"><span class="mo">DEC</span><div class="tcard mini"><span class="num">IX · CUPS</span><span class="glyph">♃</span><span class="nm">Nine of Cups</span></div></div>
+      <div class="month"><span class="mo">JAN</span><div class="tcard mini"><span class="num">IV</span><span class="glyph">♈</span><span class="nm">The Emperor</span></div></div>
+      <div class="month"><span class="mo">FEB</span><div class="tcard mini"><span class="num">VI · SWORDS</span><span class="glyph">☿</span><span class="nm">Six of Swords</span></div></div>
+      <div class="month"><span class="mo">MAR</span><div class="tcard mini"><span class="num">XVII</span><span class="glyph">♒</span><span class="nm">The Star</span></div></div>
+      <div class="month"><span class="mo">APR</span><div class="tcard mini"><span class="num">ACE · WANDS</span><span class="glyph">♈</span><span class="nm">Ace of Wands</span></div></div>
+      <div class="month"><span class="mo">MAY</span><div class="tcard mini"><span class="num">X · PENT</span><span class="glyph">☿</span><span class="nm">Ten of Pentacles</span></div></div>
+      <div class="month"><span class="mo">JUN</span><div class="tcard mini"><span class="num">PAGE · CUPS</span><span class="glyph">♓</span><span class="nm">Page of Cups</span></div></div>
+      <div class="month"><span class="mo">JUL</span><div class="tcard mini"><span class="num">XXI</span><span class="glyph">♄</span><span class="nm">The Cosmos</span></div></div>
+    </div>
+    <div class="chiprow" style="margin-top:8px">
+      <span class="chip">Also timed: <b>New Moon Intention</b> · each lunation</span>
+      <span class="chip"><b>Full Moon Release</b> · what's lit, what's let go</span>
+      <span class="chip"><b>Mercury Rx Survival</b> · revisit / repair / release</span>
+      <span class="chip"><b>Venus Rx Review</b> · during Venus retrogrades</span>
+    </div>
+  </section>
+
+  <!-- ————————————— JOURNAL ————————————— -->
+  <section class="panel" id="journal">
+    <div class="step-label">Cosmic journal <span class="spec" style="margin-left:auto">New · one journal shared with Stellar via Supabase</span></div>
+    <h2>One journal, both apps</h2>
+    <p class="lede">Every reading saves with a stamp of the sky at that exact moment. Stellar's transit notes land in the same stream — so the story reads across both apps.</p>
+
+    <div class="entry">
+      <div class="when"><b>14</b>Aug</div>
+      <div class="body">
+        <h3>Year Ahead spread <span class="src">Tarot</span></h3>
+        <p>Solar return. Twelve cards saved — The Empress opens the year. Wrote: “this year, tend instead of chase.”</p>
+        <div class="skystamp">
+          <span class="chip">☉ Solar return</span>
+          <span class="chip">☽ Waxing crescent</span>
+          <span class="chip">♄ Saturn □ Sun applying</span>
+        </div>
+      </div>
+    </div>
+    <div class="entry">
+      <div class="when"><b>12</b>Aug</div>
+      <div class="body">
+        <h3>Transit note <span class="src">Stellar</span></h3>
+        <p>“New Moon in my 9th. Enrolled in the course I've circled for a year. Watch this seed.”</p>
+        <div class="skystamp">
+          <span class="chip">● New Moon in Leo</span>
+          <span class="chip">9th house</span>
+        </div>
+      </div>
+    </div>
+    <div class="entry">
+      <div class="when"><b>29</b>Jul</div>
+      <div class="body">
+        <h3>Full Moon Release <span class="src">Tarot</span></h3>
+        <p>Drew the Eight of Cups and the Tower reversed. “Illuminated: the project I keep resurrecting. Released: the version of it that needed everyone's approval.”</p>
+        <div class="skystamp">
+          <span class="chip">○ Full Moon in Aquarius</span>
+          <span class="chip">3rd house</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:26px">
+      <div class="step-label">Patterns <span class="spec" style="margin-left:auto">Premium · computed from saved readings</span></div>
+      <div class="pattern">
+        <div class="pips"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
+        <p>The <b>Queen of Cups</b> has visited four times this month — she tends to find you when your Pisces Moon is running the show.</p>
+      </div>
+      <div class="pattern">
+        <div class="pips"><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
+        <p>You pull <b>Swords</b> most often within two days of a Full Moon.</p>
+      </div>
+      <div class="pattern">
+        <div class="pips"><span class="pip"></span><span class="pip"></span></div>
+        <p><b>Wands</b> made up nearly half your pulls this Leo season — fitting, for a fire Sun in its home month.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ————————————— ACCOUNT ————————————— -->
+  <section class="panel" id="account">
+    <div class="step-label">Account <span class="spec" style="margin-left:auto">New · Stellar's existing Supabase auth, second app surface</span></div>
+    <h2>One account across the constellation</h2>
+    <p class="lede">Sign in with the same Stellar account. The chart flows one way, the journal flows both ways, and premium unlocks in both apps at once. Guests keep everything on-device; signing in lifts local history to the account.</p>
+
+    <div class="synccols">
+      <div class="syncbox">
+        <div class="app">Stellar</div>
+        <div class="what">natal chart · houses ·<br>live transits · premium status</div>
+      </div>
+      <div class="synclink">⟷<small>one account</small></div>
+      <div class="syncbox">
+        <div class="app">Stellar Tarot</div>
+        <div class="what">readings · birth cards ·<br>journal entries · patterns</div>
+      </div>
+    </div>
+    <div style="text-align:center"><button class="btn solid" type="button">✷ &nbsp;Sign in with Stellar</button></div>
+
+    <div class="tiers">
+      <div class="tier">
+        <h3>Free</h3>
+        <p class="price">with a Stellar account</p>
+        <ul>
+          <li>Daily pull, framed by the day's ruler</li>
+          <li>Your Birth Cards page</li>
+          <li>The Big Three spread</li>
+          <li>Save readings &amp; shared journal</li>
+          <li class="dim">Transit-timed suggestions</li>
+          <li class="dim">Houses &amp; Year Ahead spreads</li>
+        </ul>
+      </div>
+      <div class="tier pro">
+        <h3>Stellar Premium <span class="lock">✷ shared</span></h3>
+        <p class="price">the same subscription, now in two apps</p>
+        <ul>
+          <li>Everything in Free</li>
+          <li>Transit-timed suggestion shelf</li>
+          <li>The Houses spread on your wheel</li>
+          <li>Year Ahead solar-return spread</li>
+          <li>Chart-woven deep readings</li>
+          <li>Patterns across your journal</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="glyphline">✷ ☽ ✷</div>
+    <p>Preview mockup — sample chart &amp; pulls. The Astra deck's correspondences (signs, decans, rulers) already live in astra-content.json.</p>
+  </footer>
+</div>
+
+<script>
+  (function(){
+    var root=document.documentElement;
+    var tbtn=document.getElementById('themebtn');
+    function isLight(){
+      var t=root.getAttribute('data-theme');
+      if(t)return t==='light';
+      return window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches;
+    }
+    function paint(){tbtn.textContent=isLight()?'☾':'☀';}
+    tbtn.addEventListener('click',function(){
+      root.setAttribute('data-theme',isLight()?'dark':'light');
+      paint();
+    });
+    paint();
+  })();
+  (function(){
+    var br=document.getElementById('mode-readings'),ba=document.getElementById('mode-astro');
+    var mr=document.getElementById('menu-readings'),ma=document.getElementById('menu-astro');
+    function set(astro){
+      ba.classList.toggle('on',astro);br.classList.toggle('on',!astro);
+      ma.hidden=!astro;mr.hidden=astro;
+    }
+    br.addEventListener('click',function(){set(false)});
+    ba.addEventListener('click',function(){set(true)});
+  })();
+  (function(){
+    var btn=document.getElementById('flipbtn');
+    var daily=document.getElementById('daily');
+    if(!btn)return;
+    btn.addEventListener('click',function(){
+      btn.classList.add('flipped');
+      daily.classList.add('done');
+      btn.setAttribute('aria-label',"Today's card: Six of Wands");
+    });
+  })();
+</script>
+
+</html>
