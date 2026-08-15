@@ -469,6 +469,16 @@
   footer .glyphline{color:var(--gold-soft);letter-spacing:.6em;margin-bottom:12px;font-style:normal}
 </style>
 
+<script>
+  /* set the theme before first paint, from the same key the app uses */
+  (function(){try{
+    var t=localStorage.getItem("astra.theme");
+    if(t!=="light"&&t!=="dark") t="dark";
+    document.documentElement.setAttribute("data-theme",t);
+  }catch(e){document.documentElement.setAttribute("data-theme","dark");}})();
+</script>
+
+
 <button class="profile-btn" id="profilebtn" type="button" aria-label="Profile" aria-expanded="false">☉</button>
 <button class="themebtn" id="themebtn" type="button" aria-label="Switch to light theme" title="Switch theme">☀︎</button>
 <div class="profile-pop" id="profilepop">
@@ -577,10 +587,15 @@
   (function(){
     var root=document.documentElement;
     var tbtn=document.getElementById('themebtn');
-    function isLight(){return root.getAttribute('data-theme')==='light'}
-    function paint(){tbtn.textContent=isLight()?'☾':'☀︎'}
+    function isLight(){ return root.getAttribute('data-theme')==='light'; }
+    function paint(){
+      tbtn.textContent=isLight()?'☾':'☀︎';
+      tbtn.title=isLight()?'Switch to dark':'Switch to light';
+    }
     tbtn.addEventListener('click',function(){
-      if(isLight()){root.removeAttribute('data-theme')}else{root.setAttribute('data-theme','light')}
+      var next=isLight()?'dark':'light';
+      root.setAttribute('data-theme',next);
+      try{ localStorage.setItem("astra.theme",next); }catch(e){}
       paint();
     });
     paint();

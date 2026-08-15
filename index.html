@@ -402,10 +402,10 @@
   .ask-threadfoot{margin-top:28px;text-align:center}
 </style>
 <script>
-  /* set the theme before first paint (no flash): saved choice, else system preference */
+  /* set the theme before first paint (no flash): saved choice, else dark */
   (function(){try{
     var t=localStorage.getItem("astra.theme");
-    if(t!=="light"&&t!=="dark") t=(window.matchMedia&&matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";
+    if(t!=="light"&&t!=="dark") t="dark";
     document.documentElement.setAttribute("data-theme",t);
   }catch(e){document.documentElement.setAttribute("data-theme","dark");}})();
 </script>
