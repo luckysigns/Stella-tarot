@@ -77,7 +77,7 @@
       radial-gradient(1px 1px at 47% 33%, #fff 50%, transparent 51%),
       radial-gradient(1px 1px at 95% 71%, #cdd6f4 50%, transparent 51%);
   }
-  .wrap{max-width:880px;margin:0 auto;padding:clamp(28px,6vw,64px) clamp(16px,4vw,28px) 90px;position:relative;z-index:1}
+  .wrap{max-width:880px;margin:0 auto;padding:clamp(68px,7vw,80px) clamp(16px,4vw,28px) 90px;position:relative;z-index:1}
 
   header{text-align:center;margin-bottom:14px}
   .homehead{text-align:center;margin-bottom:clamp(20px,4vw,36px)}
@@ -117,6 +117,21 @@
   .tab:hover{border-color:var(--gold);color:var(--gold)}
   .tab.active{background:var(--gold);color:var(--ink);border-color:var(--gold)}
   .tabico{font-size:11px}
+
+  /* ————— back to readings, top-left and unmissable ————— */
+  .backbtn{position:fixed;top:14px;left:14px;z-index:60;
+    border:1px solid var(--gold);background:var(--surface);color:var(--gold);border-radius:999px;
+    font-family:"Trebuchet MS",sans-serif;font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+    padding:11px 20px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:8px;
+    -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);transition:.2s}
+  .backbtn:hover{background:var(--gold);color:var(--ink)}
+  .backbtn:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+  @media (max-width:560px){.backbtn{font-size:10px;padding:9px 14px;letter-spacing:.1em}}
+  .pm-row.active{background:var(--surface);border:1px solid var(--line)}
+  .pm-sub{font-size:11px;color:var(--mist);font-style:italic}
+  .pm-add{width:100%;text-align:left;padding:10px 8px;background:none;border:none;cursor:pointer;
+    font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-soft)}
+  .pm-add:hover{color:var(--gold)}
 
   /* ————— card library ————— */
   .lib-controls{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-bottom:16px}
@@ -495,19 +510,27 @@
 
 <button class="profile-btn" id="profilebtn" type="button" aria-label="Profile" aria-expanded="false">☉</button>
 <button class="themebtn" id="themebtn" type="button" aria-label="Switch to light theme" title="Switch theme">☀︎</button>
-<div class="profile-pop" id="profilepop" hidden>
-  <div class="pophead"><span class="who">Your profile</span><button class="popclose" id="popclose" type="button" aria-label="Close">✕</button></div>
-  <div class="pm-row">
+<div class="profile-pop" id="profilepop">
+  <div class="pophead"><span class="who">Your charts</span><button class="popclose" id="popclose" type="button" aria-label="Close">✕</button></div>
+  <div class="pm-row active">
     <span class="avatar-sm">☉</span>
-    <span style="color:var(--text-strong)">Lucky</span>
+    <span><span style="color:var(--text-strong)">Lucky</span><br><span class="pm-sub">Leo · Pisces · Sagittarius</span></span>
     <span class="pm-actions"><button class="linkbtn" type="button">rename</button>·<button class="linkbtn" type="button">icon</button>·<button class="linkbtn" type="button" style="color:var(--rose)">remove</button></span>
   </div>
+  <div class="pm-row">
+    <span class="avatar-sm">☽</span>
+    <span><span style="color:var(--text-strong)">Mum</span><br><span class="pm-sub">Virgo · Taurus · Cancer</span></span>
+  </div>
+  <button class="pm-add" type="button">+ &nbsp;Add a chart</button>
+  <hr>
   <div class="pm-row"><span class="hint" style="font-style:normal">Plan · <b style="color:var(--gold)">Arcana</b></span><button class="linkbtn" type="button" style="margin-left:auto">manage</button></div>
   <hr>
-  <button class="btn solid sm" id="astrobtn" type="button" style="width:100%">✷ &nbsp;Astrology Readings</button>
-  <button class="btn sm" id="journalbtn" type="button" style="width:100%;margin-top:8px">☽ &nbsp;Journal</button>
+  <button class="btn solid sm" id="journalbtn" type="button" style="width:100%">☽ &nbsp;Journal</button>
   <div class="row" style="margin-top:10px"><button class="rowbtn" type="button">Sign out</button></div>
+  <span class="spec" style="display:block;margin-top:14px;text-align:center">Opens on arrival when you're signed into Stellar</span>
 </div>
+
+<a class="backbtn" href="/">← &nbsp;Tarot readings</a>
 
 <div class="wrap">
   <header>
@@ -515,44 +538,12 @@
     <h1>Stellar <em>Tarot</em></h1>
   </header>
 
-  <div id="page-home">
-  <div class="homehead">
-    <p class="tagline">Twenty-two Major Arcana as planets and signs, fifty-six Minor across the four classic suits — Wands, Cups, Swords, Pentacles. Choose how the heavens are dealt, then let them be read.</p>
-    <div class="modeswitch">
-      <div class="seg" role="group" aria-label="Reading mode">
-        <button type="button">Guided Spread</button>
-        <button type="button" class="on">Ask a Question</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ————————————— HOME, AS IT IS TODAY ————————————— -->
-  <section class="panel">
-    <div class="step-label">Ask the cards a question</div>
-    <div class="fauxfield">Ask anything — “How do I move forward with…”, “What's really going on with…”, “Should I…”</div>
-    <div class="step-label" style="margin-top:24px">How many cards</div>
-    <div class="seg" role="group" aria-label="Card count">
-      <button type="button">1</button><button type="button">2</button><button type="button" class="on">3</button><button type="button">4</button><button type="button">5</button><button type="button">6</button>
-    </div>
-    <div class="pullrow">
-      <button class="btn solid" type="button">✦ &nbsp;Pull 3 Cards</button>
-      <label class="checkline"><input type="checkbox" checked> allow reversed cards</label>
-      <div class="seg" style="margin-left:auto" role="group" aria-label="Deck">
-        <button type="button" class="on">Base</button>
-        <button type="button">✷ Astra</button>
-      </div>
-    </div>
-  </section>
-  <p style="text-align:center;margin-top:14px"><span class="spec">Home stays pure tarot — astrology opens from the clear button in the profile menu</span></p>
-
-  </div>
-
   <!-- ————————————— ASTROLOGY PAGE ————————————— -->
-  <div id="view-astro" hidden>
+  <div id="view-astro">
 
   <section class="panel">
     <div class="step-label">Astrology readings
-      <button class="btn ghost sm homebtn" type="button" style="margin-left:auto">⌂ &nbsp;Home</button>
+      <a class="btn ghost sm" href="/" style="margin-left:auto;text-decoration:none">⌂ &nbsp;Tarot readings</a>
     </div>
     <div class="tabs" role="group" aria-label="Reading type">
       <button class="tab active" data-view="cards">Your Cards <span class="tabico">✦</span></button>
@@ -807,7 +798,7 @@
   <div id="page-journal" hidden>
   <section class="panel">
     <div class="step-label">Journal
-      <button class="btn ghost sm homebtn" type="button" style="margin-left:auto">⌂ &nbsp;Home</button>
+      <a class="btn ghost sm" href="/" style="margin-left:auto;text-decoration:none">⌂ &nbsp;Tarot readings</a>
     </div>
     <div class="entry">
       <div class="when"><b>14</b>Aug</div>
@@ -865,7 +856,6 @@
   })();
   (function(){
     var pages={
-      home:document.getElementById('page-home'),
       astro:document.getElementById('view-astro'),
       journal:document.getElementById('page-journal')
     };
@@ -874,11 +864,7 @@
       document.getElementById('profilepop').hidden=true;
       window.scrollTo({top:0,behavior:'auto'});
     }
-    document.getElementById('astrobtn').addEventListener('click',function(){go('astro')});
     document.getElementById('journalbtn').addEventListener('click',function(){go('journal')});
-    document.querySelectorAll('.homebtn').forEach(function(b){
-      b.addEventListener('click',function(){go('home')});
-    });
     document.getElementById('popclose').addEventListener('click',function(){
       document.getElementById('profilepop').hidden=true;
     });
