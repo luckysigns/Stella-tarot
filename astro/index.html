@@ -332,10 +332,6 @@
   .suggest p{font-size:13.5px;color:var(--mist)}
   .suggest .foot{margin-top:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
   .suggest .cards-n{font-size:12px;color:var(--gold-soft);font-style:italic}
-  .lock{
-    font-family:"Trebuchet MS",sans-serif;font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;
-    color:var(--gold);border:1px solid var(--line);border-radius:999px;padding:3px 9px;
-  }
 
   /* ————— daily flip ————— */
   .daily{display:flex;flex-wrap:wrap;gap:clamp(18px,4vw,34px);align-items:center;margin-top:18px}
@@ -440,49 +436,13 @@
   .pattern p b{color:var(--gold);font-weight:400}
 
   /* ————— account ————— */
-  .synccols{display:grid;grid-template-columns:1fr auto 1fr;gap:14px;align-items:center;margin:20px 0}
-  .syncbox{
     border:1px solid var(--line);border-radius:14px;background:var(--surface-2);
     padding:16px;text-align:center;
   }
-  .syncbox .app{color:var(--text-strong);font-size:16px}
-  .syncbox .what{font-size:12.5px;color:var(--mist);margin-top:6px;line-height:1.5}
-  .synclink{text-align:center;color:var(--gold);font-size:20px;line-height:1.2}
-  .synclink small{display:block;font-family:"Trebuchet MS",sans-serif;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--mist);margin-top:2px}
-  @media (max-width:560px){.synccols{grid-template-columns:1fr}.synclink{transform:rotate(90deg);padding:4px 0}}
 
-  .seg.mini button{padding:8px 14px;font-size:10px}
-  .strike{color:var(--mist);text-decoration:line-through;font-size:12px;margin-right:5px}
-  .bundle{
-    border:1px solid var(--gold-soft);border-radius:14px;background:var(--surface-2);
-    padding:18px 20px;margin-top:14px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;
-    box-shadow:0 0 40px -18px rgba(233,196,106,.5);
-  }
-  .bundle .bt{color:var(--text-strong);font-size:17px}
-  .bundle .bd{font-size:13px;color:var(--mist);font-style:italic}
-  .bundle .bp{margin-left:auto;display:flex;gap:14px;flex-wrap:wrap;font-variant-numeric:tabular-nums}
-  .bundle .bp span{font-size:13.5px;color:var(--silver)}
-  .bundle .bp b{color:var(--gold);font-weight:400}
-  .plans{display:flex;gap:8px;margin-top:16px}
-  .plan{
-    flex:1;border:1px solid var(--line);border-radius:10px;padding:12px 6px;text-align:center;
-    background:none;cursor:pointer;font-family:inherit;color:var(--silver);transition:.15s;position:relative;
-  }
-  .plan:hover{border-color:var(--gold-soft)}
-  .plan.on{border-color:var(--gold);background:rgba(233,196,106,.08)}
-  .plan:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
   .plan .per{font-family:"Trebuchet MS",sans-serif;font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--mist);display:block}
   .plan .amt{font-size:19px;color:var(--text-strong);display:block;margin-top:4px;font-variant-numeric:tabular-nums}
   .plan .note{font-size:10.5px;color:var(--gold-soft);font-style:italic;display:block;margin-top:2px}
-  .tiers{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin-top:18px}
-  .tier{border:1px solid var(--line);border-radius:14px;padding:20px;background:var(--surface-2)}
-  .tier.pro{border-color:var(--gold-soft);box-shadow:0 0 40px -18px rgba(233,196,106,.5)}
-  .tier h3{display:flex;align-items:center;gap:10px}
-  .tier ul{list-style:none;margin-top:12px;display:flex;flex-direction:column;gap:8px}
-  .tier li{font-size:13.5px;color:var(--silver);padding-left:20px;position:relative}
-  .tier li::before{content:"✷";position:absolute;left:0;color:var(--gold-soft);font-size:11px;top:3px}
-  .tier li.dim{color:var(--mist)}
-  .tier .price{font-size:12.5px;color:var(--mist);font-style:italic;margin-top:4px}
 
   /* ————— mode switch + split menu ————— */
   .seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--surface)}
@@ -517,7 +477,6 @@
   <button class="btn solid sm" id="signinbtn" type="button" style="width:100%">✷ &nbsp;Sign in with Stellar</button>
   <hr>
   <button class="btn ghost sm" id="journalbtn" type="button" style="width:100%">☽ &nbsp;Journal</button>
-  <button class="btn ghost sm" id="planbtn" type="button" style="width:100%;margin-top:8px">Manage plan</button>
   <a class="btn ghost sm" href="/" style="width:100%;margin-top:8px;text-align:center;text-decoration:none;display:block">← &nbsp;Tarot readings</a>
 </div>
 
@@ -539,8 +498,8 @@
     <div class="tabs" role="group" aria-label="Reading type">
       <button class="tab active" data-view="cards">Your Cards <span class="tabico">✦</span></button>
       <button class="tab" data-view="big3">Big Three</button>
-      <button class="tab" data-view="houses" data-locked="1">The Houses <span class="tabico">✷</span></button>
-      <button class="tab" data-view="year" data-locked="1">Year Ahead <span class="tabico">✷</span></button>
+      <button class="tab" data-view="houses">The Houses</button>
+      <button class="tab" data-view="year">Year Ahead</button>
     </div>
   </section>
 
@@ -577,79 +536,6 @@
     <div class="step-label">Year Ahead</div>
     <p class="lede">Your solar-return spread: twelve cards, one for each month of your new year, offered in your birthday week.</p>
     <p class="hint" style="margin-top:14px">Needs your birth chart — sign in with Stellar to link it.</p>
-  </section>
-
-  <section class="panel" id="account" hidden>
-    <div class="step-label">Arcana
-      <button class="btn ghost sm" id="planclose" type="button" style="margin-left:auto">✕ &nbsp;Close</button>
-    </div>
-    <h2>One account across the constellation</h2>
-    <p class="lede">Sign in with the same Stellar account. The chart flows one way, the journal flows both ways, and Arcana bills as an add-on through the account you already have. Guests keep everything on-device; signing in lifts local history to the account.</p>
-
-    <div class="synccols">
-      <div class="syncbox">
-        <div class="app">Stellar</div>
-        <div class="what">natal chart · houses ·<br>live transits · billing</div>
-      </div>
-      <div class="synclink">⟷<small>one account</small></div>
-      <div class="syncbox">
-        <div class="app">Stellar Tarot</div>
-        <div class="what">readings · birth cards ·<br>journal entries · patterns</div>
-      </div>
-    </div>
-    <div style="text-align:center"><button class="btn solid" type="button">✷ &nbsp;Sign in with Stellar</button></div>
-
-    <div class="tiers">
-      <div class="tier">
-        <h3>Free</h3>
-        <p class="price">with any Stellar account</p>
-        <ul>
-          <li>Daily pull, framed by the day's ruler</li>
-          <li>Your Birth Cards page</li>
-          <li>The Big Three spread</li>
-          <li>Save readings &amp; shared journal</li>
-          <li class="dim">Transit-timed suggestions</li>
-          <li class="dim">Houses &amp; Year Ahead spreads</li>
-        </ul>
-      </div>
-      <div class="tier pro">
-        <h3>✷ Arcana</h3>
-        <p class="price">the astrology wing, unlocked — priced by your Stellar subscription</p>
-        <ul>
-          <li>Everything in Free</li>
-          <li>Transit-timed suggestion shelf</li>
-          <li>The Houses spread on your wheel</li>
-          <li>Year Ahead solar-return spread</li>
-          <li>Chart-woven deep readings</li>
-          <li>Patterns across your journal</li>
-        </ul>
-        <div style="text-align:center;margin-top:16px">
-          <div class="seg mini" role="group" aria-label="Pricing basis">
-            <button type="button" id="price-with" class="on">With Plus / Premium</button>
-            <button type="button" id="price-solo">On its own</button>
-          </div>
-        </div>
-        <div class="plans" role="group" aria-label="Arcana plans">
-          <button class="plan" type="button"><span class="per">Monthly</span><span class="amt" data-with="$4.99" data-solo="$7.99">$4.99</span></button>
-          <button class="plan on" type="button"><span class="per">Yearly</span><span class="amt" data-with="$34.99" data-solo="$54.99">$34.99</span><span class="note">two months free</span></button>
-          <button class="plan" type="button"><span class="per">Lifetime</span><span class="amt" data-with="$79.99" data-solo="$129">$79.99</span><span class="note" style="color:var(--gold)">founding · ends 11/11</span></button>
-        </div>
-        <p class="hint" id="price-note" style="text-align:center;margin-top:10px">Member rate — for Stellar Plus &amp; Premium members.</p>
-        <p class="hint" style="text-align:center;margin-top:12px">Arcana unlocks when Stellar accounts arrive in the tarot app.</p>
-      </div>
-    </div>
-
-    <div class="bundle">
-      <div>
-        <div class="bt">✷ The Constellation</div>
-        <div class="bd">Stellar Premium (Star Reader) + Arcana, one subscription</div>
-      </div>
-      <div class="bp">
-        <span><b>$17.99</b>/mo</span>
-        <span><b>$119.99</b>/yr</span>
-        <span><b>$199</b> once · until 11/11</span>
-      </div>
-    </div>
   </section>
 
   <section class="panel">
@@ -717,32 +603,15 @@
   (function(){
     var tabs=[].slice.call(document.querySelectorAll('.tab'));
     var views={cards:'rv-cards',big3:'rv-big3',houses:'rv-houses',year:'rv-year'};
-    var plan=document.getElementById('account');
-    function hideAllViews(){ Object.keys(views).forEach(function(k){ document.getElementById(views[k]).hidden=true; }); }
-    function showPlan(show){ plan.hidden=!show; if(show){ plan.scrollIntoView({behavior:'smooth',block:'nearest'}); } }
     tabs.forEach(function(t){
       t.addEventListener('click',function(){
         tabs.forEach(function(x){x.classList.remove('active')});
         t.classList.add('active');
-        hideAllViews();
-        if(t.getAttribute('data-locked')){ showPlan(true); return; }
-        showPlan(false);
-        document.getElementById(views[t.getAttribute('data-view')]).hidden=false;
+        var pick=t.getAttribute('data-view');
+        Object.keys(views).forEach(function(k){
+          document.getElementById(views[k]).hidden=(k!==pick);
+        });
       });
-    });
-    document.getElementById('planbtn').addEventListener('click',function(){
-      document.getElementById('profilepop').hidden=true;
-      showPlan(true);
-    });
-    document.getElementById('planclose').addEventListener('click',function(){
-      showPlan(false);
-      var act=tabs.filter(function(x){return x.classList.contains('active')})[0];
-      if(act&&act.getAttribute('data-locked')){
-        tabs.forEach(function(x){x.classList.remove('active')});
-        tabs[0].classList.add('active');
-        hideAllViews();
-        document.getElementById('rv-cards').hidden=false;
-      }
     });
     function signinPending(noteId){
       return function(){
@@ -764,26 +633,6 @@
     document.addEventListener('click',function(e){
       if(!pop.hidden&&!pop.contains(e.target)){pop.hidden=true;btn.setAttribute('aria-expanded','false');}
     });
-  })();
-  (function(){
-    var plans=document.querySelectorAll('.plan');
-    plans.forEach(function(p){
-      p.addEventListener('click',function(){
-        plans.forEach(function(q){q.classList.remove('on')});
-        p.classList.add('on');
-      });
-    });
-    var w=document.getElementById('price-with'),s=document.getElementById('price-solo');
-    var note=document.getElementById('price-note');
-    function basis(withSub){
-      w.classList.toggle('on',withSub);s.classList.toggle('on',!withSub);
-      document.querySelectorAll('.plan .amt').forEach(function(a){
-        a.textContent=withSub?a.getAttribute('data-with'):a.getAttribute('data-solo');
-      });
-      note.textContent=withSub?'Member rate — for Stellar Plus & Premium members.':'Standalone rate — no Stellar subscription needed.';
-    }
-    w.addEventListener('click',function(){basis(true)});
-    s.addEventListener('click',function(){basis(false)});
   })();
 
   /* card library — all 78, searchable */
