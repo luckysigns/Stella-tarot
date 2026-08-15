@@ -489,10 +489,12 @@
   <div class="pm-row"><span class="hint" style="font-style:normal">Plan · <b style="color:var(--gold)">Arcana</b></span><button class="linkbtn" type="button" style="margin-left:auto">manage</button></div>
   <hr>
   <button class="btn solid sm" id="astrobtn" type="button" style="width:100%">✷ &nbsp;Astrology Readings</button>
+  <button class="btn sm" id="journalbtn" type="button" style="width:100%;margin-top:8px">☽ &nbsp;Journal</button>
   <div class="row" style="margin-top:10px"><button class="rowbtn" type="button">Sign out</button></div>
 </div>
 
 <div class="wrap">
+  <div id="page-home">
   <header>
     <div class="eyebrow" style="color:var(--gold-soft)">The Astra Deck · 78 Cards · Major &amp; Minor Arcana</div>
     <h1>Stellar <em>Tarot</em></h1>
@@ -524,12 +526,14 @@
   </section>
   <p style="text-align:center;margin-top:14px"><span class="spec">Home stays pure tarot — astrology opens from the clear button in the profile menu</span></p>
 
-  <!-- ————————————— THE OBSERVATORY (opens from the ✷) ————————————— -->
+  </div>
+
+  <!-- ————————————— ASTROLOGY PAGE ————————————— -->
   <div id="view-astro" hidden>
 
   <section class="panel">
     <div class="step-label">Astrology readings
-      <button class="btn ghost sm" id="wingclose" type="button" style="margin-left:auto">✕ &nbsp;Back to the cards</button>
+      <button class="btn ghost sm homebtn" type="button" style="margin-left:auto">⌂ &nbsp;Home</button>
     </div>
     <div class="chiprow" style="justify-content:center;margin-bottom:14px">
       <span class="chip">☉ <b>Leo Sun</b></span>
@@ -748,6 +752,48 @@
   </section>
   </div>
 
+  <!-- ————————————— JOURNAL PAGE ————————————— -->
+  <div id="page-journal" hidden>
+  <section class="panel">
+    <div class="step-label">Journal
+      <button class="btn ghost sm homebtn" type="button" style="margin-left:auto">⌂ &nbsp;Home</button>
+    </div>
+    <div class="entry">
+      <div class="when"><b>14</b>Aug</div>
+      <div class="body">
+        <h3>Year Ahead spread <span class="src">Tarot</span></h3>
+        <p>Solar return. Twelve cards saved — The Empress opens the year. Wrote: “this year, tend instead of chase.”</p>
+        <div class="skystamp">
+          <span class="chip">☉ Solar return</span>
+          <span class="chip">☽ Waxing crescent</span>
+        </div>
+      </div>
+    </div>
+    <div class="entry">
+      <div class="when"><b>12</b>Aug</div>
+      <div class="body">
+        <h3>Transit note <span class="src">Stellar</span></h3>
+        <p>“New Moon in my 9th. Enrolled in the course I've circled for a year. Watch this seed.”</p>
+        <div class="skystamp">
+          <span class="chip">● New Moon in Leo</span>
+          <span class="chip">9th house</span>
+        </div>
+      </div>
+    </div>
+    <div class="entry">
+      <div class="when"><b>29</b>Jul</div>
+      <div class="body">
+        <h3>Full Moon Release <span class="src">Tarot</span></h3>
+        <p>Drew the Eight of Cups and the Tower reversed. “Released: the version that needed everyone's approval.”</p>
+        <div class="skystamp">
+          <span class="chip">○ Full Moon in Aquarius</span>
+        </div>
+      </div>
+    </div>
+    <p class="hint" style="text-align:center;margin-top:16px">Readings save here automatically — one journal, shared with your Stellar account.</p>
+  </section>
+  </div>
+
   <footer>
     <div class="glyphline">✷ ☽ ✷</div>
     <p>Preview mockup — sample chart &amp; pulls. The Astra deck's correspondences (signs, decans, rulers) already live in astra-content.json.</p>
@@ -767,16 +813,20 @@
     paint();
   })();
   (function(){
-    var wing=document.getElementById('view-astro');
-    var abtn=document.getElementById('astrobtn');
-    var close=document.getElementById('wingclose');
-    abtn.addEventListener('click',function(){
+    var pages={
+      home:document.getElementById('page-home'),
+      astro:document.getElementById('view-astro'),
+      journal:document.getElementById('page-journal')
+    };
+    function go(k){
+      Object.keys(pages).forEach(function(x){pages[x].hidden=(x!==k)});
       document.getElementById('profilepop').hidden=true;
-      wing.hidden=false;
-      wing.scrollIntoView({behavior:'smooth',block:'start'});
-    });
-    close.addEventListener('click',function(){
-      wing.hidden=true;window.scrollTo({top:0,behavior:'smooth'});
+      window.scrollTo({top:0,behavior:'auto'});
+    }
+    document.getElementById('astrobtn').addEventListener('click',function(){go('astro')});
+    document.getElementById('journalbtn').addEventListener('click',function(){go('journal')});
+    document.querySelectorAll('.homebtn').forEach(function(b){
+      b.addEventListener('click',function(){go('home')});
     });
     document.getElementById('popclose').addEventListener('click',function(){
       document.getElementById('profilepop').hidden=true;
