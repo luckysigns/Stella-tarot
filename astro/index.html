@@ -513,11 +513,7 @@
 <button class="themebtn" id="themebtn" type="button" aria-label="Switch to light theme" title="Switch theme">☀︎</button>
 <div class="profile-pop" id="profilepop">
   <div class="pophead"><span class="who">Your charts</span><button class="popclose" id="popclose" type="button" aria-label="Close">✕</button></div>
-  <div class="pm-row active">
-    <span class="avatar-sm" id="pmAvatar">☉</span>
-    <span><span style="color:var(--text-strong)" id="pmName">Lucky</span><br><span class="pm-sub">Leo · Pisces · Sagittarius</span></span>
-    <span class="pm-actions"><button class="linkbtn" id="pmRename" type="button">rename</button>·<button class="linkbtn" id="pmIcon" type="button">icon</button></span>
-  </div>
+  <p class="hint" style="padding:4px 8px 10px">No charts yet — sign in with Stellar to bring your birth chart across.</p>
   <hr>
   <button class="btn solid sm" id="journalbtn" type="button" style="width:100%">☽ &nbsp;Journal</button>
   <a class="btn ghost sm" href="/" style="width:100%;margin-top:8px;text-align:center;text-decoration:none;display:block">← &nbsp;Tarot readings</a>
@@ -544,144 +540,43 @@
       <button class="tab" data-view="houses">The Houses</button>
       <button class="tab" data-view="year">Year Ahead</button>
     </div>
-    <div class="chiprow" style="justify-content:center;margin-top:16px">
-      <span class="chip">☉ <b>Leo Sun</b></span>
-      <span class="chip">☽ <b>Pisces Moon</b></span>
-      <span class="chip">↑ <b>Sag Rising</b></span>
+  </section>
+
+  <section class="panel" id="signin">
+    <div class="step-label">Link your chart</div>
+    <h2>Sign in with Stellar</h2>
+    <p class="lede">Your birth chart lives in your Stellar account. Sign in and the tarot reads from it — your birth cards, your houses, your year ahead — and anything you save is kept in the same journal both apps share.</p>
+    <p class="hint" style="margin-top:14px">Accounts are being wired up now. Until then nothing is stored here, and no chart is loaded.</p>
+    <div style="margin-top:18px">
+      <a class="btn ghost sm" href="https://www.stellarastro.app" target="_blank" rel="noopener" style="text-decoration:none">Open Stellar ↗</a>
     </div>
   </section>
 
   <!-- ————————————— YOUR CARDS ————————————— -->
   <section class="panel" id="rv-cards">
     <div class="step-label">Your cards</div>
-    <h2>The cards you were born holding</h2>
-    <p class="lede">No shuffle here. These are fixed by your chart — the Majors that rule your Big Three, the pair hidden in your birthdate, and the minor card of your Sun's exact degree.</p>
-
-    <div class="cardrow">
-      <div class="cardslot">
-        <span class="pos-tag">☉ Sun · Leo</span>
-        <div class="tcard"><span class="num">VIII</span><span class="glyph">♌</span><span class="nm">Strength</span></div>
-        <span class="why">How your light burns: warm, proud, steadied by gentleness.</span>
-      </div>
-      <div class="cardslot">
-        <span class="pos-tag">☽ Moon · Pisces</span>
-        <div class="tcard"><span class="num">XVIII</span><span class="glyph">♓</span><span class="nm">The Moon</span></div>
-        <span class="why">Your tides — literally. Deep feeling, dream logic, porous edges.</span>
-      </div>
-      <div class="cardslot">
-        <span class="pos-tag">↑ Rising · Sagittarius</span>
-        <div class="tcard"><span class="num">XIV</span><span class="glyph">♐</span><span class="nm">Temperance</span></div>
-        <span class="why">The mask that meets the world: the optimist, mid-pour, mixing fire and water.</span>
-      </div>
-    </div>
-
-    <div style="display:flex;flex-wrap:wrap;gap:clamp(16px,4vw,40px);justify-content:center;margin-top:26px">
-      <div>
-        <h3 style="text-align:center">Birth card pair</h3>
-        <p class="hint" style="text-align:center;margin-bottom:12px">from your birthdate's numerology</p>
-        <div class="minirow" style="justify-content:center">
-          <div class="tcard mini"><span class="num">X</span><span class="glyph">☸</span><span class="nm">Wheel of Fortune</span></div>
-          <div class="tcard mini"><span class="num">I</span><span class="glyph">☿</span><span class="nm">The Magician</span></div>
-        </div>
-      </div>
-      <div>
-        <h3 style="text-align:center">Your decan card</h3>
-        <p class="hint" style="text-align:center;margin-bottom:12px">Sun at 21° Leo · third decan, ruled by Mars</p>
-        <div class="minirow" style="justify-content:center">
-          <div class="tcard mini"><span class="num">VII · WANDS</span><span class="glyph">♂</span><span class="nm">Seven of Wands</span></div>
-        </div>
-      </div>
-    </div>
-    <p class="hint" style="text-align:center;margin-top:20px">Each card opens its full deep reading, written as an <em>identity</em> card — who you are, not what's coming. ✷ Shareable as an image.</p>
+    <p class="lede">The cards you were born holding: the Majors that rule your Sun, Moon and Rising, the pair hidden in your birthdate, and the minor card of your Sun's exact degree. Nothing is shuffled — these are fixed by your chart and stay yours.</p>
+    <p class="hint" style="margin-top:14px">Needs your birth chart — sign in with Stellar to link it.</p>
   </section>
 
-  <!-- ————————————— SPREADS ————————————— -->
   <section class="panel" id="rv-big3" hidden>
-    <div class="step-label">Chart-aware spreads</div>
-    <h2>The Big Three Spread</h2>
-    <p class="lede">Three cards, one for each pillar of the chart. The reading isn't generic — it names <em>your</em> placements and reads the card against them.</p>
-
-    <div class="cardrow">
-      <div class="cardslot">
-        <span class="pos-tag">Your light · ☉ Leo</span>
-        <div class="tcard"><span class="num">VII · PENT</span><span class="glyph">♄</span><span class="nm">Seven of Pentacles</span></div>
-      </div>
-      <div class="cardslot">
-        <span class="pos-tag">Your tides · ☽ Pisces</span>
-        <div class="tcard"><span class="num">KNIGHT · CUPS</span><span class="glyph">♓</span><span class="nm">Knight of Cups</span></div>
-      </div>
-      <div class="cardslot">
-        <span class="pos-tag">Your mask · ↑ Sag</span>
-        <div class="tcard rev"><span class="num">IX</span><span class="glyph">♍</span><span class="nm">The Hermit</span></div>
-      </div>
-    </div>
-
-    <div class="reading">
-      <div class="pos-read">
-        <span class="pos-tag">Your light</span>
-        <p>The Seven of Pentacles is a slow harvest — and it lands on a Leo Sun that would rather be applauded now. That's the tension to sit with this season: the work is growing, it just isn't ripe. Leaning on the patience your Sun doesn't naturally carry is the whole assignment.</p>
-      </div>
-      <div class="pos-read">
-        <span class="pos-tag">Your tides</span>
-        <p>The Knight of Cups arrives in the Moon's seat, and for a Pisces Moon he's practically family — the feeling-led romantic who trusts the current. Your instincts are running true right now. When something moves you this week, it's information, not noise.</p>
-      </div>
-      <div class="pos-read">
-        <span class="pos-tag">Your mask <span class="orient">reversed</span></span>
-        <p>The Hermit reversed on a Sagittarius Rising: the world expects your bright, outward face, but the lantern's been left inside. Some of the tiredness you're carrying is the cost of performing openness. Let the mask slip with one or two people and the rest gets easier.</p>
-      </div>
-    </div>
+    <div class="step-label">Big Three</div>
+    <p class="lede">Three cards, one for each pillar of your chart — your light, your tides and your mask — with each reading written against your actual Sun, Moon and Rising rather than in general terms.</p>
+    <p class="hint" style="margin-top:14px">Needs your birth chart — sign in with Stellar to link it.</p>
   </section>
 
   <section class="panel" id="rv-houses" hidden>
-    <div class="step-label">Chart-aware spreads</div>
-    <h2>The Houses Spread</h2>
-    <p class="lede">Twelve cards laid around your own wheel — one for each house, using <em>your</em> house cusps, with your natal planets marked where they actually sit.</p>
-
-    <div class="wheelwrap">
-      <div class="wheel" role="img" aria-label="Twelve-card spread arranged as an astrological house wheel">
-        <div class="hub">
-          <span class="glyph">✷</span>
-          <span class="t">Your wheel</span>
-          <span class="hint">tap a house to draw</span>
-        </div>
-        <div class="house" style="transform:rotate(180deg) translate(min(33vw,180px)) rotate(-180deg)"><div class="cell"><span class="rn">I</span></div><span class="lbl">Self</span><span class="natal">↑ Sag rising</span></div>
-        <div class="house" style="transform:rotate(210deg) translate(min(33vw,180px)) rotate(-210deg)"><div class="cell"><span class="rn">II</span></div><span class="lbl">Money</span></div>
-        <div class="house" style="transform:rotate(240deg) translate(min(33vw,180px)) rotate(-240deg)"><div class="cell"><span class="rn">III</span></div><span class="lbl">Voice</span></div>
-        <div class="house" style="transform:rotate(270deg) translate(min(33vw,180px)) rotate(-270deg)"><div class="cell"><span class="rn">IV</span></div><span class="lbl">Home</span><span class="natal">☽ Moon here</span></div>
-        <div class="house" style="transform:rotate(300deg) translate(min(33vw,180px)) rotate(-300deg)"><div class="cell"><span class="rn">V</span></div><span class="lbl">Play</span></div>
-        <div class="house" style="transform:rotate(330deg) translate(min(33vw,180px)) rotate(-330deg)"><div class="cell"><span class="rn">VI</span></div><span class="lbl">Health</span></div>
-        <div class="house" style="transform:rotate(0deg) translate(min(33vw,180px)) rotate(0deg)"><div class="cell"><span class="rn">VII</span></div><span class="lbl">Partners</span><span class="natal">♀ Venus here</span></div>
-        <div class="house" style="transform:rotate(30deg) translate(min(33vw,180px)) rotate(-30deg)"><div class="cell"><span class="rn">VIII</span></div><span class="lbl">Depths</span></div>
-        <div class="house" style="transform:rotate(60deg) translate(min(33vw,180px)) rotate(-60deg)"><div class="cell"><span class="rn">IX</span></div><span class="lbl">Horizons</span><span class="natal">☉ Sun here</span></div>
-        <div class="house" style="transform:rotate(90deg) translate(min(33vw,180px)) rotate(-90deg)"><div class="cell"><span class="rn">X</span></div><span class="lbl">Career</span></div>
-        <div class="house" style="transform:rotate(120deg) translate(min(33vw,180px)) rotate(-120deg)"><div class="cell"><span class="rn">XI</span></div><span class="lbl">Community</span></div>
-        <div class="house" style="transform:rotate(150deg) translate(min(33vw,180px)) rotate(-150deg)"><div class="cell"><span class="rn">XII</span></div><span class="lbl">Dreams</span></div>
-      </div>
-      <p class="hint" style="max-width:52ch;text-align:center">A card drawn into House VII reads differently when the app knows your natal Venus lives there — “the Ten of Cups falls where your Venus already sits” is a sentence no generic spread can say.</p>
-    </div>
+    <div class="step-label">The Houses</div>
+    <p class="lede">Twelve cards laid around your own wheel, one per house, using your house cusps and marking the houses your natal planets already occupy.</p>
+    <p class="hint" style="margin-top:14px">Needs your birth chart — sign in with Stellar to link it.</p>
   </section>
 
   <section class="panel" id="rv-year" hidden>
-    <div class="step-label">Chart-aware spreads</div>
-    <h2>Year Ahead — the Solar Return spread</h2>
-    <p class="lede">Offered in your birthday week. Twelve cards fan out, one per month of your new solar year, starting from today.</p>
-    <div class="yearstrip" tabindex="0" aria-label="Twelve month cards, scroll horizontally">
-      <div class="month"><span class="mo">AUG</span><div class="tcard mini"><span class="num">III</span><span class="glyph">♀</span><span class="nm">The Empress</span></div></div>
-      <div class="month"><span class="mo">SEP</span><div class="tcard mini"><span class="num">VIII · PENT</span><span class="glyph">☉</span><span class="nm">Eight of Pentacles</span></div></div>
-      <div class="month"><span class="mo">OCT</span><div class="tcard mini"><span class="num">II · SWORDS</span><span class="glyph">☽</span><span class="nm">Two of Swords</span></div></div>
-      <div class="month"><span class="mo">NOV</span><div class="tcard mini"><span class="num">XIII</span><span class="glyph">♏</span><span class="nm">Death</span></div></div>
-      <div class="month"><span class="mo">DEC</span><div class="tcard mini"><span class="num">IX · CUPS</span><span class="glyph">♃</span><span class="nm">Nine of Cups</span></div></div>
-      <div class="month"><span class="mo">JAN</span><div class="tcard mini"><span class="num">IV</span><span class="glyph">♈</span><span class="nm">The Emperor</span></div></div>
-      <div class="month"><span class="mo">FEB</span><div class="tcard mini"><span class="num">VI · SWORDS</span><span class="glyph">☿</span><span class="nm">Six of Swords</span></div></div>
-      <div class="month"><span class="mo">MAR</span><div class="tcard mini"><span class="num">XVII</span><span class="glyph">♒</span><span class="nm">The Star</span></div></div>
-      <div class="month"><span class="mo">APR</span><div class="tcard mini"><span class="num">ACE · WANDS</span><span class="glyph">♈</span><span class="nm">Ace of Wands</span></div></div>
-      <div class="month"><span class="mo">MAY</span><div class="tcard mini"><span class="num">X · PENT</span><span class="glyph">☿</span><span class="nm">Ten of Pentacles</span></div></div>
-      <div class="month"><span class="mo">JUN</span><div class="tcard mini"><span class="num">PAGE · CUPS</span><span class="glyph">♓</span><span class="nm">Page of Cups</span></div></div>
-      <div class="month"><span class="mo">JUL</span><div class="tcard mini"><span class="num">XXI</span><span class="glyph">♄</span><span class="nm">The Cosmos</span></div></div>
-    </div>
+    <div class="step-label">Year Ahead</div>
+    <p class="lede">Your solar-return spread: twelve cards, one for each month of your new year, offered in your birthday week.</p>
+    <p class="hint" style="margin-top:14px">Needs your birth chart — sign in with Stellar to link it.</p>
   </section>
 
-  <!-- ————————————— ACCOUNT ————————————— -->
   <section class="panel" id="account">
     <div class="step-label">Account</div>
     <h2>One account across the constellation</h2>
@@ -778,39 +673,7 @@
     <div class="step-label">Journal
       <a class="btn ghost sm" href="/" style="margin-left:auto;text-decoration:none">⌂ &nbsp;Tarot readings</a>
     </div>
-    <div class="entry">
-      <div class="when"><b>14</b>Aug</div>
-      <div class="body">
-        <h3>Year Ahead spread <span class="src">Tarot</span></h3>
-        <p>Solar return. Twelve cards saved — The Empress opens the year. Wrote: “this year, tend instead of chase.”</p>
-        <div class="skystamp">
-          <span class="chip">☉ Solar return</span>
-          <span class="chip">☽ Waxing crescent</span>
-        </div>
-      </div>
-    </div>
-    <div class="entry">
-      <div class="when"><b>12</b>Aug</div>
-      <div class="body">
-        <h3>Transit note <span class="src">Stellar</span></h3>
-        <p>“New Moon in my 9th. Enrolled in the course I've circled for a year. Watch this seed.”</p>
-        <div class="skystamp">
-          <span class="chip">● New Moon in Leo</span>
-          <span class="chip">9th house</span>
-        </div>
-      </div>
-    </div>
-    <div class="entry">
-      <div class="when"><b>29</b>Jul</div>
-      <div class="body">
-        <h3>Full Moon Release <span class="src">Tarot</span></h3>
-        <p>Drew the Eight of Cups and the Tower reversed. “Released: the version that needed everyone's approval.”</p>
-        <div class="skystamp">
-          <span class="chip">○ Full Moon in Aquarius</span>
-        </div>
-      </div>
-    </div>
-    <p class="hint" style="text-align:center;margin-top:16px">Readings save here automatically — one journal, shared with your Stellar account.</p>
+    <p class="lede">Nothing saved yet. Once you're signed in, every reading you keep lands here with the sky it was drawn under, alongside your Stellar entries.</p>
   </section>
   </div>
 
@@ -892,28 +755,6 @@
     }
     w.addEventListener('click',function(){basis(true)});
     s.addEventListener('click',function(){basis(false)});
-  })();
-
-  /* profile name + glyph, shared with the app */
-  (function(){
-    var GLYPHS=["☉","☽","✦","✷","♀","♃","♄","☿"];
-    var NK="astra.profile.name", GK="astra.profile.glyph";
-    var nameEl=document.getElementById('pmName'), avEl=document.getElementById('pmAvatar');
-    var btn=document.getElementById('profilebtn');
-    function get(k,d){ try{ return localStorage.getItem(k)||d; }catch(e){ return d; } }
-    function set(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
-    function paint(){ var n=get(NK,"Lucky"), g=get(GK,"☉"); nameEl.textContent=n; avEl.textContent=g; btn.textContent=g; }
-    document.getElementById('pmRename').addEventListener('click',function(e){
-      e.stopPropagation();
-      var v=prompt("What should the cards call you?", get(NK,"Lucky"));
-      if(v!==null&&v.trim()){ set(NK,v.trim().slice(0,24)); paint(); }
-    });
-    document.getElementById('pmIcon').addEventListener('click',function(e){
-      e.stopPropagation();
-      var i=GLYPHS.indexOf(get(GK,"☉"));
-      set(GK,GLYPHS[(i+1)%GLYPHS.length]); paint();
-    });
-    paint();
   })();
 
   /* card library — all 78, searchable */
