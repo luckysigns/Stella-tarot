@@ -95,6 +95,30 @@
 
   .modeswitch{display:flex;justify-content:center;margin-top:30px}
 
+  /* ————— the Observatory star, next to profile ————— */
+  .obs-btn{position:fixed;top:14px;right:64px;z-index:60;width:40px;height:40px;border-radius:50%;
+    border:1px solid var(--line);background:var(--surface);color:var(--gold);font-size:16px;line-height:1;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);transition:.2s}
+  .obs-btn:hover{border-color:var(--gold);box-shadow:0 0 14px rgba(233,196,106,.4)}
+  .obs-btn.on{background:var(--gold);color:var(--ink)}
+  .obs-btn:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+
+  /* ————— faux home-screen controls ————— */
+  .fauxfield{
+    border:1px solid var(--line);border-radius:12px;background:var(--field-bg);
+    padding:18px;color:var(--mist);font-style:italic;font-size:15px;min-height:88px;
+  }
+  .pullrow{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-top:22px}
+  .checkline{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--mist);font-style:italic}
+  .checkline input{accent-color:var(--gold)}
+  .whisper{
+    display:block;background:none;border:none;font-family:inherit;font-style:italic;font-size:13.5px;
+    color:var(--mist);cursor:pointer;margin:22px auto 0;text-align:center;transition:.15s;
+  }
+  .whisper b{color:var(--gold-soft);font-weight:400}
+  .whisper:hover{color:var(--gold)}
+  .whisper:focus-visible{outline:2px solid var(--gold);outline-offset:3px;border-radius:6px}
+
   /* ————— profile, top right like Stellar ————— */
   .profile-btn{position:fixed;top:14px;right:14px;z-index:60;width:40px;height:40px;border-radius:50%;
     border:1px solid var(--gold-soft);background:radial-gradient(circle at 35% 30%,#2a2762,#0e0d2c);
@@ -424,6 +448,7 @@
   footer .glyphline{color:var(--gold-soft);letter-spacing:.6em;margin-bottom:12px;font-style:normal}
 </style>
 
+<button class="obs-btn" id="obsbtn" type="button" aria-label="The Observatory — astrology" aria-expanded="false">✷</button>
 <button class="profile-btn" id="profilebtn" type="button" aria-label="Profile" aria-expanded="false">☉</button>
 <div class="profile-pop" id="profilepop" hidden>
   <div class="who">Lucky</div>
@@ -446,38 +471,44 @@
 
 <div class="wrap">
   <header>
-    <div class="eyebrow">Feature Preview · Stellar Tarot</div>
+    <div class="eyebrow" style="color:var(--gold-soft)">The Astra Deck · 78 Cards · Major &amp; Minor Arcana</div>
     <h1>Stellar <em>Tarot</em></h1>
+    <p class="tagline">Twenty-two Major Arcana as planets and signs, fifty-six Minor across the four classic suits — Wands, Cups, Swords, Pentacles. Choose how the heavens are dealt, then let them be read.</p>
     <div class="modeswitch">
-      <div class="seg" role="group" aria-label="App mode">
-        <button type="button" id="mode-readings">✦ &nbsp;Readings</button>
-        <button type="button" id="mode-astro" class="on">☉ &nbsp;Astrology</button>
+      <div class="seg" role="group" aria-label="Reading mode">
+        <button type="button">Guided Spread</button>
+        <button type="button" class="on">Ask a Question</button>
       </div>
     </div>
   </header>
 
-  <!-- ————————————— READINGS VIEW ————————————— -->
-  <div id="view-readings" hidden>
-    <section class="panel">
-      <div class="menucols" style="grid-template-columns:1fr;max-width:440px;margin-left:auto;margin-right:auto">
-        <div class="menucol">
-          <ul>
-            <li><span class="mglyph">?</span>Ask a question<span class="mhint">threads &amp; clarifiers</span></li>
-            <li><span class="mglyph">⚏</span>Draw a spread<span class="mhint">1 · 3 · Celtic Cross…</span></li>
-            <li><span class="mglyph">❦</span>Card Library<span class="mhint">all 78, filters</span></li>
-            <li><span class="mglyph">✷</span>Deck<span class="mhint">Base · <b style="color:var(--gold);font-weight:400">Astra</b></span></li>
-          </ul>
-        </div>
+  <!-- ————————————— HOME, AS IT IS TODAY ————————————— -->
+  <section class="panel">
+    <div class="step-label">Ask the cards a question</div>
+    <div class="fauxfield">Ask anything — “How do I move forward with…”, “What's really going on with…”, “Should I…”</div>
+    <div class="step-label" style="margin-top:24px">How many cards</div>
+    <div class="seg" role="group" aria-label="Card count">
+      <button type="button">1</button><button type="button">2</button><button type="button" class="on">3</button><button type="button">4</button><button type="button">5</button><button type="button">6</button>
+    </div>
+    <div class="pullrow">
+      <button class="btn solid" type="button">✦ &nbsp;Pull 3 Cards</button>
+      <label class="checkline"><input type="checkbox" checked> allow reversed cards</label>
+      <div class="seg" style="margin-left:auto" role="group" aria-label="Deck">
+        <button type="button" class="on">Base</button>
+        <button type="button">✷ Astrology</button>
       </div>
-      <p class="hint" style="text-align:center;margin-top:14px">The app as it is today — untouched.</p>
-      <div style="text-align:center;margin-top:16px">
-        <a class="btn ghost sm" style="text-decoration:none;display:inline-block" href="https://tarot.stellarastro.app" target="_blank" rel="noopener">Open the live app ↗</a>
-      </div>
-    </section>
-  </div>
+    </div>
+    <button class="whisper" id="whisper" type="button"><b>✷</b> New Moon in Leo tonight — a two-card intention pull would suit it</button>
+  </section>
+  <p style="text-align:center;margin-top:14px"><span class="spec">The home never changes — astrology waits behind the small ✷ up top; the whisper line shows only for signed-in chart folk, and is the only trace of it here</span></p>
 
-  <!-- ————————————— ASTROLOGY VIEW ————————————— -->
-  <div id="view-astro">
+  <!-- ————————————— THE OBSERVATORY (opens from the ✷) ————————————— -->
+  <div id="view-astro" hidden>
+
+  <section class="panel">
+    <div class="step-label">The Observatory</div>
+    <h2>For the stellar nerds ✷</h2>
+  </section>
 
   <!-- ————————————— TODAY ————————————— -->
   <section class="panel" id="today">
@@ -836,14 +867,18 @@
     paint();
   })();
   (function(){
-    var br=document.getElementById('mode-readings'),ba=document.getElementById('mode-astro');
-    var vr=document.getElementById('view-readings'),va=document.getElementById('view-astro');
-    function set(astro){
-      ba.classList.toggle('on',astro);br.classList.toggle('on',!astro);
-      va.hidden=!astro;vr.hidden=astro;
+    var obs=document.getElementById('obsbtn');
+    var wing=document.getElementById('view-astro');
+    var whisper=document.getElementById('whisper');
+    function open(){
+      wing.hidden=false;obs.classList.add('on');obs.setAttribute('aria-expanded','true');
+      wing.scrollIntoView({behavior:'smooth',block:'start'});
     }
-    br.addEventListener('click',function(){set(false)});
-    ba.addEventListener('click',function(){set(true)});
+    obs.addEventListener('click',function(){
+      if(wing.hidden){open()}
+      else{wing.hidden=true;obs.classList.remove('on');obs.setAttribute('aria-expanded','false');window.scrollTo({top:0,behavior:'smooth'});}
+    });
+    whisper.addEventListener('click',open);
   })();
   (function(){
     var btn=document.getElementById('profilebtn');
