@@ -386,6 +386,18 @@
   .synclink small{display:block;font-family:"Trebuchet MS",sans-serif;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--mist);margin-top:2px}
   @media (max-width:560px){.synccols{grid-template-columns:1fr}.synclink{transform:rotate(90deg);padding:4px 0}}
 
+  .seg.mini button{padding:8px 14px;font-size:10px}
+  .strike{color:var(--mist);text-decoration:line-through;font-size:12px;margin-right:5px}
+  .bundle{
+    border:1px solid var(--gold-soft);border-radius:14px;background:var(--surface-2);
+    padding:18px 20px;margin-top:14px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+    box-shadow:0 0 40px -18px rgba(233,196,106,.5);
+  }
+  .bundle .bt{color:var(--text-strong);font-size:17px}
+  .bundle .bd{font-size:13px;color:var(--mist);font-style:italic}
+  .bundle .bp{margin-left:auto;display:flex;gap:14px;flex-wrap:wrap;font-variant-numeric:tabular-nums}
+  .bundle .bp span{font-size:13.5px;color:var(--silver)}
+  .bundle .bp b{color:var(--gold);font-weight:400}
   .plans{display:flex;gap:8px;margin-top:16px}
   .plan{
     flex:1;border:1px solid var(--line);border-radius:10px;padding:12px 6px;text-align:center;
@@ -788,7 +800,7 @@
       </div>
       <div class="tier pro">
         <h3>✷ Arcana</h3>
-        <p class="price">the astrology wing, unlocked — an add-on to your Stellar account</p>
+        <p class="price">the astrology wing, unlocked — priced by your Stellar subscription</p>
         <ul>
           <li>Everything in Free</li>
           <li>Transit-timed suggestion shelf</li>
@@ -797,13 +809,33 @@
           <li>Chart-woven deep readings</li>
           <li>Patterns across your journal</li>
         </ul>
-        <div class="plans" role="group" aria-label="Arcana plans">
-          <button class="plan" type="button"><span class="per">Monthly</span><span class="amt">$3.99</span></button>
-          <button class="plan on" type="button"><span class="per">Yearly</span><span class="amt">$24.99</span><span class="note">two months free</span></button>
-          <button class="plan" type="button"><span class="per">Lifetime</span><span class="amt">$59.99</span><span class="note">once, forever</span></button>
+        <div style="text-align:center;margin-top:16px">
+          <div class="seg mini" role="group" aria-label="Pricing basis">
+            <button type="button" id="price-with" class="on">With Stellar Premium</button>
+            <button type="button" id="price-solo">On its own</button>
+          </div>
         </div>
-        <div style="text-align:center;margin-top:16px"><button class="btn solid sm" type="button">Unlock Arcana</button></div>
+        <div class="plans" role="group" aria-label="Arcana plans">
+          <button class="plan" type="button"><span class="per">Monthly</span><span class="amt" data-with="$2.49" data-solo="$3.99">$2.49</span></button>
+          <button class="plan on" type="button"><span class="per">Yearly</span><span class="amt" data-with="$16.99" data-solo="$24.99">$16.99</span><span class="note">two months free</span></button>
+          <button class="plan" type="button"><span class="per">Lifetime</span><span class="amt" data-with="$39.99" data-solo="$59.99">$39.99</span><span class="note">once, forever</span></button>
+        </div>
+        <p class="hint" id="price-note" style="text-align:center;margin-top:10px">Member rate — your Stellar Premium is active.</p>
+        <div style="text-align:center;margin-top:12px"><button class="btn solid sm" type="button">Unlock Arcana</button></div>
       </div>
+    </div>
+
+    <div class="bundle">
+      <div>
+        <div class="bt">✷ The Constellation</div>
+        <div class="bd">Stellar Premium + Arcana, packaged as one subscription</div>
+      </div>
+      <div class="bp">
+        <span><b>$6.99</b>/mo</span>
+        <span><b>$49.99</b>/yr</span>
+        <span><b>$119</b> lifetime</span>
+      </div>
+      <button class="btn sm" type="button">Get the bundle</button>
     </div>
   </section>
   </div>
@@ -860,6 +892,17 @@
         p.classList.add('on');
       });
     });
+    var w=document.getElementById('price-with'),s=document.getElementById('price-solo');
+    var note=document.getElementById('price-note');
+    function basis(withSub){
+      w.classList.toggle('on',withSub);s.classList.toggle('on',!withSub);
+      document.querySelectorAll('.plan .amt').forEach(function(a){
+        a.textContent=withSub?a.getAttribute('data-with'):a.getAttribute('data-solo');
+      });
+      note.textContent=withSub?'Member rate — your Stellar Premium is active.':'Standalone rate — no Stellar subscription needed.';
+    }
+    w.addEventListener('click',function(){basis(true)});
+    s.addEventListener('click',function(){basis(false)});
   })();
   (function(){
     var btn=document.getElementById('flipbtn');
