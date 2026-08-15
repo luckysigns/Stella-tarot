@@ -103,6 +103,20 @@
   .obs-btn.on{background:var(--gold);color:var(--ink)}
   .obs-btn:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
 
+  /* ————— floating theme button, below profile like Stellar ————— */
+  .themebtn{position:fixed;top:64px;right:14px;z-index:60;width:40px;height:40px;border-radius:50%;
+    border:1px solid var(--line);background:var(--surface);color:var(--gold);font-size:17px;line-height:1;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);transition:.2s}
+  .themebtn:hover{border-color:var(--gold)}
+  .themebtn:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+
+  /* ————— reading-type tab bar, like Stellar's ————— */
+  .tabs{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:4px}
+  .tab{background:transparent;border:1px solid var(--line);color:var(--mist);font:inherit;font-size:13.5px;padding:10px 20px;border-radius:999px;cursor:pointer;transition:.2s}
+  .tab:hover{border-color:var(--gold);color:var(--gold)}
+  .tab.active{background:var(--gold);color:var(--ink);border-color:var(--gold)}
+  .tabico{font-size:11px}
+
   /* ————— faux home-screen controls ————— */
   .fauxfield{
     border:1px solid var(--line);border-radius:12px;background:var(--field-bg);
@@ -127,7 +141,7 @@
   .profile-btn:hover{box-shadow:0 0 14px rgba(233,196,106,.5)}
   .profile-btn:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
   .profile-pop{
-    position:fixed;top:62px;right:14px;z-index:59;width:min(88vw,300px);
+    position:fixed;top:112px;right:14px;z-index:59;width:min(88vw,300px);
     border:1px solid var(--line);border-radius:16px;background:var(--panel-grad);
     -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
     box-shadow:0 24px 60px -24px rgba(0,0,0,.9);padding:20px;
@@ -449,6 +463,7 @@
 </style>
 
 <button class="profile-btn" id="profilebtn" type="button" aria-label="Profile" aria-expanded="false">☉</button>
+<button class="themebtn" id="themebtn" type="button" aria-label="Switch to light theme" title="Switch theme">☀︎</button>
 <div class="profile-pop" id="profilepop" hidden>
   <div class="who">Lucky</div>
   <div class="sub">signed in with Stellar</div>
@@ -459,10 +474,7 @@
   </div>
   <hr>
   <div class="row">
-    <button class="rowbtn" id="obsrow" type="button" style="color:var(--gold)">✷ &nbsp;The Observatory</button>
-    <button class="rowbtn" type="button">✷ &nbsp;Arcana — yearly, renews 14 Aug 2027</button>
-    <button class="rowbtn" type="button">Deck: Base · Astra</button>
-    <button class="rowbtn" id="themebtn" type="button">☀ &nbsp;Light mode</button>
+    <button class="rowbtn" id="obsrow" type="button" style="color:var(--gold)">✷ &nbsp;Astrology readings</button>
     <button class="rowbtn" type="button">Sign out</button>
   </div>
   <hr>
@@ -498,91 +510,26 @@
         <button type="button">✷ Astrology</button>
       </div>
     </div>
-    <button class="whisper" id="whisper" type="button"><b>✷</b> New Moon in Leo tonight — a two-card intention pull would suit it</button>
   </section>
-  <p style="text-align:center;margin-top:14px"><span class="spec">The home never changes — astrology lives inside the profile menu (☉ → The Observatory); the whisper line shows only for signed-in chart folk, and is the only trace of it here</span></p>
+  <p style="text-align:center;margin-top:14px"><span class="spec">The home never changes — astrology readings live behind the profile ☉, nothing else</span></p>
 
   <!-- ————————————— THE OBSERVATORY (opens from the ✷) ————————————— -->
   <div id="view-astro" hidden>
 
   <section class="panel">
-    <div class="step-label">The Observatory</div>
-    <h2 style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap">For the stellar nerds ✷
+    <div class="step-label">Astrology readings
       <button class="btn ghost sm" id="wingclose" type="button" style="margin-left:auto">✕ &nbsp;Back to the cards</button>
-    </h2>
-  </section>
-
-  <!-- ————————————— TODAY ————————————— -->
-  <section class="panel" id="today">
-    <div class="step-label">Suggested for you today <span class="spec" style="margin-left:auto">New · driven by Stellar's live transits</span></div>
-    <h2>Friday, 14 August</h2>
-    <p class="hint">Each suggestion says <em>why</em> — the sky condition in your chart that called for it.</p>
-
-    <div class="shelf">
-      <div class="suggest">
-        <div class="because">Because the Sun returns to its natal place today</div>
-        <h3>Happy Solar Return</h3>
-        <p>Your birthday spread: twelve cards, one for each month of your new solar year.</p>
-        <div class="foot">
-          <span class="cards-n">12 cards · ~15 min</span>
-          <span class="lock">✷ Arcana</span>
-          <button class="btn sm solid" type="button">Begin</button>
-        </div>
-      </div>
-      <div class="suggest">
-        <div class="because">Because Wednesday's New Moon fell in your 9th house</div>
-        <h3>New Moon Intention</h3>
-        <p>Two cards — the seed and the soil. This lunation stirs your house of horizons: study, travel, belief.</p>
-        <div class="foot">
-          <span class="cards-n">2 cards · 5 min</span>
-          <button class="btn sm ghost" type="button">Begin</button>
-        </div>
-      </div>
-      <div class="suggest">
-        <div class="because">Because Saturn squares your natal Sun — exact next week</div>
-        <h3>Pressure &amp; Foundation</h3>
-        <p>Three cards: what's being tested, what holds, and what this pressure is quietly building.</p>
-        <div class="foot">
-          <span class="cards-n">3 cards · 8 min</span>
-          <span class="lock">✷ Arcana</span>
-          <button class="btn sm ghost" type="button">Begin</button>
-        </div>
-      </div>
-      <div class="suggest">
-        <div class="because">Because your chart runs hot — fire in Sun and Rising</div>
-        <h3>Water the Garden</h3>
-        <p>A Cups-only pull. One card of the element your chart carries least, to balance the week.</p>
-        <div class="foot">
-          <span class="cards-n">1 card · 2 min</span>
-          <button class="btn sm ghost" type="button">Begin</button>
-        </div>
-      </div>
     </div>
-
-    <div class="daily" id="daily">
-      <button class="flip" id="flipbtn" type="button" aria-label="Reveal today's card">
-        <div class="inner">
-          <div class="side"><div class="cardback"></div></div>
-          <div class="side back-face">
-            <div class="tcard" style="width:100%;height:100%">
-              <span class="num">VI · WANDS</span>
-              <span class="glyph">♌</span>
-              <span class="nm">Six of Wands</span>
-            </div>
-          </div>
-        </div>
-      </button>
-      <div class="daily-copy">
-        <div class="step-label" style="margin-bottom:10px">Card of the day</div>
-        <p>Friday belongs to Venus, and today she's moving through your tenth house — the work you're seen for.</p>
-        <p class="hint tap-hint" style="margin-top:8px">Tap the card to draw.</p>
-        <p class="revealed"><em>Six of Wands.</em> Recognition arrives while Venus lights your career house — a strong day to let good work be visible instead of quietly filed away. Second decan of Leo: the parade, not the battle.</p>
-      </div>
+    <div class="tabs" role="group" aria-label="Reading type">
+      <button class="tab active" data-view="cards">Your Cards <span class="tabico">✦</span></button>
+      <button class="tab" data-view="big3">Big Three</button>
+      <button class="tab" data-view="houses">The Houses</button>
+      <button class="tab" data-view="year">Year Ahead</button>
     </div>
   </section>
 
   <!-- ————————————— YOUR CARDS ————————————— -->
-  <section class="panel" id="yourcards">
+  <section class="panel" id="rv-cards">
     <div class="step-label">Your cards <span class="spec" style="margin-left:auto">New · computed once from the chart, no drawing</span></div>
     <h2>The cards you were born holding</h2>
     <p class="lede">No shuffle here. These are fixed by your chart — the Majors that rule your Big Three, the pair hidden in your birthdate, and the minor card of your Sun's exact degree.</p>
@@ -626,7 +573,7 @@
   </section>
 
   <!-- ————————————— SPREADS ————————————— -->
-  <section class="panel" id="spreads">
+  <section class="panel" id="rv-big3" hidden>
     <div class="step-label">Chart-aware spreads <span class="spec" style="margin-left:auto">New · interpretations woven with natal placements</span></div>
     <h2>The Big Three Spread</h2>
     <p class="lede">Three cards, one for each pillar of the chart. The reading isn't generic — it names <em>your</em> placements and reads the card against them.</p>
@@ -662,7 +609,7 @@
     </div>
   </section>
 
-  <section class="panel">
+  <section class="panel" id="rv-houses" hidden>
     <div class="step-label">Chart-aware spreads <span class="spec" style="margin-left:auto">Arcana · house data from Stellar's natal engine</span></div>
     <h2>The Houses Spread</h2>
     <p class="lede">Twelve cards laid around your own wheel — one for each house, using <em>your</em> house cusps, with your natal planets marked where they actually sit.</p>
@@ -691,7 +638,7 @@
     </div>
   </section>
 
-  <section class="panel">
+  <section class="panel" id="rv-year" hidden>
     <div class="step-label">Chart-aware spreads <span class="spec" style="margin-left:auto">Arcana · content already written — all 78 × Months 1–12</span></div>
     <h2>Year Ahead — the Solar Return spread</h2>
     <p class="lede">Offered in your birthday week. Twelve cards fan out, one per month of your new solar year, starting from today.</p>
@@ -708,70 +655,6 @@
       <div class="month"><span class="mo">MAY</span><div class="tcard mini"><span class="num">X · PENT</span><span class="glyph">☿</span><span class="nm">Ten of Pentacles</span></div></div>
       <div class="month"><span class="mo">JUN</span><div class="tcard mini"><span class="num">PAGE · CUPS</span><span class="glyph">♓</span><span class="nm">Page of Cups</span></div></div>
       <div class="month"><span class="mo">JUL</span><div class="tcard mini"><span class="num">XXI</span><span class="glyph">♄</span><span class="nm">The Cosmos</span></div></div>
-    </div>
-    <div class="chiprow" style="margin-top:8px">
-      <span class="chip">Also timed: <b>New Moon Intention</b> · each lunation</span>
-      <span class="chip"><b>Full Moon Release</b> · what's lit, what's let go</span>
-      <span class="chip"><b>Mercury Rx Survival</b> · revisit / repair / release</span>
-      <span class="chip"><b>Venus Rx Review</b> · during Venus retrogrades</span>
-    </div>
-  </section>
-
-  <!-- ————————————— JOURNAL ————————————— -->
-  <section class="panel" id="journal">
-    <div class="step-label">Cosmic journal <span class="spec" style="margin-left:auto">New · one journal shared with Stellar via Supabase</span></div>
-    <h2>One journal, both apps</h2>
-    <p class="lede">Every reading saves with a stamp of the sky at that exact moment. Stellar's transit notes land in the same stream — so the story reads across both apps.</p>
-
-    <div class="entry">
-      <div class="when"><b>14</b>Aug</div>
-      <div class="body">
-        <h3>Year Ahead spread <span class="src">Tarot</span></h3>
-        <p>Solar return. Twelve cards saved — The Empress opens the year. Wrote: “this year, tend instead of chase.”</p>
-        <div class="skystamp">
-          <span class="chip">☉ Solar return</span>
-          <span class="chip">☽ Waxing crescent</span>
-          <span class="chip">♄ Saturn □ Sun applying</span>
-        </div>
-      </div>
-    </div>
-    <div class="entry">
-      <div class="when"><b>12</b>Aug</div>
-      <div class="body">
-        <h3>Transit note <span class="src">Stellar</span></h3>
-        <p>“New Moon in my 9th. Enrolled in the course I've circled for a year. Watch this seed.”</p>
-        <div class="skystamp">
-          <span class="chip">● New Moon in Leo</span>
-          <span class="chip">9th house</span>
-        </div>
-      </div>
-    </div>
-    <div class="entry">
-      <div class="when"><b>29</b>Jul</div>
-      <div class="body">
-        <h3>Full Moon Release <span class="src">Tarot</span></h3>
-        <p>Drew the Eight of Cups and the Tower reversed. “Illuminated: the project I keep resurrecting. Released: the version of it that needed everyone's approval.”</p>
-        <div class="skystamp">
-          <span class="chip">○ Full Moon in Aquarius</span>
-          <span class="chip">3rd house</span>
-        </div>
-      </div>
-    </div>
-
-    <div style="margin-top:26px">
-      <div class="step-label">Patterns <span class="spec" style="margin-left:auto">Arcana · computed from saved readings</span></div>
-      <div class="pattern">
-        <div class="pips"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
-        <p>The <b>Queen of Cups</b> has visited four times this month — she tends to find you when your Pisces Moon is running the show.</p>
-      </div>
-      <div class="pattern">
-        <div class="pips"><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
-        <p>You pull <b>Swords</b> most often within two days of a Full Moon.</p>
-      </div>
-      <div class="pattern">
-        <div class="pips"><span class="pip"></span><span class="pip"></span></div>
-        <p><b>Wands</b> made up nearly half your pulls this Leo season — fitting, for a fire Sun in its home month.</p>
-      </div>
     </div>
   </section>
 
@@ -860,9 +743,8 @@
     var root=document.documentElement;
     var tbtn=document.getElementById('themebtn');
     function isLight(){return root.getAttribute('data-theme')==='light'}
-    function paint(){tbtn.innerHTML=isLight()?'☾ &nbsp;Dark mode':'☀ &nbsp;Light mode'}
-    tbtn.addEventListener('click',function(e){
-      e.stopPropagation();
+    function paint(){tbtn.textContent=isLight()?'☾':'☀︎'}
+    tbtn.addEventListener('click',function(){
       if(isLight()){root.removeAttribute('data-theme')}else{root.setAttribute('data-theme','light')}
       paint();
     });
@@ -870,19 +752,29 @@
   })();
   (function(){
     var wing=document.getElementById('view-astro');
-    var whisper=document.getElementById('whisper');
     var obsrow=document.getElementById('obsrow');
     var close=document.getElementById('wingclose');
     var pop=document.getElementById('profilepop');
-    function open(){
-      wing.hidden=false;
-      pop.hidden=true;
+    obsrow.addEventListener('click',function(){
+      wing.hidden=false;pop.hidden=true;
       wing.scrollIntoView({behavior:'smooth',block:'start'});
-    }
-    obsrow.addEventListener('click',open);
-    whisper.addEventListener('click',open);
+    });
     close.addEventListener('click',function(){
       wing.hidden=true;window.scrollTo({top:0,behavior:'smooth'});
+    });
+  })();
+  (function(){
+    var tabs=document.querySelectorAll('.tab');
+    var views={cards:'rv-cards',big3:'rv-big3',houses:'rv-houses',year:'rv-year'};
+    tabs.forEach(function(t){
+      t.addEventListener('click',function(){
+        tabs.forEach(function(x){x.classList.remove('active')});
+        t.classList.add('active');
+        var pick=t.getAttribute('data-view');
+        Object.keys(views).forEach(function(k){
+          document.getElementById(views[k]).hidden=(k!==pick);
+        });
+      });
     });
   })();
   (function(){
@@ -916,16 +808,6 @@
     }
     w.addEventListener('click',function(){basis(true)});
     s.addEventListener('click',function(){basis(false)});
-  })();
-  (function(){
-    var btn=document.getElementById('flipbtn');
-    var daily=document.getElementById('daily');
-    if(!btn)return;
-    btn.addEventListener('click',function(){
-      btn.classList.add('flipped');
-      daily.classList.add('done');
-      btn.setAttribute('aria-label',"Today's card: Six of Wands");
-    });
   })();
 </script>
 
