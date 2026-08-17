@@ -230,6 +230,43 @@
     padding:12px 8px;text-align:center;position:relative;overflow:hidden}
   /* real card art, laid over the sigil face; if the file is missing the sigil shows through */
   .card-art{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;border-radius:inherit}
+  /* deck chooser */
+  .deck-btn{font-family:"Trebuchet MS",sans-serif;background:none;border:none;cursor:pointer;color:var(--silver);
+    display:flex;align-items:center;gap:10px;padding:9px 16px;font-size:12px;letter-spacing:.1em}
+  .deck-btn .dk-now{color:var(--gold);text-transform:uppercase;letter-spacing:.16em}
+  .deck-btn .dk-change{color:var(--mist);font-style:italic;font-family:inherit;letter-spacing:0;text-transform:none}
+  .deck-btn:hover .dk-change{color:var(--gold)}
+  .deckmodal{position:fixed;inset:0;z-index:140;background:rgba(6,5,18,.74);-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px);
+    display:flex;align-items:center;justify-content:center;padding:18px}
+  .deckmodal.hidden{display:none}
+  .decksheet{width:min(560px,95vw);max-height:86vh;overflow-y:auto;border:1px solid var(--line);border-radius:18px;
+    background:var(--panel-grad);padding:clamp(18px,4vw,26px);box-shadow:0 30px 80px -30px #000}
+  .decksheet h3{font-weight:400;font-size:20px;color:var(--text-strong)}
+  .decksheet .dk-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+  .deckrow{display:flex;gap:14px;align-items:flex-start;border:1px solid var(--line);border-radius:14px;
+    padding:14px;margin-top:14px;background:var(--surface-2)}
+  .deckrow.on{border-color:var(--gold)}
+  .deckrow.soon{opacity:.72}
+  .dk-thumbs{display:flex;gap:4px;flex:none}
+  .dk-thumb{width:36px;height:60px;border-radius:5px;object-fit:cover;border:1px solid var(--gold-soft);display:block}
+  .dk-thumb.back{background:repeating-conic-gradient(from 0deg,#12103a 0deg 30deg,#0c0b28 30deg 60deg)}
+  .dk-body{flex:1;min-width:0}
+  .dk-name{color:var(--text-strong);font-size:16px}
+  .dk-sub{font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-soft);margin-top:3px}
+  .dk-tag{font-family:"Trebuchet MS",sans-serif;font-size:9px;letter-spacing:.14em;text-transform:uppercase;
+    border:1px solid var(--line);border-radius:999px;padding:2px 8px;color:var(--mist);vertical-align:middle;margin-left:4px}
+  .dk-tag.soon{color:var(--rose);border-color:var(--rose)}
+  .dk-more{margin-top:8px}
+  .dk-more summary{cursor:pointer;font-size:12.5px;color:var(--mist);font-style:italic;list-style:none}
+  .dk-more summary::-webkit-details-marker{display:none}
+  .dk-more summary::before{content:"✷ ";color:var(--gold-soft);font-style:normal}
+  .dk-more summary:hover{color:var(--gold)}
+  .dk-more p{font-size:13.5px;line-height:1.65;color:var(--silver);margin-top:8px}
+  .dk-use{flex:none;align-self:center;font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.16em;
+    text-transform:uppercase;border:1px solid var(--gold);color:var(--gold);background:none;border-radius:999px;
+    padding:9px 14px;cursor:pointer;transition:.2s}
+  .dk-use:hover:not(:disabled){background:var(--gold);color:var(--ink)}
+  .dk-use:disabled{opacity:.45;cursor:default;border-color:var(--line);color:var(--mist)}
   .front-art .num{font-family:"Trebuchet MS",sans-serif;font-size:9px;letter-spacing:.2em;color:var(--gold-soft)}
   .front-art .sigil{font-size:clamp(30px,8vw,46px);color:var(--gold);text-shadow:0 0 18px rgba(233,196,106,.6);line-height:1}
   .front-art .nm{font-size:clamp(11px,2.6vw,14px);color:#fff;line-height:1.15}
@@ -430,6 +467,17 @@
   <p class="pm-soon" style="text-align:left;margin:0">✷ &nbsp;Astrology readings — the cards read against your birth chart — are still being built.</p>
 </div>
 
+<div class="deckmodal hidden" id="deckModal">
+  <div class="decksheet">
+    <div class="dk-head">
+      <h3>Your deck</h3>
+      <button class="pmenu-close" id="deckClose" type="button" aria-label="Close">✕</button>
+    </div>
+    <p class="hint">The reading is the same either way — the deck changes the art and the voice it's written in.</p>
+    <div id="deckList"></div>
+  </div>
+</div>
+
 <svg width="0" height="0" style="position:absolute">
   <!-- shared card-back design: astrolabe -->
   <defs>
@@ -622,7 +670,14 @@ const CHART_POSITIONS={"astro":{"major_00_fool":{"Your light":{"upright":"Landin
 try{for(const _d of ['base','astro']){const _deck=CONTENT[_d];if(!_deck)continue;const _cp=CHART_POSITIONS[_d]||{};for(const _id in _cp){if(_deck[_id]&&_deck[_id].positions){Object.assign(_deck[_id].positions,_cp[_id]);}}}}catch(_e){/* inert */}
 
 const MAJOR_IDS={"0":"major_00_fool","1":"major_01_magician","2":"major_02_high_priestess","3":"major_03_empress","4":"major_04_emperor","5":"major_05_hierophant","6":"major_06_lovers","7":"major_07_chariot","8":"major_08_strength","9":"major_09_hermit","10":"major_10_wheel_of_fortune","11":"major_11_justice","12":"major_12_hanged_man","13":"major_13_death","14":"major_14_temperance","15":"major_15_devil","16":"major_16_tower","17":"major_17_star","18":"major_18_moon","19":"major_19_sun","20":"major_20_judgement","21":"major_21_world"};
-const DECKS=[{id:"base",name:"Traditional"},{id:"astro",name:"Astrology"}];
+const DECKS=[
+  {id:"base",name:"Traditional",sub:"Rider–Waite–Smith · 1909",ready:true,
+   samples:["major_00_fool","major_19_sun","cups_queen"],
+   blurb:"The deck almost everyone pictures when they picture tarot. Pamela Colman Smith drew all seventy-eight in 1909, and hers were the first where the number cards show whole scenes rather than rows of cups and coins — which is why so much of what readers 'know' about a card traces back to her drawing of it. Meanings here follow that tradition plainly, with no extra theme laid over the top."},
+  {id:"astro",name:"Astra",sub:"Celestial · being drawn now",ready:false,
+   samples:[],
+   blurb:"A cosmic retelling of the same seventy-eight cards: ornate black and gold borders, nebulae and sacred geometry, each Major carrying its ruling planet or sign and each number card its decan. The written readings are finished — every card interpreted through its correspondence — and the artwork is still being drawn, so the deck isn't selectable yet."}
+];
 const MAJORS = [
   {n:0,name:"The Fool",sigil:"✷",astro:"Uranus",glyph:"♅",
    key:["new beginnings","innocence","spontaneity","a leap of faith","the unknown"],
@@ -1120,14 +1175,51 @@ $("changeSpreadBtn").onclick=()=>{
 $("reversals").onchange=e=>state.reversals=e.target.checked;
 /* ===== deck picker (data-driven; extend DECKS to add more decks) ===== */
 function persistDeck(){ try{ localStorage.setItem("astra.deck", state.deck); }catch(e){} }
-function restoreDeckPref(){ try{ const v=localStorage.getItem("astra.deck"); if(v && DECKS.some(x=>x.id===v)) state.deck=v; }catch(e){} }
+function restoreDeckPref(){ try{ const v=localStorage.getItem("astra.deck"); if(v && DECKS.some(x=>x.id===v && x.ready)) state.deck=v; }catch(e){} }
+function deckById(id){ return DECKS.find(d=>d.id===id)||DECKS[0]; }
+function deckThumbs(dk){
+  if(!dk.ready||!dk.samples.length) return '<span class="dk-thumb back"></span><span class="dk-thumb back"></span><span class="dk-thumb back"></span>';
+  return dk.samples.map(id=>'<img class="dk-thumb" src="cards/rws/'+id+'.jpg" alt="" loading="lazy">').join("");
+}
 function renderDeckPicker(){
   ["deckSeg","askDeckSeg"].forEach(id=>{
     const seg=$(id); if(!seg) return;
-    seg.innerHTML=DECKS.map(dk=>`<button data-deck="${dk.id}" class="${state.deck===dk.id?'on':''}">${dk.id==='astro'?'✷ ':''}${dk.name}</button>`).join("");
-    seg.querySelectorAll("button").forEach(b=>{ b.onclick=()=>{ state.deck=b.dataset.deck; persistDeck(); renderDeckPicker(); if(state.drawn.length && !$("step-read").classList.contains("hidden")) renderDetail(); if(typeof buildLibrary==='function') buildLibrary(); if(typeof renderAskThread==='function' && typeof askThread!=='undefined' && askThread.length) renderAskThread(); }; });
+    const cur=deckById(state.deck);
+    seg.innerHTML='<button type="button" class="deck-btn"><span class="dk-now">'+cur.name+'</span><span class="dk-change">Pick your deck</span></button>';
+    seg.querySelector("button").onclick=openDeckSheet;
   });
 }
+function renderDeckSheet(){
+  const list=$("deckList"); if(!list) return;
+  list.innerHTML=DECKS.map(dk=>{
+    const on=state.deck===dk.id;
+    return '<div class="deckrow'+(on?' on':'')+(dk.ready?'':' soon')+'">'
+      + '<div class="dk-thumbs">'+deckThumbs(dk)+'</div>'
+      + '<div class="dk-body">'
+      +   '<div class="dk-name">'+dk.name+(on?' <span class="dk-tag">in use</span>':'')+(dk.ready?'':' <span class="dk-tag soon">being drawn</span>')+'</div>'
+      +   '<div class="dk-sub">'+dk.sub+'</div>'
+      +   '<details class="dk-more"><summary>Learn more</summary><p>'+dk.blurb+'</p></details>'
+      + '</div>'
+      + (dk.ready ? '<button type="button" class="dk-use" data-usedeck="'+dk.id+'"'+(on?' disabled':'')+'>'+(on?'Selected':'Use this deck')+'</button>' : '')
+      + '</div>';
+  }).join("");
+  list.querySelectorAll("[data-usedeck]").forEach(b=>{
+    b.onclick=()=>{
+      state.deck=b.dataset.usedeck; persistDeck(); renderDeckPicker(); renderDeckSheet();
+      if(state.drawn.length && !$("step-read").classList.contains("hidden")) renderDetail();
+      if(typeof buildLibrary==='function') buildLibrary();
+      if(typeof renderAskThread==='function' && typeof askThread!=='undefined' && askThread.length) renderAskThread();
+      closeDeckSheet();
+    };
+  });
+}
+function openDeckSheet(){ renderDeckSheet(); $("deckModal").classList.remove("hidden"); }
+document.addEventListener("click",function(e){
+  if(e.target && e.target.id==="deckModal") closeDeckSheet();
+  if(e.target && e.target.id==="deckClose") closeDeckSheet();
+});
+document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeDeckSheet(); });
+function closeDeckSheet(){ $("deckModal").classList.add("hidden"); }
 restoreDeckPref(); renderDeckPicker();
 $("againBtn").onclick=()=>{
   state.drawn=[];buildDeck();
