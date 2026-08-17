@@ -9,3 +9,9 @@ ASTRA_BUILD_PROMPT.md
 DECK_PICKER_SPEC.md
 SETUP.md
 astrology_tarot_claude_code_context.txt
+com.lucky.astra-deepen.plist
+ASTRA_DEEPEN_PROMPT.md
+
+# unreleased Astra deck artwork — never publish
+cards/Astro deck/
+.DS_Store
