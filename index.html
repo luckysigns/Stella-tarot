@@ -228,6 +228,8 @@
     border:1px solid rgba(233,196,106,.4);border-radius:12px;
     display:flex;flex-direction:column;align-items:center;justify-content:space-between;
     padding:12px 8px;text-align:center;position:relative;overflow:hidden}
+  /* real card art, laid over the sigil face; if the file is missing the sigil shows through */
+  .card-art{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;border-radius:inherit}
   .front-art .num{font-family:"Trebuchet MS",sans-serif;font-size:9px;letter-spacing:.2em;color:var(--gold-soft)}
   .front-art .sigil{font-size:clamp(30px,8vw,46px);color:var(--gold);text-shadow:0 0 18px rgba(233,196,106,.6);line-height:1}
   .front-art .nm{font-size:clamp(11px,2.6vw,14px);color:#fff;line-height:1.15}
@@ -1070,6 +1072,14 @@ let state={spread:null,method:"fan",reversals:true,drawn:[],need:0,clarifiers:{}
 const $=id=>document.getElementById(id);
 const backSVG=`<svg class="face" viewBox="0 0 100 160" preserveAspectRatio="none"><use href="#astrolabe"/></svg>`;
 
+/* real card art per deck — Traditional uses the public-domain Rider-Waite-Smith scans.
+   Returns an <img> overlay; a missing file removes itself and the sigil face shows. */
+const DECK_ART={base:"cards/rws/"};
+function cardArtIMG(card){
+  const dir=card&&card.id?DECK_ART[state.deck]:null;
+  if(!dir) return "";
+  return '<img class="card-art" src="'+dir+card.id+'.jpg" alt="'+String(card.name).replace(/"/g,"&quot;")+'" loading="lazy" onerror="this.remove()">';
+}
 /* build spread chooser */
 const spreadList=$("spreadList");
 Object.entries(SPREADS).forEach(([key,s])=>{
@@ -1364,6 +1374,7 @@ function reveal(){
             <div class="sigil">${d.card.sigil}</div>
             <div class="nm">${d.card.name}</div>
             <div class="astro">${cardBottomLabel(d.card)}</div>
+            ${cardArtIMG(d.card)}
           </div>
         </div>
       </div>`;
@@ -1826,7 +1837,7 @@ function entryLabel(entry,i){ var L=entry.labels&&entry.labels[i]?entry.labels[i
 
 /* one flip-card, reusing the guided reveal markup */
 function tcardHTML(d,i){
-  return '<div class="tcard materialize'+(d.reversed?" rev":"")+'" style="animation-delay:'+(i*0.1)+'s"><div class="inner"><div class="side back">'+backSVG+'</div><div class="side front"><div class="front-art" data-arcana="'+d.card.arcana+'"><div class="num">'+cardTopLabel(d.card)+'</div><div class="sigil">'+d.card.sigil+'</div><div class="nm">'+d.card.name+'</div><div class="astro">'+cardBottomLabel(d.card)+'</div></div></div></div></div>';
+  return '<div class="tcard materialize'+(d.reversed?" rev":"")+'" style="animation-delay:'+(i*0.1)+'s"><div class="inner"><div class="side back">'+backSVG+'</div><div class="side front"><div class="front-art" data-arcana="'+d.card.arcana+'"><div class="num">'+cardTopLabel(d.card)+'</div><div class="sigil">'+d.card.sigil+'</div><div class="nm">'+d.card.name+'</div><div class="astro">'+cardBottomLabel(d.card)+'</div>'+cardArtIMG(d.card)+'</div></div></div></div>';
 }
 
 /* one card's full reading in an ask entry — label as its position, deep read + contexts + clarifier */
