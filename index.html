@@ -2366,6 +2366,7 @@ updatePullLabel();
   // ---- public API + boot ----
   var api = {
     ready: false, user: null, chart: null, identity: null,
+    _sb: function () { return sb; },
     signIn: function (email) { if (!sb) initClient(); if (!sb) return Promise.reject(new Error("supabase unavailable")); return sb.auth.signInWithOtp({ email: email, options: { emailRedirectTo: location.origin + location.pathname } }); },
     signOut: function () { if (!sb) return Promise.resolve(); return sb.auth.signOut().then(function () { api.user = user = null; api.chart = null; api.identity = null; }); },
     refresh: function () { return boot(); },
@@ -2389,6 +2390,87 @@ updatePullLabel();
   initClient();
   try { if (sb) sb.auth.onAuthStateChange(function () { boot(); }); } catch (e) {}
   if (document.readyState === "loading") { document.addEventListener("DOMContentLoaded", function () { boot(); }); } else { setTimeout(boot, 0); }
+})();
+
+/* ===== ASTRA REFERRAL ATTRIBUTION =========================================
+   Captures ?ref=, logs the click, and binds the code permanently to the
+   signed-in Supabase account.
+
+   The browser copy only has to survive the gap between clicking an artist's
+   link and signing in. After that the binding lives on the account
+   (referrals.user_id is UNIQUE, first one wins, never reassigned) so it
+   survives new browsers, new devices, cleared storage and Safari's 7-day
+   purge of script-writable storage.
+
+   This is what makes clause 8.3 of the artist licence true. Read
+   TAROT-ARTIST-LICENCE-DRAFT.md before changing anything here.
+   ========================================================================= */
+(function () {
+  var KEY = "astra.ref", DONE = "astra.refbound", DAYS = 60;
+  var pendingClick = null;
+
+  function client() {
+    try { return (window.STELLAR && window.STELLAR._sb && window.STELLAR._sb()) || null; }
+    catch (e) { return null; }
+  }
+  function getRef() {
+    try {
+      var r = JSON.parse(localStorage.getItem(KEY) || "null");
+      if (r && r.code && (Date.now() - r.at) < DAYS * 864e5) return r.code;
+    } catch (e) {}
+    return null;
+  }
+  function markBound() { try { localStorage.setItem(DONE, "1"); } catch (e) {} }
+
+  function flushClick() {
+    if (!pendingClick) return;
+    var c = client(); if (!c) return;
+    var code = pendingClick; pendingClick = null;
+    try { c.from("affiliate_clicks").insert({ code: code, source: "astra" }).then(function () {}, function () {}); }
+    catch (e) {}
+  }
+
+  /* 1. capture ?ref=. The magic-link redirect drops the query string, which is
+        exactly why this is written to storage before any sign-in happens. */
+  try {
+    var raw = new URLSearchParams(location.search).get("ref");
+    if (raw) {
+      var code = raw.toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 40);
+      if (code) {
+        localStorage.setItem(KEY, JSON.stringify({ code: code, at: Date.now() }));
+        try { localStorage.removeItem(DONE); } catch (e) {}  /* newest link wins until they sign in */
+        pendingClick = code;
+        flushClick();
+      }
+    }
+  } catch (e) {}
+
+  /* 2. bind on sign-in. Insert only, never update: the first code attached to
+        an account is permanent. 23505 means it is already bound, which counts
+        as done. Any other error leaves the flag unset so a later visit retries. */
+  function bind() {
+    try {
+      if (localStorage.getItem(DONE)) return;
+      var code = getRef(); if (!code) return;
+      var c = client(); if (!c) return;
+      var u = (window.STELLAR && window.STELLAR.user) || null;
+      if (!u || !u.id) return;
+      c.from("referrals")
+        .insert({ code: code, user_id: u.id, email: u.email || null, source: "astra" })
+        .then(function (res) {
+          if (!res || !res.error) { markBound(); return; }
+          if (res.error.code === "23505") markBound();
+        }, function () {});
+    } catch (e) {}
+  }
+
+  window.addEventListener("stellar:ready", function (ev) {
+    flushClick();
+    if (ev && ev.detail && ev.detail.signedIn) bind();
+  });
+  try { if (window.STELLAR && window.STELLAR.ready && window.STELLAR.user) bind(); } catch (e) {}
+
+  window.ASTRA_REF = { get: getRef, bind: bind };
 })();
 
 </script>
