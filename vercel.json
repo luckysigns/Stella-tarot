@@ -9,11 +9,11 @@
     },
     {
       "source": "/:artist([a-z0-9-]+)",
-      "destination": "/index.html"
+      "destination": "/"
     },
     {
       "source": "/:artist([a-z0-9-]+)/:deck([a-z0-9_-]+)",
-      "destination": "/index.html"
+      "destination": "/"
     }
   ],
   "headers": [
