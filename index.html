@@ -94,8 +94,12 @@
   .pm-save:hover{border-color:var(--gold)}
   .pm-save-t{font-size:13px;color:var(--text-strong);display:flex;justify-content:space-between;gap:8px;align-items:baseline}
   .pm-save-t span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .pm-save-t .del{background:none;border:none;color:var(--mist);cursor:pointer;font-size:12px;padding:0 2px;font-family:inherit;flex:none}
+  .pm-save-t .del,.pm-save-t .ren{background:none;border:none;color:var(--mist);cursor:pointer;font-size:12px;padding:0 2px;font-family:inherit;flex:none}
   .pm-save-t .del:hover{color:#e07a7a}
+  .pm-save-t .ren:hover{color:var(--gold)}
+  .pm-save-rename{flex:1;min-width:0;background:var(--field-bg);border:1px solid var(--gold);border-radius:6px;
+    color:var(--text-strong);font-family:inherit;font-size:13px;padding:3px 7px}
+  .pm-save-rename:focus{outline:none}
   .pm-save-m{font-size:11px;color:var(--mist);margin-top:2px}
   .pm-save-j{font-size:11px;color:var(--silver);font-style:italic;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   *{box-sizing:border-box;margin:0;padding:0}
@@ -2272,7 +2276,9 @@ async function renderSaves(){
     const n=(r.payload&&r.payload.cards&&r.payload.cards.length)||0;
     const j=(r.journal||"").trim();
     return '<div class="pm-save" data-save="'+r.id+'">'
-      +'<div class="pm-save-t"><span>'+(r.kind==="ask"?"❝ ":"")+escapeHTML(r.title)+'</span><button class="del" data-del="'+r.id+'" aria-label="Delete this reading" title="Delete">✕</button></div>'
+      +'<div class="pm-save-t"><span>'+(r.kind==="ask"?"❝ ":"")+escapeHTML(r.title)+'</span>'
+      +'<button class="ren" data-ren="'+r.id+'" aria-label="Rename this reading" title="Rename">✎</button>'
+      +'<button class="del" data-del="'+r.id+'" aria-label="Delete this reading" title="Delete">✕</button></div>'
       +'<div class="pm-save-m">'+when+' · '+n+(n===1?" card":" cards")+'</div>'
       +(j?'<div class="pm-save-j">'+escapeHTML(j)+'</div>':"")
       +'</div>';
@@ -2315,7 +2321,36 @@ function openSaved(r){
     updateJournalHint();
   }
 }
+function startRename(id){
+  const row=document.querySelector('#pmSaves .pm-save[data-save="'+id+'"]'); if(!row) return;
+  const r=(SAVES.rows||[]).find(function(x){ return x.id===id; }); if(!r) return;
+  const t=row.querySelector(".pm-save-t"); if(!t||t.querySelector(".pm-save-rename")) return;
+  const span=t.querySelector("span");
+  const inp=document.createElement("input");
+  inp.type="text"; inp.className="pm-save-rename"; inp.value=r.title; inp.maxLength=300;
+  span.replaceWith(inp);
+  inp.focus(); inp.select();
+  let done=false;
+  async function commit(){
+    if(done) return; done=true;
+    const name=inp.value.trim();
+    if(name && name!==r.title){
+      const c=savesClient();
+      if(c){ try{ await c.from("tarot_readings").update({title:name}).eq("id",id); r.title=name; }catch(err){} }
+    }
+    renderSaves();
+  }
+  inp.addEventListener("keydown",function(ev){
+    if(ev.key==="Enter"){ ev.preventDefault(); commit(); }
+    if(ev.key==="Escape"){ done=true; renderSaves(); }
+    ev.stopPropagation();
+  });
+  inp.addEventListener("blur",commit);
+}
 document.addEventListener("click",async function(e){
+  if(e.target.closest("#pmSaves .pm-save-rename")) return;   /* typing a new name, not opening the reading */
+  const ren=e.target.closest("#pmSaves .ren");
+  if(ren){ e.stopPropagation(); startRename(ren.dataset.ren); return; }
   const del=e.target.closest("#pmSaves .del");
   if(del){
     e.stopPropagation();
