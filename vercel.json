@@ -8,11 +8,11 @@
       "destination": "https://tfukuaqtkbzdjssanrly.supabase.co/:path*"
     },
     {
-      "source": "/:artist([a-z0-9][a-z0-9-]{1,30})",
+      "source": "/:artist([a-z0-9-]+)",
       "destination": "/index.html"
     },
     {
-      "source": "/:artist([a-z0-9][a-z0-9-]{1,30})/:deck([a-z0-9][a-z0-9_-]{1,60})",
+      "source": "/:artist([a-z0-9-]+)/:deck([a-z0-9_-]+)",
       "destination": "/index.html"
     }
   ],
