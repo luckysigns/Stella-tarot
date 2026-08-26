@@ -15,3 +15,5 @@ ASTRA_DEEPEN_PROMPT.md
 # unreleased Astra deck artwork — never publish
 cards/Astro deck/
 .DS_Store
+.vercel
+.env*
