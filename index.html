@@ -2419,8 +2419,26 @@ updatePullLabel();
     maps: { SIGN_TO_MAJOR: SIGN_TO_MAJOR, DECAN_TO_PIP: DECAN_TO_PIP, MAJOR_BY_NUM: MAJOR_BY_NUM },
     _fns: { signFromLon: signFromLon, decanInfo: decanInfo, buildBirthDate: buildBirthDate, computeAsc: computeAsc, eclipticLon: eclipticLon }
   };
+  /* SSO hand-off from Stellar: the tarot links there append a one-time
+     magic-link token hash as #sso=<hash>. Consume it here so arriving from
+     Stellar signs you in to the same account with no email round trip.
+     The hash fragment never reaches any server and is stripped from the
+     URL before verification, so it cannot be re-consumed from history. */
+  async function consumeHandoff() {
+    var m = null;
+    try { m = (location.hash || "").match(/[#&]sso=([A-Za-z0-9_-]+)/); } catch (e) {}
+    if (!m || !sb) return;
+    try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
+    try {
+      var cur = await sb.auth.getSession();
+      if (cur && cur.data && cur.data.session) return; /* already signed in, keep that session */
+      await sb.auth.verifyOtp({ type: "email", token_hash: m[1] });
+    } catch (e) { /* expired or used token: continue signed out */ }
+  }
+
   async function boot() {
     if (!sb) initClient();
+    try { await consumeHandoff(); } catch (e) {}
     try { if (sb) { var s = await sb.auth.getSession(); user = (s && s.data && s.data.session && s.data.session.user) || null; } } catch (e) { user = null; }
     api.user = user;
     var chart = null; try { chart = await getActiveChart(); } catch (e) {}
