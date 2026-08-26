@@ -1,0 +1,8 @@
+{
+  "name": "stellar-tarot",
+  "private": true,
+  "description": "Stellar Tarot. The static app plus its Vercel API functions.",
+  "dependencies": {
+    "stripe": "^17.7.0"
+  }
+}

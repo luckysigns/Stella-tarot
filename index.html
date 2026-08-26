@@ -1236,18 +1236,35 @@ function renderDeckPicker(){
     seg.querySelector("button").onclick=openDeckSheet;
   });
 }
+function deckIsPaid(dk){ return !dk.is_free && (dk.price_cents||0)>0; }
+function deckPriceLabel(dk){
+  const d=(dk.price_cents||0)/100;
+  return "$"+(Number.isInteger(d)?d:d.toFixed(2));
+}
 function renderDeckSheet(){
   const list=$("deckList"); if(!list) return;
   list.innerHTML=DECKS.map(dk=>{
     const on=state.deck===dk.id;
+    const owned=OWNED.has(dk.id);
+    const paid=deckIsPaid(dk);
+    const buyable=dk.ready && paid && !owned;
+    let action="";
+    if(dk.ready && !buyable){
+      action='<button type="button" class="dk-use" data-usedeck="'+dk.id+'"'+(on?' disabled':'')+'>'+(on?'Selected':'Use this deck')+'</button>';
+    } else if(buyable){
+      action='<button type="button" class="dk-use" data-buydeck="'+dk.id+'">Buy · '+deckPriceLabel(dk)+'</button>';
+    }
     return '<div class="deckrow'+(on?' on':'')+(dk.ready?'':' soon')+'">'
       + '<div class="dk-thumbs">'+deckThumbs(dk)+'</div>'
       + '<div class="dk-body">'
-      +   '<div class="dk-name">'+dk.name+(on?' <span class="dk-tag">in use</span>':'')+(dk.ready?'':' <span class="dk-tag soon">being drawn</span>')+'</div>'
+      +   '<div class="dk-name">'+dk.name
+      +     (on?' <span class="dk-tag">in use</span>':'')
+      +     (owned&&paid?' <span class="dk-tag">owned</span>':'')
+      +     (dk.ready?'':' <span class="dk-tag soon">being drawn</span>')+'</div>'
       +   '<div class="dk-sub">'+dk.sub+'</div>'
       +   '<details class="dk-more"><summary>Learn more</summary><p>'+dk.blurb+'</p></details>'
       + '</div>'
-      + (dk.ready ? '<button type="button" class="dk-use" data-usedeck="'+dk.id+'"'+(on?' disabled':'')+'>'+(on?'Selected':'Use this deck')+'</button>' : '')
+      + action
       + '</div>';
   }).join("");
   list.querySelectorAll("[data-usedeck]").forEach(b=>{
@@ -1259,6 +1276,9 @@ function renderDeckSheet(){
       closeDeckSheet();
     };
   });
+  list.querySelectorAll("[data-buydeck]").forEach(b=>{
+    b.onclick=()=>buyDeck(b.dataset.buydeck,b);
+  });
 }
 function openDeckSheet(){ renderDeckSheet(); $("deckModal").classList.remove("hidden"); }
 document.addEventListener("click",function(e){
@@ -1268,6 +1288,111 @@ document.addEventListener("click",function(e){
 document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeDeckSheet(); });
 function closeDeckSheet(){ $("deckModal").classList.add("hidden"); }
 restoreDeckPref(); renderDeckPicker();
+
+/* ───────── live decks, ownership, and buying ─────────
+   The decks table is the source of truth; the hardcoded DECKS array above is
+   the fallback so a Supabase outage never leaves the app with no decks.
+   Ownership is per account (deck_ownership, RLS: own rows only). */
+const OWNED=new Set();
+const SB_PUB_KEY="sb_publishable_QXHauL9k0IEcPWKH7LsjTg_6mMzzGYy";
+async function refreshDecks(){
+  try{
+    const res=await fetch(location.origin+"/sb/rest/v1/decks?select=*&order=sort_order",{headers:{apikey:SB_PUB_KEY}});
+    if(!res.ok) return;
+    const rows=await res.json();
+    if(!Array.isArray(rows)||!rows.length) return;
+    const local={}; DECKS.forEach(d=>{local[d.id]=d;});
+    const mapped=rows.filter(r=>r.status!=="retired").map(r=>{
+      const l=local[r.slug]||null;
+      return {
+        id:r.slug,
+        name:r.title||(l&&l.name)||r.slug,
+        sub:r.subtitle||(l&&l.sub)||"",
+        blurb:r.blurb||(l&&l.blurb)||"",
+        /* a deck is usable when it is live AND the app has its art wired up.
+           astro stays ready:false locally until its art ships, whatever the row says */
+        ready:r.status==="live" && (l?l.ready:true),
+        samples:(l&&l.samples)||[],
+        price_cents:r.price_cents||0,
+        currency:r.currency||"usd",
+        is_free:!!r.is_free,
+        artist_code:r.artist_code||null,
+        shop_url:r.shop_url||null
+      };
+    });
+    if(mapped.length){
+      DECKS.length=0; mapped.forEach(m=>DECKS.push(m));
+      renderDeckPicker();
+      if(!$("deckModal").classList.contains("hidden")) renderDeckSheet();
+    }
+  }catch(e){}
+}
+async function refreshOwned(){
+  OWNED.clear();
+  try{
+    const u=window.STELLAR&&window.STELLAR.user;
+    const c=window.STELLAR&&window.STELLAR._sb&&window.STELLAR._sb();
+    if(u&&c){
+      const res=await c.from("deck_ownership").select("deck_slug");
+      ((res&&res.data)||[]).forEach(r=>OWNED.add(r.deck_slug));
+    }
+  }catch(e){}
+  if(!$("deckModal").classList.contains("hidden")) renderDeckSheet();
+}
+async function buyDeck(slug,btn){
+  const u=window.STELLAR&&window.STELLAR.user;
+  if(!u){
+    /* ownership is per account, so sign in first */
+    closeDeckSheet();
+    $("pmenu").classList.remove("hidden");
+    $("profileBtn").setAttribute("aria-expanded","true");
+    const em=$("pmEmail"); if(em) em.focus();
+    return;
+  }
+  const orig=btn?btn.textContent:"";
+  if(btn){ btn.disabled=true; btn.textContent="Opening checkout…"; }
+  try{
+    const c=window.STELLAR._sb();
+    const s=await c.auth.getSession();
+    const tok=s&&s.data&&s.data.session&&s.data.session.access_token;
+    if(!tok) throw new Error("Please sign in first.");
+    let ref=null;
+    try{ const r=JSON.parse(localStorage.getItem("astra.ref")||"null"); if(r&&r.code) ref=r.code; }catch(e){}
+    const res=await fetch("/api/checkout-deck",{
+      method:"POST",
+      headers:{"Content-Type":"application/json",Authorization:"Bearer "+tok},
+      body:JSON.stringify({deck_slug:slug,ref:ref})
+    });
+    const j=await res.json();
+    if(!res.ok||!j.url) throw new Error(j.error||"Couldn't start checkout.");
+    location.href=j.url;
+  }catch(err){
+    if(btn){
+      btn.disabled=false;
+      btn.textContent=(err&&err.message)||"Try again";
+      setTimeout(function(){ btn.textContent=orig; },2600);
+    }
+  }
+}
+/* back from Stripe: the webhook grants ownership within a second or two,
+   so poll briefly, then show the deck sheet with the owned state */
+function handleDeckReturn(){
+  const q=new URLSearchParams(location.search);
+  if(q.get("deck")!=="success") return;
+  try{ history.replaceState(null,"",location.pathname); }catch(e){}
+  let tries=0;
+  const slug=(q.get("slug")||"").replace(/[^a-z0-9_-]/g,"");
+  const poll=async function(){
+    tries++;
+    await refreshOwned();
+    if((slug&&OWNED.has(slug))||tries>=6){ openDeckSheet(); return; }
+    setTimeout(poll,1500);
+  };
+  window.addEventListener("stellar:ready",function once(){ window.removeEventListener("stellar:ready",once); poll(); });
+}
+window.addEventListener("stellar:ready",refreshOwned);
+refreshDecks();
+handleDeckReturn();
 $("againBtn").onclick=()=>{
   state.drawn=[];buildDeck();
   try{ SAVES.id=null; updateJournalHint(); }catch(e){}
