@@ -1321,6 +1321,11 @@ async function refreshDecks(){
       };
     });
     if(mapped.length){
+      /* anon RLS only returns live rows, so local-only decks (the astro
+         teaser while it is a draft) would vanish. Keep any local deck the
+         response did not mention, in its hardcoded form. */
+      const seen={}; mapped.forEach(m=>{seen[m.id]=1;});
+      DECKS.forEach(d=>{ if(!seen[d.id]) mapped.push(d); });
       DECKS.length=0; mapped.forEach(m=>DECKS.push(m));
       renderDeckPicker();
       if(!$("deckModal").classList.contains("hidden")) renderDeckSheet();
