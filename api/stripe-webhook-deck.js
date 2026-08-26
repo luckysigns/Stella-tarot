@@ -20,10 +20,11 @@
      - artist_royalty_cents comes from artist_royalty_rate(artist,
        referring) in the database. One source of truth for the rate,
        never hardcoded here. (clause 8.3)
-     - affiliate_commission_cents is zero when referring_code is null
-       or equals artist_code. Otherwise a third party sent the buyer:
-       10% of the sale, paid from the platform share, and the artist
-       still keeps their full royalty. (clause 8.4)
+     - affiliate_commission_cents is always zero. Nobody earns a
+       commission on another artist's deck sale: the artist gets the
+       royalty, the platform keeps the rest, and a third-party
+       referrer's standard affiliate programme (Stellar subscriptions)
+       is simply unaffected. The column stays for bookkeeping.
      - deck_sales.stripe_event_id is UNIQUE. A duplicate insert
        raising 23505 is Stripe retrying, so it returns 200 and stops.
        A retry never double-pays an artist.
@@ -103,10 +104,11 @@ async function royaltyRate(artistCode, referringCode) {
   return typeof rate === "number" ? rate : Number(rate) || 0;
 }
 
-/* Clause 8.4: a third-party referrer earns 10% from the platform share. */
-function commissionCents(amountCents, artistCode, referringCode) {
-  if (!referringCode || referringCode === artistCode) return 0;
-  return Math.round(amountCents * 0.10);
+/* No commission on deck sales, whoever referred the buyer. The artist
+   earns the royalty; other partners' standard programme covers Stellar
+   subscriptions only. */
+function commissionCents() {
+  return 0;
 }
 
 function customerIdOf(obj) {
