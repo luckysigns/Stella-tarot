@@ -85,6 +85,10 @@
   .pm-go-ghost{background:none;color:var(--mist);border-color:var(--line)}
   .pm-go-ghost:hover{color:var(--gold);border-color:var(--gold);filter:none}
   .pm-soon{display:block;margin-top:12px;font-size:12px;color:var(--mist);font-style:italic;text-align:center}
+  .pm-email{width:100%;margin:0 0 10px;background:var(--field-bg);border:1px solid var(--line);border-radius:999px;
+    color:var(--silver);font-family:inherit;font-size:14px;padding:10px 16px}
+  .pm-email:focus{outline:none;border-color:var(--gold)}
+  .pm-email::placeholder{color:var(--mist);font-style:italic}
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{height:100%}
   body{
@@ -462,8 +466,18 @@
     <span>Your account</span>
     <button class="pmenu-close" id="pmenuClose" type="button" aria-label="Close">✕</button>
   </div>
-  <p class="pm-soon" id="pmNote" style="text-align:left;margin:0 0 14px">You're not signed in. Sign in with Stellar to bring your birth chart and journal across.</p>
-  <button class="pm-go" id="pmSignIn" type="button">✷ &nbsp;Sign in with Stellar</button>
+  <div id="pmSignedOut">
+    <p class="pm-soon" id="pmNote" style="text-align:left;margin:0 0 14px">You're not signed in. Sign in with Stellar and your account carries across both apps.</p>
+    <form id="pmForm">
+      <input type="email" class="pm-email" id="pmEmail" placeholder="you@example.com" autocomplete="email" required>
+      <button class="pm-go" id="pmSignIn" type="submit">✷ &nbsp;Email me a sign-in link</button>
+    </form>
+  </div>
+  <div id="pmSignedIn" class="hidden">
+    <p class="pm-soon" style="text-align:left;margin:0 0 4px">Signed in as</p>
+    <p id="pmWho" style="margin:0 0 14px;color:var(--text-strong);font-size:14px;word-break:break-all"></p>
+    <button class="pm-go pm-go-ghost" id="pmSignOut" type="button">Sign out</button>
+  </div>
   <hr>
   <p class="pm-soon" style="text-align:left;margin:0">✷ &nbsp;Astrology readings — the cards read against your birth chart — are still being built.</p>
 </div>
@@ -2162,10 +2176,40 @@ updatePullLabel();
     if(!menu.classList.contains("hidden")&&!menu.contains(e.target)&&e.target!==btn) setOpen(false);
   });
   document.addEventListener("keydown",function(e){ if(e.key==="Escape") setOpen(false); });
-  $("pmSignIn").onclick=function(){
-    $("pmNote").textContent="Account linking isn't live yet — it's the next thing being built. When it lands, this will pull in the chart you already have in Stellar.";
-    this.disabled=true;
+  /* real sign-in, backed by the STELLAR bridge (magic link via signInWithOtp).
+     Astrology/chart linking is intentionally NOT surfaced yet; only the session. */
+  var IDLE_NOTE="You're not signed in. Sign in with Stellar and your account carries across both apps.";
+  function renderAuth(){
+    var u=(window.STELLAR&&window.STELLAR.user)||null;
+    $("pmSignedOut").classList.toggle("hidden",!!u);
+    $("pmSignedIn").classList.toggle("hidden",!u);
+    if(u) $("pmWho").textContent=u.email||"your account";
+  }
+  $("pmForm").onsubmit=function(e){
+    e.preventDefault();
+    var email=($("pmEmail").value||"").trim();
+    if(!email) return;
+    var go=$("pmSignIn"); go.disabled=true;
+    $("pmNote").textContent="Sending your link…";
+    var p; try{ p=window.STELLAR&&window.STELLAR.signIn?window.STELLAR.signIn(email):Promise.reject(new Error("unavailable")); }
+    catch(err){ p=Promise.reject(err); }
+    p.then(function(res){
+      if(res&&res.error) throw res.error;
+      $("pmNote").textContent="Link sent to "+email+". Open it on this device; it works once and expires shortly.";
+      /* allow a resend after a minute, matching the auth rate limit */
+      setTimeout(function(){ go.disabled=false; },60000);
+    }).catch(function(err){
+      $("pmNote").textContent="Could not send the link ("+((err&&err.message)||"sign-in unavailable")+"). Check the address and try again.";
+      go.disabled=false;
+    });
   };
+  $("pmSignOut").onclick=function(){
+    var btn=this; btn.disabled=true;
+    var done=function(){ btn.disabled=false; $("pmNote").textContent=IDLE_NOTE; renderAuth(); };
+    try{ window.STELLAR.signOut().then(done,done); }catch(e){ done(); }
+  };
+  window.addEventListener("stellar:ready",renderAuth);
+  renderAuth();
 })();
 
 </script>
@@ -2366,6 +2410,7 @@ updatePullLabel();
   // ---- public API + boot ----
   var api = {
     ready: false, user: null, chart: null, identity: null,
+    _sb: function () { return sb; },
     signIn: function (email) { if (!sb) initClient(); if (!sb) return Promise.reject(new Error("supabase unavailable")); return sb.auth.signInWithOtp({ email: email, options: { emailRedirectTo: location.origin + location.pathname } }); },
     signOut: function () { if (!sb) return Promise.resolve(); return sb.auth.signOut().then(function () { api.user = user = null; api.chart = null; api.identity = null; }); },
     refresh: function () { return boot(); },
@@ -2389,6 +2434,87 @@ updatePullLabel();
   initClient();
   try { if (sb) sb.auth.onAuthStateChange(function () { boot(); }); } catch (e) {}
   if (document.readyState === "loading") { document.addEventListener("DOMContentLoaded", function () { boot(); }); } else { setTimeout(boot, 0); }
+})();
+
+/* ===== ASTRA REFERRAL ATTRIBUTION =========================================
+   Captures ?ref=, logs the click, and binds the code permanently to the
+   signed-in Supabase account.
+
+   The browser copy only has to survive the gap between clicking an artist's
+   link and signing in. After that the binding lives on the account
+   (referrals.user_id is UNIQUE, first one wins, never reassigned) so it
+   survives new browsers, new devices, cleared storage and Safari's 7-day
+   purge of script-writable storage.
+
+   This is what makes clause 8.3 of the artist licence true. Read
+   TAROT-ARTIST-LICENCE-DRAFT.md before changing anything here.
+   ========================================================================= */
+(function () {
+  var KEY = "astra.ref", DONE = "astra.refbound", DAYS = 60;
+  var pendingClick = null;
+
+  function client() {
+    try { return (window.STELLAR && window.STELLAR._sb && window.STELLAR._sb()) || null; }
+    catch (e) { return null; }
+  }
+  function getRef() {
+    try {
+      var r = JSON.parse(localStorage.getItem(KEY) || "null");
+      if (r && r.code && (Date.now() - r.at) < DAYS * 864e5) return r.code;
+    } catch (e) {}
+    return null;
+  }
+  function markBound() { try { localStorage.setItem(DONE, "1"); } catch (e) {} }
+
+  function flushClick() {
+    if (!pendingClick) return;
+    var c = client(); if (!c) return;
+    var code = pendingClick; pendingClick = null;
+    try { c.from("affiliate_clicks").insert({ code: code, source: "astra" }).then(function () {}, function () {}); }
+    catch (e) {}
+  }
+
+  /* 1. capture ?ref=. The magic-link redirect drops the query string, which is
+        exactly why this is written to storage before any sign-in happens. */
+  try {
+    var raw = new URLSearchParams(location.search).get("ref");
+    if (raw) {
+      var code = raw.toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 40);
+      if (code) {
+        localStorage.setItem(KEY, JSON.stringify({ code: code, at: Date.now() }));
+        try { localStorage.removeItem(DONE); } catch (e) {}  /* newest link wins until they sign in */
+        pendingClick = code;
+        flushClick();
+      }
+    }
+  } catch (e) {}
+
+  /* 2. bind on sign-in. Insert only, never update: the first code attached to
+        an account is permanent. 23505 means it is already bound, which counts
+        as done. Any other error leaves the flag unset so a later visit retries. */
+  function bind() {
+    try {
+      if (localStorage.getItem(DONE)) return;
+      var code = getRef(); if (!code) return;
+      var c = client(); if (!c) return;
+      var u = (window.STELLAR && window.STELLAR.user) || null;
+      if (!u || !u.id) return;
+      c.from("referrals")
+        .insert({ code: code, user_id: u.id, email: u.email || null, source: "astra" })
+        .then(function (res) {
+          if (!res || !res.error) { markBound(); return; }
+          if (res.error.code === "23505") markBound();
+        }, function () {});
+    } catch (e) {}
+  }
+
+  window.addEventListener("stellar:ready", function (ev) {
+    flushClick();
+    if (ev && ev.detail && ev.detail.signedIn) bind();
+  });
+  try { if (window.STELLAR && window.STELLAR.ready && window.STELLAR.user) bind(); } catch (e) {}
+
+  window.ASTRA_REF = { get: getRef, bind: bind };
 })();
 
 </script>
