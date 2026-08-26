@@ -517,7 +517,7 @@
 <div class="deckmodal hidden" id="deckModal">
   <div class="decksheet">
     <div class="dk-head">
-      <h3>Your deck</h3>
+      <h3 id="deckSheetTitle">Your deck</h3>
       <button class="pmenu-close" id="deckClose" type="button" aria-label="Close">✕</button>
     </div>
     <p class="hint">The reading is the same either way — the deck changes the art and the voice it's written in.</p>
@@ -1243,7 +1243,20 @@ function deckPriceLabel(dk){
 }
 function renderDeckSheet(){
   const list=$("deckList"); if(!list) return;
-  list.innerHTML=DECKS.map(dk=>{
+  let rows=DECKS,filtered=false;
+  if(deckFilterArtist){
+    let mine=DECKS.filter(d=>d.artist_code===deckFilterArtist);
+    if(deckFilterDeck){const one=mine.filter(d=>d.id===deckFilterDeck);if(one.length)mine=one;}
+    if(mine.length){rows=mine;filtered=true;}
+  }
+  const titleEl=$("deckSheetTitle");
+  if(titleEl) titleEl.textContent=filtered?"Decks by "+artistDisplayName():"Your deck";
+  const strip=filtered
+    ? '<p class="hint" style="margin:2px 0 12px">You arrived through '+escA(artistDisplayName())+"'s link. Decks you buy here support them directly."
+      +(ARTIST_VIEW.shop?' <a href="#" id="artistShopLink">Visit their physical shop ↗</a>':'')
+      +' &middot; <a href="#" id="showAllDecks">Show all decks</a></p>'
+    : "";
+  list.innerHTML=strip+rows.map(dk=>{
     const on=state.deck===dk.id;
     const owned=OWNED.has(dk.id);
     const paid=deckIsPaid(dk);
@@ -1262,7 +1275,9 @@ function renderDeckSheet(){
       +     (owned&&paid?' <span class="dk-tag">owned</span>':'')
       +     (dk.ready?'':' <span class="dk-tag soon">being drawn</span>')+'</div>'
       +   '<div class="dk-sub">'+dk.sub+'</div>'
-      +   '<details class="dk-more"><summary>Learn more</summary><p>'+dk.blurb+'</p></details>'
+      +   '<details class="dk-more"><summary>Learn more</summary><p>'+dk.blurb
+      +     (dk.shop_url&&dk.artist_code?' <a href="#" class="dk-shop" data-shopdeck="'+dk.id+'">Buy the printed deck ↗</a>':'')
+      +   '</p></details>'
       + '</div>'
       + action
       + '</div>';
@@ -1279,6 +1294,17 @@ function renderDeckSheet(){
   list.querySelectorAll("[data-buydeck]").forEach(b=>{
     b.onclick=()=>buyDeck(b.dataset.buydeck,b);
   });
+  list.querySelectorAll("[data-shopdeck]").forEach(a=>{
+    a.onclick=e=>{
+      e.preventDefault();
+      const dk=DECKS.find(d=>d.id===a.dataset.shopdeck);
+      if(dk&&dk.shop_url) shopClick(dk.artist_code,dk.id,dk.shop_url);
+    };
+  });
+  const shopA=$("artistShopLink");
+  if(shopA) shopA.onclick=e=>{e.preventDefault();shopClick(ARTIST_VIEW.code,deckFilterDeck||null,ARTIST_VIEW.shop);};
+  const allA=$("showAllDecks");
+  if(allA) allA.onclick=e=>{e.preventDefault();deckFilterArtist=null;deckFilterDeck=null;renderDeckSheet();};
 }
 function openDeckSheet(){ renderDeckSheet(); $("deckModal").classList.remove("hidden"); }
 document.addEventListener("click",function(e){
@@ -1295,6 +1321,56 @@ restoreDeckPref(); renderDeckPicker();
    Ownership is per account (deck_ownership, RLS: own rows only). */
 const OWNED=new Set();
 const SB_PUB_KEY="sb_publishable_QXHauL9k0IEcPWKH7LsjTg_6mMzzGYy";
+
+/* ───────── artist profile links ─────────
+   tarot.stellarastro.app/orla and /orla/deck-slug are rewritten to this
+   page by vercel.json. The path becomes ?ref=orla before the referral
+   attribution block runs (it lives later in the document and reads
+   location.search), plus a deck view filtered to that artist. The
+   protected attribution block itself is untouched. */
+const ARTIST_VIEW={code:null,deck:null,name:null,shop:null,opened:false};
+(function(){
+  try{
+    var m=location.pathname.match(/^\/([a-z0-9][a-z0-9-]{1,30})(?:\/([a-z0-9][a-z0-9_-]{1,60}))?\/?$/);
+    if(!m||m[1]==="index") return;
+    ARTIST_VIEW.code=m[1]; ARTIST_VIEW.deck=m[2]||null;
+    var q=new URLSearchParams(location.search);
+    if(!q.get("ref")) q.set("ref",ARTIST_VIEW.code);
+    var qs=q.toString();
+    history.replaceState(null,"","/"+(qs?"?"+qs:"")+location.hash);
+  }catch(e){}
+})();
+function escA(v){return String(v==null?"":v).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+function artistDisplayName(){
+  if(ARTIST_VIEW.name) return ARTIST_VIEW.name;
+  var c=ARTIST_VIEW.code||"";
+  return c.charAt(0).toUpperCase()+c.slice(1);
+}
+async function fetchArtistCard(){
+  if(!ARTIST_VIEW.code) return;
+  try{
+    var res=await fetch(location.origin+"/sb/rest/v1/artist_directory?select=name,shop_url&code=eq."+encodeURIComponent(ARTIST_VIEW.code),{headers:{apikey:SB_PUB_KEY}});
+    if(!res.ok) return; /* the view may not exist yet; the code stands in for the name */
+    var rows=await res.json();
+    if(rows&&rows[0]){
+      ARTIST_VIEW.name=rows[0].name||null;
+      ARTIST_VIEW.shop=rows[0].shop_url||null;
+      if(!$("deckModal").classList.contains("hidden")) renderDeckSheet();
+    }
+  }catch(e){}
+}
+/* physical shop click-through: log it, then open the artist's shop */
+function shopClick(artistCode,deckSlug,url){
+  try{
+    fetch(location.origin+"/sb/rest/v1/shop_clicks",{
+      method:"POST",
+      headers:{apikey:SB_PUB_KEY,"Content-Type":"application/json"},
+      body:JSON.stringify({artist_code:artistCode,deck_slug:deckSlug||null})
+    });
+  }catch(e){}
+  try{window.open(url,"_blank","noopener");}catch(e){}
+}
+let deckFilterArtist=null,deckFilterDeck=null;
 async function refreshDecks(){
   try{
     const res=await fetch(location.origin+"/sb/rest/v1/decks?select=*&order=sort_order",{headers:{apikey:SB_PUB_KEY}});
@@ -1329,6 +1405,15 @@ async function refreshDecks(){
       DECKS.length=0; mapped.forEach(m=>DECKS.push(m));
       renderDeckPicker();
       if(!$("deckModal").classList.contains("hidden")) renderDeckSheet();
+      if(ARTIST_VIEW.code&&!ARTIST_VIEW.opened){
+        const mine=DECKS.filter(d=>d.artist_code===ARTIST_VIEW.code);
+        if(mine.length){
+          ARTIST_VIEW.opened=true;
+          deckFilterArtist=ARTIST_VIEW.code;
+          deckFilterDeck=(ARTIST_VIEW.deck&&mine.some(d=>d.id===ARTIST_VIEW.deck))?ARTIST_VIEW.deck:null;
+          openDeckSheet();
+        }
+      }
     }
   }catch(e){}
 }
@@ -1397,6 +1482,7 @@ function handleDeckReturn(){
 }
 window.addEventListener("stellar:ready",refreshOwned);
 refreshDecks();
+fetchArtistCard();
 handleDeckReturn();
 $("againBtn").onclick=()=>{
   state.drawn=[];buildDeck();

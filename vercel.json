@@ -3,17 +3,43 @@
   "framework": null,
   "cleanUrls": true,
   "rewrites": [
-    { "source": "/sb/:path*", "destination": "https://tfukuaqtkbzdjssanrly.supabase.co/:path*" }
+    {
+      "source": "/sb/:path*",
+      "destination": "https://tfukuaqtkbzdjssanrly.supabase.co/:path*"
+    },
+    {
+      "source": "/:artist([a-z0-9][a-z0-9-]{1,30})",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/:artist([a-z0-9][a-z0-9-]{1,30})/:deck([a-z0-9][a-z0-9_-]{1,60})",
+      "destination": "/index.html"
+    }
   ],
   "headers": [
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "X-Frame-Options", "value": "DENY" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), payment=(), usb=()" },
-        { "key": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains" }
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), payment=(), usb=()"
+        },
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=63072000; includeSubDomains"
+        }
       ]
     }
   ]
