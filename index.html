@@ -89,6 +89,15 @@
     color:var(--silver);font-family:inherit;font-size:14px;padding:10px 16px}
   .pm-email:focus{outline:none;border-color:var(--gold)}
   .pm-email::placeholder{color:var(--mist);font-style:italic}
+  .pm-saves{max-height:250px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;margin-bottom:2px}
+  .pm-save{border:1px solid var(--line);border-radius:10px;padding:9px 11px;cursor:pointer;background:var(--field-bg);transition:border-color .2s}
+  .pm-save:hover{border-color:var(--gold)}
+  .pm-save-t{font-size:13px;color:var(--text-strong);display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+  .pm-save-t span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pm-save-t .del{background:none;border:none;color:var(--mist);cursor:pointer;font-size:12px;padding:0 2px;font-family:inherit;flex:none}
+  .pm-save-t .del:hover{color:#e07a7a}
+  .pm-save-m{font-size:11px;color:var(--mist);margin-top:2px}
+  .pm-save-j{font-size:11px;color:var(--silver);font-style:italic;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{height:100%}
   body{
@@ -476,6 +485,9 @@
   <div id="pmSignedIn" class="hidden">
     <p class="pm-soon" style="text-align:left;margin:0 0 4px">Signed in as</p>
     <p id="pmWho" style="margin:0 0 14px;color:var(--text-strong);font-size:14px;word-break:break-all"></p>
+    <p class="pm-soon" style="text-align:left;margin:0 0 8px">✦ &nbsp;Saved readings &amp; journal</p>
+    <div class="pm-saves" id="pmSaves"></div>
+    <hr>
     <button class="pm-go pm-go-ghost" id="pmSignOut" type="button">Sign out</button>
   </div>
   <hr>
@@ -1238,6 +1250,7 @@ function closeDeckSheet(){ $("deckModal").classList.add("hidden"); }
 restoreDeckPref(); renderDeckPicker();
 $("againBtn").onclick=()=>{
   state.drawn=[];buildDeck();
+  try{ SAVES.id=null; updateJournalHint(); }catch(e){}
   $("journalBox").value="";
   $("journalPrint").classList.add("hidden");
   $("step-read").classList.add("hidden");
@@ -1447,6 +1460,7 @@ function spawnBurst(stage){
   setTimeout(function(){ if(b.parentNode) b.remove(); },1000);
 }
 function gatherAndReveal(){
+  try{ savesCreateGuided(); }catch(e){}   /* signed in: this reading saves to the account */
   var stage=$("stage");
   if(!stage){ reveal(); return; }
   var backs=stage.querySelectorAll(".cardback");
@@ -1686,6 +1700,7 @@ function drawClarifier(key){
   const reversed=state.reversals && Math.random()<0.2;
   if(!state.clarifiers[key]) state.clarifiers[key]=[];
   state.clarifiers[key].push({card:DECK[deckIdx],reversed});
+  try{ savesUpdateGuided(); }catch(e){}
   renderDetail();
   // scroll the new clarifier into view
   setTimeout(()=>{
@@ -2043,6 +2058,7 @@ function askDrawClarifier(entryId,cardIdx){
   var idx=entry.pool.shift();
   var reversed=state.reversals && Math.random()<0.2;
   entry.cards[cardIdx].clar.push({deckIdx:idx,reversed});
+  try{ savesUpdateAsk(entry); }catch(e){}
   renderAskThread();
 }
 /* suggest the next position label when extending a spread (Month 3 -> Month 4, Option C -> D, …) */
@@ -2065,6 +2081,7 @@ function addToSpread(entryId,label){
   entry.labels=entry.labels||[];
   entry.labels[entry.cards.length-1]=(label&&label.trim())?label.trim():"";
   entry.count=entry.cards.length;
+  try{ savesUpdateAsk(entry); }catch(e){}
   renderAskThread();   // scroll is preserved; the new card flips in where you are
 }
 
@@ -2076,7 +2093,9 @@ function askPull(){
   for(var i=0;i<askCount;i++){ var idx=pool.shift(); var reversed=state.reversals && Math.random()<0.2; cards.push({deckIdx:idx,reversed:reversed,clar:[]}); }
   var now=new Date();
   var time=now.toLocaleString(undefined,{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"});
-  askThread.push({id:++askId, q:q, count:askCount, labels:labels.slice(0,askCount), pool:pool, cards:cards, time:time, _flipped:0});
+  var newEntry={id:++askId, q:q, count:askCount, labels:labels.slice(0,askCount), pool:pool, cards:cards, time:time, _flipped:0};
+  askThread.push(newEntry);
+  try{ savesCreateAsk(newEntry); }catch(e){}   /* signed in: this pull saves to the account */
   $("askQ").value="";
   renderAskThread(askId);
 }
@@ -2161,6 +2180,160 @@ $("askThread").addEventListener("click",function(e){
 renderAskCount();
 renderAskLabels();
 updatePullLabel();
+
+/* ───────── saved readings + journal, synced to the account (tarot_readings) ─────────
+   Signed in, every finished reading saves itself: guided spreads on reveal, ask pulls
+   on each question. The journal column rides along with debounced edits. The account
+   sheet lists them; tapping one restores it into the page, the ✕ deletes it.
+   Signed out nothing changes: readings stay ephemeral exactly as before. */
+const SAVES={id:null,timer:null,rows:[],restoring:false};
+const DECK_BY_ID={}; DECK.forEach(function(c,i){ DECK_BY_ID[c.id]=i; });
+function savesClient(){ try{ return (window.STELLAR&&window.STELLAR._sb&&window.STELLAR._sb())||null; }catch(e){ return null; } }
+function savesUser(){ return (window.STELLAR&&window.STELLAR.user)||null; }
+function cardRef(d){ return {id:d.card.id,reversed:!!d.reversed}; }
+function guidedPayload(){
+  const s=SPREADS[state.spread]||{};
+  const clar={};
+  Object.keys(state.clarifiers||{}).forEach(function(k){ clar[k]=(state.clarifiers[k]||[]).map(cardRef); });
+  return {spread:state.spread,positions:s.positions||[],cards:state.drawn.map(cardRef),clarifiers:clar};
+}
+function askPayload(entry){
+  return {q:entry.q,labels:entry.labels||[],cards:entry.cards.map(function(cc){
+    return {id:DECK[cc.deckIdx].id,reversed:!!cc.reversed,
+      clar:(cc.clar||[]).map(function(cl){ return {id:DECK[cl.deckIdx].id,reversed:!!cl.reversed}; })};
+  })};
+}
+function updateJournalHint(){
+  const el=$("journalSaved"); if(!el) return;
+  el.textContent = SAVES.id ? "This reading and your notes save to your account."
+    : (savesUser() ? "Saving to your account…"
+                   : "Notes stay with this reading until you draw again. Sign in to keep readings.");
+}
+async function savesCreateGuided(){
+  SAVES.id=null; updateJournalHint();
+  const c=savesClient(), u=savesUser(); if(!c||!u||!state.drawn.length) return;
+  const s=SPREADS[state.spread];
+  try{
+    const res=await c.from("tarot_readings")
+      .insert({user_id:u.id,kind:"spread",title:(s&&s.name)||"Reading",deck_slug:state.deck||"base",payload:guidedPayload()})
+      .select("id").single();
+    if(res&&res.data&&res.data.id){ SAVES.id=res.data.id; }
+  }catch(e){}
+  updateJournalHint();
+}
+async function savesUpdateGuided(){
+  if(!SAVES.id) return; const c=savesClient(); if(!c) return;
+  try{ await c.from("tarot_readings").update({payload:guidedPayload()}).eq("id",SAVES.id); }catch(e){}
+}
+function savesJournalInput(){
+  clearTimeout(SAVES.timer);
+  SAVES.timer=setTimeout(async function(){
+    if(!SAVES.id) return;
+    const c=savesClient(); if(!c) return;
+    try{
+      await c.from("tarot_readings").update({journal:$("journalBox").value.trim()||null}).eq("id",SAVES.id);
+      const el=$("journalSaved"); if(el) el.textContent="Notes saved to your account ✓";
+    }catch(e){}
+  },800);
+}
+async function savesCreateAsk(entry){
+  const c=savesClient(), u=savesUser(); if(!c||!u) return;
+  try{
+    const res=await c.from("tarot_readings")
+      .insert({user_id:u.id,kind:"ask",title:(entry.q||"Question").slice(0,300),deck_slug:state.deck||"base",payload:askPayload(entry)})
+      .select("id").single();
+    if(res&&res.data&&res.data.id) entry.cloudId=res.data.id;
+  }catch(e){}
+}
+async function savesUpdateAsk(entry){
+  if(!entry||!entry.cloudId) return; const c=savesClient(); if(!c) return;
+  try{ await c.from("tarot_readings").update({payload:askPayload(entry)}).eq("id",entry.cloudId); }catch(e){}
+}
+async function renderSaves(){
+  const box=$("pmSaves"); if(!box) return;
+  const c=savesClient(), u=savesUser();
+  if(!c||!u){ box.innerHTML=""; return; }
+  if(!box.childElementCount) box.innerHTML='<p class="pm-soon" style="margin:0">Loading…</p>';
+  let rows=[];
+  try{
+    const res=await c.from("tarot_readings")
+      .select("id,kind,title,journal,created_at,deck_slug,payload")
+      .eq("user_id",u.id).order("created_at",{ascending:false}).limit(30);
+    rows=(res&&res.data)||[];
+  }catch(e){}
+  SAVES.rows=rows;
+  if(!rows.length){
+    box.innerHTML='<p class="pm-soon" style="margin:0">Nothing saved yet. Finish a reading while signed in and it will appear here.</p>';
+    return;
+  }
+  box.innerHTML=rows.map(function(r){
+    const d=new Date(r.created_at);
+    const when=d.toLocaleDateString(undefined,{month:"short",day:"numeric"})+" · "+d.toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"});
+    const n=(r.payload&&r.payload.cards&&r.payload.cards.length)||0;
+    const j=(r.journal||"").trim();
+    return '<div class="pm-save" data-save="'+r.id+'">'
+      +'<div class="pm-save-t"><span>'+(r.kind==="ask"?"❝ ":"")+escapeHTML(r.title)+'</span><button class="del" data-del="'+r.id+'" aria-label="Delete this reading" title="Delete">✕</button></div>'
+      +'<div class="pm-save-m">'+when+' · '+n+(n===1?" card":" cards")+'</div>'
+      +(j?'<div class="pm-save-j">'+escapeHTML(j)+'</div>':"")
+      +'</div>';
+  }).join("");
+}
+function openSaved(r){
+  try{ $("pmenu").classList.add("hidden"); $("profileBtn").setAttribute("aria-expanded","false"); }catch(e){}
+  if(r.deck_slug && DECKS.some(function(x){ return x.id===r.deck_slug&&x.ready; })) state.deck=r.deck_slug;
+  const p=r.payload||{};
+  if(r.kind==="ask"){
+    setMode("ask");
+    const entry={id:++askId,q:p.q||r.title,count:(p.cards||[]).length,labels:p.labels||[],
+      cards:(p.cards||[]).map(function(cc){
+        return {deckIdx:DECK_BY_ID[cc.id],reversed:!!cc.reversed,
+          clar:(cc.clar||[]).map(function(cl){ return {deckIdx:DECK_BY_ID[cl.id],reversed:!!cl.reversed}; })};
+      }),
+      time:new Date(r.created_at).toLocaleString(undefined,{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}),
+      _flipped:99, cloudId:r.id, pool:[]};
+    const used={}; entry.cards.forEach(function(cc){ used[cc.deckIdx]=1;(cc.clar||[]).forEach(function(cl){ used[cl.deckIdx]=1; }); });
+    entry.pool=shuffled().filter(function(i){ return !used[i]; });
+    askThread.push(entry);
+    renderAskThread(entry.id);
+  } else {
+    setMode("guided");
+    if(p.spread && SPREADS[p.spread]) state.spread=p.spread;
+    state.need=(p.cards||[]).length;
+    state.drawn=(p.cards||[]).map(function(cc){ return {card:DECK[DECK_BY_ID[cc.id]],reversed:!!cc.reversed}; });
+    state.clarifiers={};
+    Object.keys(p.clarifiers||{}).forEach(function(k){
+      state.clarifiers[k]=(p.clarifiers[k]||[]).map(function(cl){ return {card:DECK[DECK_BY_ID[cl.id]],reversed:!!cl.reversed}; });
+    });
+    const usedIds={}; state.drawn.forEach(function(d){ usedIds[d.card.id]=1; });
+    Object.keys(state.clarifiers).forEach(function(k){ state.clarifiers[k].forEach(function(d){ usedIds[d.card.id]=1; }); });
+    order=shuffled().filter(function(i){ return !usedIds[DECK[i].id]; });
+    SAVES.id=r.id;
+    SAVES.restoring=true;
+    reveal();
+    SAVES.restoring=false;
+    $("journalBox").value=r.journal||"";
+    updateJournalHint();
+  }
+}
+document.addEventListener("click",async function(e){
+  const del=e.target.closest("#pmSaves .del");
+  if(del){
+    e.stopPropagation();
+    const c=savesClient(); if(!c) return;
+    try{ await c.from("tarot_readings").delete().eq("id",del.dataset.del); }catch(err){}
+    if(SAVES.id===del.dataset.del){ SAVES.id=null; updateJournalHint(); }
+    renderSaves();
+    return;
+  }
+  const row=e.target.closest("#pmSaves .pm-save");
+  if(row){
+    const r=(SAVES.rows||[]).find(function(x){ return x.id===row.dataset.save; });
+    if(r) openSaved(r);
+  }
+});
+$("journalBox").addEventListener("input",savesJournalInput);
+$("profileBtn").addEventListener("click",function(){ setTimeout(function(){ if(!$("pmenu").classList.contains("hidden")) renderSaves(); },0); });
+window.addEventListener("stellar:ready",function(){ renderSaves(); updateJournalHint(); });
 
 /* ——— account menu ——— */
 (function(){
