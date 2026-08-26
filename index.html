@@ -85,6 +85,10 @@
   .pm-go-ghost{background:none;color:var(--mist);border-color:var(--line)}
   .pm-go-ghost:hover{color:var(--gold);border-color:var(--gold);filter:none}
   .pm-soon{display:block;margin-top:12px;font-size:12px;color:var(--mist);font-style:italic;text-align:center}
+  .pm-email{width:100%;margin:0 0 10px;background:var(--field-bg);border:1px solid var(--line);border-radius:999px;
+    color:var(--silver);font-family:inherit;font-size:14px;padding:10px 16px}
+  .pm-email:focus{outline:none;border-color:var(--gold)}
+  .pm-email::placeholder{color:var(--mist);font-style:italic}
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{height:100%}
   body{
@@ -462,8 +466,18 @@
     <span>Your account</span>
     <button class="pmenu-close" id="pmenuClose" type="button" aria-label="Close">✕</button>
   </div>
-  <p class="pm-soon" id="pmNote" style="text-align:left;margin:0 0 14px">You're not signed in. Sign in with Stellar to bring your birth chart and journal across.</p>
-  <button class="pm-go" id="pmSignIn" type="button">✷ &nbsp;Sign in with Stellar</button>
+  <div id="pmSignedOut">
+    <p class="pm-soon" id="pmNote" style="text-align:left;margin:0 0 14px">You're not signed in. Sign in with Stellar and your account carries across both apps.</p>
+    <form id="pmForm">
+      <input type="email" class="pm-email" id="pmEmail" placeholder="you@example.com" autocomplete="email" required>
+      <button class="pm-go" id="pmSignIn" type="submit">✷ &nbsp;Email me a sign-in link</button>
+    </form>
+  </div>
+  <div id="pmSignedIn" class="hidden">
+    <p class="pm-soon" style="text-align:left;margin:0 0 4px">Signed in as</p>
+    <p id="pmWho" style="margin:0 0 14px;color:var(--text-strong);font-size:14px;word-break:break-all"></p>
+    <button class="pm-go pm-go-ghost" id="pmSignOut" type="button">Sign out</button>
+  </div>
   <hr>
   <p class="pm-soon" style="text-align:left;margin:0">✷ &nbsp;Astrology readings — the cards read against your birth chart — are still being built.</p>
 </div>
@@ -2162,10 +2176,40 @@ updatePullLabel();
     if(!menu.classList.contains("hidden")&&!menu.contains(e.target)&&e.target!==btn) setOpen(false);
   });
   document.addEventListener("keydown",function(e){ if(e.key==="Escape") setOpen(false); });
-  $("pmSignIn").onclick=function(){
-    $("pmNote").textContent="Account linking isn't live yet — it's the next thing being built. When it lands, this will pull in the chart you already have in Stellar.";
-    this.disabled=true;
+  /* real sign-in, backed by the STELLAR bridge (magic link via signInWithOtp).
+     Astrology/chart linking is intentionally NOT surfaced yet; only the session. */
+  var IDLE_NOTE="You're not signed in. Sign in with Stellar and your account carries across both apps.";
+  function renderAuth(){
+    var u=(window.STELLAR&&window.STELLAR.user)||null;
+    $("pmSignedOut").classList.toggle("hidden",!!u);
+    $("pmSignedIn").classList.toggle("hidden",!u);
+    if(u) $("pmWho").textContent=u.email||"your account";
+  }
+  $("pmForm").onsubmit=function(e){
+    e.preventDefault();
+    var email=($("pmEmail").value||"").trim();
+    if(!email) return;
+    var go=$("pmSignIn"); go.disabled=true;
+    $("pmNote").textContent="Sending your link…";
+    var p; try{ p=window.STELLAR&&window.STELLAR.signIn?window.STELLAR.signIn(email):Promise.reject(new Error("unavailable")); }
+    catch(err){ p=Promise.reject(err); }
+    p.then(function(res){
+      if(res&&res.error) throw res.error;
+      $("pmNote").textContent="Link sent to "+email+". Open it on this device; it works once and expires shortly.";
+      /* allow a resend after a minute, matching the auth rate limit */
+      setTimeout(function(){ go.disabled=false; },60000);
+    }).catch(function(err){
+      $("pmNote").textContent="Could not send the link ("+((err&&err.message)||"sign-in unavailable")+"). Check the address and try again.";
+      go.disabled=false;
+    });
   };
+  $("pmSignOut").onclick=function(){
+    var btn=this; btn.disabled=true;
+    var done=function(){ btn.disabled=false; $("pmNote").textContent=IDLE_NOTE; renderAuth(); };
+    try{ window.STELLAR.signOut().then(done,done); }catch(e){ done(); }
+  };
+  window.addEventListener("stellar:ready",renderAuth);
+  renderAuth();
 })();
 
 </script>
