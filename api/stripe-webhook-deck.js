@@ -56,7 +56,10 @@ const sbHeaders = {
 };
 
 /* Insert one deck_sales row. Returns "duplicate" when the event id has
-   been recorded before, which callers treat as success. */
+   been recorded before, which callers treat as success. A refund can
+   arrive after its deck was retired and deleted; deck_slug is
+   denormalised for exactly that case, so a dangling deck_id falls back
+   to null rather than failing the row. */
 async function insertSale(row) {
   const res = await fetch(SB_URL + "/rest/v1/deck_sales", {
     method: "POST",
@@ -65,7 +68,11 @@ async function insertSale(row) {
   });
   if (res.ok) return "inserted";
   const text = await res.text();
-  if (res.status === 409 || text.includes("23505")) return "duplicate";
+  if (text.includes("23505")) return "duplicate";
+  if (text.includes("23503") && row.deck_id) {
+    return insertSale(Object.assign({}, row, { deck_id: null }));
+  }
+  if (res.status === 409) return "duplicate";
   throw new Error("deck_sales insert failed: " + res.status + " " + text);
 }
 
