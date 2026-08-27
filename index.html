@@ -524,7 +524,7 @@
     <button class="pm-go pm-go-ghost" id="pmSignOut" type="button">Sign out</button>
   </div>
   <hr>
-  <p class="pm-soon" style="text-align:left;margin:0">✷ &nbsp;Astrology readings — the cards read against your birth chart — are still being built.</p>
+  <p class="pm-soon" style="text-align:left;margin:0">✷ &nbsp;Want to see your astrology? <a id="pmAstroLink" href="https://www.stellarastro.app/" style="color:var(--gold);text-decoration:underline;text-decoration-color:var(--gold-soft);text-underline-offset:3px">Stellar has your full chart →</a></p>
 </div>
 
 <div class="deckmodal hidden" id="readingsModal">
@@ -1766,6 +1766,14 @@ if(_dst) _dst.querySelectorAll("button").forEach(b=>{
     renderDeckSheet();
   };
 });
+(function(){
+  /* the astrology link carries the same partner code across apps */
+  var a=$("pmAstroLink"); if(!a) return;
+  try{
+    var r=JSON.parse(localStorage.getItem("astra.ref")||"null");
+    if(r&&r.code) a.href="https://www.stellarastro.app/?ref="+encodeURIComponent(r.code);
+  }catch(e){}
+})();
 renderDeckSheet();
 refreshDecks();
 fetchArtistDirectory();
