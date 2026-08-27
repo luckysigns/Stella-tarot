@@ -271,7 +271,7 @@
   .deckrow.soon{opacity:.72}
   .dk-thumbs{display:flex;gap:4px;flex:none}
   .dk-thumb{width:36px;height:60px;border-radius:5px;object-fit:cover;border:1px solid var(--gold-soft);display:block}
-  .dk-thumb.back{background:url("cards/back-stellar.jpg") center/100% 100% no-repeat,#0c0b28}
+  .dk-thumb.back{background:url("/cards/back-stellar.jpg") center/100% 100% no-repeat,#0c0b28}
   .dk-body{flex:1;min-width:0}
   .dk-name{color:var(--text-strong);font-size:16px}
   .dk-sub{font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-soft);margin-top:3px}
@@ -1268,11 +1268,11 @@ const SPREADS = {
 /* ───────── STATE ───────── */
 let state={spread:null,method:"fan",reversals:true,drawn:[],need:0,clarifiers:{},deck:"base"};
 const $=id=>document.getElementById(id);
-const backSVG=`<svg class="face" viewBox="0 0 100 160" preserveAspectRatio="none"><use href="#astrolabe"/></svg><img class="backimg" src="cards/back-stellar.jpg" alt="" onerror="this.remove()">`;
+const backSVG=`<svg class="face" viewBox="0 0 100 160" preserveAspectRatio="none"><use href="#astrolabe"/></svg><img class="backimg" src="/cards/back-stellar.jpg" alt="" onerror="this.remove()">`;
 
 /* real card art per deck — Traditional uses the public-domain Rider-Waite-Smith scans.
    Returns an <img> overlay; a missing file removes itself and the sigil face shows. */
-const DECK_ART={base:"cards/rws/"};
+const DECK_ART={base:"/cards/rws/"};
 function cardArtIMG(card){
   const dir=card&&card.id?DECK_ART[state.deck]:null;
   if(!dir) return "";
@@ -1322,7 +1322,7 @@ function restoreDeckPref(){ try{ const v=localStorage.getItem("astra.deck"); if(
 function deckById(id){ return DECKS.find(d=>d.id===id)||DECKS[0]; }
 function deckThumbs(dk){
   if(!dk.ready||!dk.samples.length) return '<span class="dk-thumb back"></span><span class="dk-thumb back"></span><span class="dk-thumb back"></span>';
-  return dk.samples.map(id=>'<img class="dk-thumb" src="cards/rws/'+id+'.jpg" alt="" loading="lazy">').join("");
+  return dk.samples.map(id=>'<img class="dk-thumb" src="/cards/rws/'+id+'.jpg" alt="" loading="lazy">').join("");
 }
 function renderDeckPicker(){
   ["deckSeg","askDeckSeg"].forEach(id=>{
@@ -1382,7 +1382,7 @@ function renderArtistPage(){
   const box=$("apContent"),decksEl=$("apDecks");
   if(!box||!AP.code) return;
   const nm=artistDisplayName();
-  const fan='<div class="ah-fan"><img src="cards/back-stellar.jpg" alt=""><img src="cards/back-stellar.jpg" alt=""><img src="cards/back-stellar.jpg" alt=""></div>';
+  const fan='<div class="ah-fan"><img src="/cards/back-stellar.jpg" alt=""><img src="/cards/back-stellar.jpg" alt=""><img src="/cards/back-stellar.jpg" alt=""></div>';
   const note=ARTIST_VIEW.viaLink
     ?'<div class="ah-note">You arrived through '+escA(nm)+"'s link. Every deck you buy here supports them directly.</div>":"";
   const mine=DECKS.filter(d=>d.artist_code===AP.code);
