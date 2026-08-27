@@ -1405,7 +1405,7 @@ function renderArtistPage(){
       +"<h2>"+goldNameHTML(singleDk.name)+"</h2>"+fan
       +'<div class="ah-blurb">'+escA(singleDk.blurb||singleDk.sub||"")+"</div>"
       +'<div class="ah-actions">'+cta
-      +(singleDk.ready?'<button type="button" class="dk-use" id="ahReviews">'+(r&&r.n?"★ "+r.avg.toFixed(1)+" · reviews":"Reviews")+"</button>":"")
+      +(singleDk.ready&&singleDk.artist_code?'<button type="button" class="dk-use" id="ahReviews">'+(r&&r.n?"★ "+r.avg.toFixed(1)+" · reviews":"Reviews")+"</button>":"")
       +"</div>"+note
       +'<a href="#" class="ah-browse" id="ahAllDecks">See all decks by '+escA(nm)+" →</a>";
     decksEl.innerHTML="";
