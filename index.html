@@ -1428,7 +1428,8 @@ async function refreshDecks(){
           deckFilterArtist=ARTIST_VIEW.code;
           deckFilterDeck=(ARTIST_VIEW.deck&&mine.some(d=>d.id===ARTIST_VIEW.deck))?ARTIST_VIEW.deck:null;
           renderDeckSheet();
-          const sec=$("deckshop"); if(sec) sec.scrollIntoView({behavior:"smooth",block:"start"});
+          /* let images and fonts settle so the scroll target does not shift */
+          setTimeout(function(){const sec=$("deckshop");if(sec)sec.scrollIntoView({behavior:"smooth",block:"start"});},450);
         }
       }
     }
