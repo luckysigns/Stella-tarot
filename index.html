@@ -285,6 +285,12 @@
   .dk-more summary:hover{color:var(--gold)}
   .dk-more p{font-size:13.5px;line-height:1.65;color:var(--silver);margin-top:8px}
   .dk-meta{font-size:12px;color:var(--mist);font-style:italic;margin-top:4px}
+  .artist-hero{text-align:center;margin:6px 0 22px}
+  .artist-hero .ah-eyebrow{font-family:"Trebuchet MS",sans-serif;font-size:11px;letter-spacing:.42em;text-transform:uppercase;color:var(--gold-soft)}
+  .artist-hero h2{font-size:clamp(34px,6vw,54px);font-weight:400;line-height:1.02;color:var(--text-strong);margin:10px 0 0;text-shadow:0 0 30px rgba(233,196,106,.25)}
+  .artist-hero h2 em{color:var(--gold)}
+  .artist-hero .ah-bio{font-size:14.5px;font-style:italic;color:var(--mist);max-width:520px;margin:12px auto 0;line-height:1.6}
+  .artist-hero .ah-actions{margin-top:16px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
   .dk-reviews{white-space:nowrap}
   .rev-stars{display:flex;gap:4px;margin:10px 0 8px}
   .rev-stars button{background:none;border:none;font-size:24px;line-height:1;color:var(--line);cursor:pointer;padding:2px}
@@ -709,7 +715,8 @@
   <!-- DECK SHOP -->
   <section class="panel" id="deckshop">
     <div class="step-label" style="margin-bottom:4px" id="deckShopLabel">The deck shop · pick your deck</div>
-    <p class="hint" style="margin-bottom:14px">Every deck reads with the same depth. Browse them all, switch any time, and buy the ones that speak to you. Each purchase supports its artist directly.</p>
+    <p class="hint" style="margin-bottom:14px" id="deckShopHint">Every deck reads with the same depth. Browse them all, switch any time, and buy the ones that speak to you. Each purchase supports its artist directly.</p>
+    <div id="artistHero" class="hidden"></div>
     <div class="shop-controls" style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:14px">
       <div class="seg" id="deckShopTabs">
         <button type="button" data-t="mine" class="on">Your decks</button>
@@ -1310,6 +1317,8 @@ function openArtistPage(code){
   ARTIST_VIEW.code=code;
   ARTIST_VIEW.name=(ARTISTS[code]&&ARTISTS[code].name)||null;
   ARTIST_VIEW.shop=(ARTISTS[code]&&ARTISTS[code].shop)||null;
+  ARTIST_VIEW.bio=(ARTISTS[code]&&ARTISTS[code].bio)||null;
+  ARTIST_VIEW.viaLink=false;
   deckFilterArtist=code; deckFilterDeck=null;
   try{history.pushState(null,"","/"+code+location.search);}catch(e){}
   renderDeckSheet();
@@ -1337,9 +1346,9 @@ function renderDeckListInto(list,mode){
     rows=rows.slice().sort((a,b)=>desc*by(a,b));
   }
   const strip=filtered
-    ? '<p class="hint" style="margin:2px 0 12px">You arrived through '+escA(artistDisplayName())+"'s link. Decks you buy here support them directly."
-      +(ARTIST_VIEW.shop?' <a href="#" class="artist-shop-link">Visit their physical shop ↗</a>':'')
-      +' &middot; <a href="#" class="show-all-decks">Show all decks</a></p>'
+    ? '<p class="hint" style="margin:2px 0 12px">'
+      +(ARTIST_VIEW.viaLink?"You arrived through "+escA(artistDisplayName())+"'s link. Decks you buy here support them directly. &middot; ":"")
+      +'<a href="#" class="show-all-decks">Show all decks</a></p>'
     : "";
   if(!rows.length){
     list.innerHTML=strip+'<p class="hint">'+(deckSearchQ&&list.id==="deckShopList"
@@ -1405,9 +1414,6 @@ function renderDeckListInto(list,mode){
       if(dk&&dk.shop_url) shopClick(dk.artist_code,dk.id,dk.shop_url);
     };
   });
-  list.querySelectorAll(".artist-shop-link").forEach(a=>{
-    a.onclick=e=>{e.preventDefault();shopClick(ARTIST_VIEW.code,deckFilterDeck||null,ARTIST_VIEW.shop);};
-  });
   list.querySelectorAll(".show-all-decks").forEach(a=>{
     a.onclick=e=>{
       e.preventDefault();deckFilterArtist=null;deckFilterDeck=null;
@@ -1429,7 +1435,28 @@ function renderDeckSheet(){
   const sort=$("deckSort");
   if(sort) sort.style.display=f2?"none":"";
   const lbl=$("deckShopLabel");
-  if(lbl) lbl.textContent=f2?"Decks by "+artistDisplayName()+" · the deck shop":"Your decks · the deck shop";
+  if(lbl){ lbl.style.display=f2?"none":""; lbl.textContent="Your decks · the deck shop"; }
+  const hint=$("deckShopHint");
+  if(hint) hint.style.display=f2?"none":"";
+  const hero=$("artistHero");
+  if(hero){
+    hero.classList.toggle("hidden",!f2);
+    hero.className=f2?"artist-hero":"hidden";
+    if(f2){
+      const nm=artistDisplayName();
+      const parts=nm.split(" ");
+      const last=parts.length>1?parts.pop():null;
+      const nameHTML=last?escA(parts.join(" "))+' <em>'+escA(last)+"</em>":'<em>'+escA(nm)+"</em>";
+      hero.innerHTML='<div class="ah-eyebrow">Decks by</div><h2>'+nameHTML+"</h2>"
+        +(ARTIST_VIEW.bio?'<div class="ah-bio">'+escA(ARTIST_VIEW.bio)+"</div>":"")
+        +'<div class="ah-actions">'
+        +(ARTIST_VIEW.shop?'<button type="button" class="dk-use" id="ahShop">Visit their physical shop ↗</button>':"")
+        +(deckFilterDeck?'<button type="button" class="dk-use" id="ahAll">All their decks</button>':"")
+        +"</div>";
+      const sh=$("ahShop"); if(sh) sh.onclick=()=>shopClick(ARTIST_VIEW.code,deckFilterDeck||null,ARTIST_VIEW.shop);
+      const al=$("ahAll"); if(al) al.onclick=()=>{deckFilterDeck=null;renderDeckSheet();};
+    }
+  }
 }
 function openDeckSheet(){ renderDeckSheet(); $("deckModal").classList.remove("hidden"); }
 document.addEventListener("click",function(e){
@@ -1453,12 +1480,12 @@ const SB_PUB_KEY="sb_publishable_QXHauL9k0IEcPWKH7LsjTg_6mMzzGYy";
    attribution block runs (it lives later in the document and reads
    location.search), plus a deck view filtered to that artist. The
    protected attribution block itself is untouched. */
-const ARTIST_VIEW={code:null,deck:null,name:null,shop:null,opened:false};
+const ARTIST_VIEW={code:null,deck:null,name:null,shop:null,bio:null,opened:false,viaLink:false};
 (function(){
   try{
     var m=location.pathname.match(/^\/([a-z0-9][a-z0-9-]{1,30})(?:\/([a-z0-9][a-z0-9_-]{1,60}))?\/?$/);
     if(!m||m[1]==="index") return;
-    ARTIST_VIEW.code=m[1]; ARTIST_VIEW.deck=m[2]||null;
+    ARTIST_VIEW.code=m[1]; ARTIST_VIEW.deck=m[2]||null; ARTIST_VIEW.viaLink=true;
     var q=new URLSearchParams(location.search);
     if(!q.get("ref")) q.set("ref",ARTIST_VIEW.code);
     var qs=q.toString();
@@ -1485,13 +1512,14 @@ async function refreshDeckMeta(){
 }
 async function fetchArtistDirectory(){
   try{
-    var res=await fetch(location.origin+"/sb/rest/v1/artist_directory?select=code,name,shop_url",{headers:{apikey:SB_PUB_KEY}});
+    var res=await fetch(location.origin+"/sb/rest/v1/artist_directory?select=code,name,shop_url,artist_bio",{headers:{apikey:SB_PUB_KEY}});
     if(!res.ok) return; /* the view may not exist yet; codes stand in for names */
     var rows=await res.json();
-    (rows||[]).forEach(function(r){ARTISTS[r.code]={name:r.name||null,shop:r.shop_url||null};});
+    (rows||[]).forEach(function(r){ARTISTS[r.code]={name:r.name||null,shop:r.shop_url||null,bio:r.artist_bio||null};});
     if(ARTIST_VIEW.code&&ARTISTS[ARTIST_VIEW.code]){
       ARTIST_VIEW.name=ARTISTS[ARTIST_VIEW.code].name;
       ARTIST_VIEW.shop=ARTIST_VIEW.shop||ARTISTS[ARTIST_VIEW.code].shop;
+      ARTIST_VIEW.bio=ARTISTS[ARTIST_VIEW.code].bio;
     }
     renderDeckSheet();
   }catch(e){}
