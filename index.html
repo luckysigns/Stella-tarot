@@ -1524,6 +1524,13 @@ function renderDeckSheet(){
   renderDeckListInto($("deckShopList"),deckShopTab);
   if(!$("artistPage").classList.contains("hidden")) renderArtistPage();
 }
+function openDeckSheet(){ renderDeckSheet(); $("deckModal").classList.remove("hidden"); }
+document.addEventListener("click",function(e){
+  if(e.target && e.target.id==="deckModal") closeDeckSheet();
+  if(e.target && e.target.id==="deckClose") closeDeckSheet();
+});
+document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeDeckSheet(); });
+function closeDeckSheet(){ $("deckModal").classList.add("hidden"); }
 restoreDeckPref(); renderDeckPicker();
 
 /* ───────── live decks, ownership, and buying ─────────
