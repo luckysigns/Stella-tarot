@@ -298,6 +298,8 @@
   #revMine input,#revMine textarea{width:100%;box-sizing:border-box;background:var(--field-bg);border:1px solid var(--line);
     border-radius:12px;color:var(--silver);font:inherit;font-size:14px;padding:10px 14px;margin-bottom:8px;resize:vertical}
   #revMine input:focus,#revMine textarea:focus{outline:none;border-color:var(--gold)}
+  .rev-anon{display:flex;align-items:center;gap:8px;font-size:12.5px;font-style:italic;color:var(--mist);margin:0 0 10px;cursor:pointer}
+  .rev-anon input{width:auto;margin:0;accent-color:var(--gold)}
   .rev-item{border-top:1px solid var(--line);padding:12px 0}
   .rev-item .rv-stars{color:var(--gold);letter-spacing:2px;font-size:13px}
   .rev-item .rv-who{font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-soft);margin-top:2px}
@@ -561,7 +563,8 @@
     </div>
     <div id="revMine" class="hidden">
       <div class="rev-stars" id="revStars" role="radiogroup" aria-label="Your rating"></div>
-      <input type="text" id="revName" maxlength="40" placeholder="Name to show with your review (optional)">
+      <input type="text" id="revName" maxlength="40" placeholder="Name to show with your review">
+      <label class="rev-anon"><input type="checkbox" id="revAnon"> Post anonymously, as "A reader"</label>
       <textarea id="revBody" maxlength="2000" rows="3" placeholder="What is this deck like to read with?"></textarea>
       <button type="button" class="dk-use" id="revSubmit">Post your review</button>
       <p class="hint hidden" id="revMsg"></p>
@@ -1674,6 +1677,15 @@ window.addEventListener("stellar:ready",refreshOwned);
    (they own it, or it is free). The RLS policy is the real gate; the
    client only decides which prompt to show. */
 let revDeck=null,revRating=0;
+function accountName(){
+  const u=window.STELLAR&&window.STELLAR.user;
+  if(!u) return "";
+  const md=u.user_metadata||{};
+  if(md.full_name) return String(md.full_name).trim();
+  if(md.name) return String(md.name).trim();
+  const local=(u.email||"").split("@")[0].split(/[._+-]/)[0];
+  return local?local.charAt(0).toUpperCase()+local.slice(1):"";
+}
 function starRow(n){
   let h="";
   for(let i=1;i<=5;i++) h+='<button type="button" data-star="'+i+'"'+(i<=n?' class="on"':'')+' aria-label="'+i+' star'+(i>1?'s':'')+'">★</button>';
@@ -1702,7 +1714,9 @@ async function loadReviews(slug){
     if(mine){
       revRating=mine.rating; $("revStars").innerHTML=starRow(revRating);
       wireStars();
-      $("revBody").value=mine.body||""; $("revName").value=mine.display_name||"";
+      $("revBody").value=mine.body||"";
+      if(mine.display_name){ $("revName").value=mine.display_name; $("revAnon").checked=false; $("revName").disabled=false; }
+      else{ $("revAnon").checked=true; $("revName").disabled=true; }
       $("revSubmit").textContent="Update your review";
     }
   }catch(e){ listEl.innerHTML='<p class="hint">Could not fetch reviews right now.</p>'; }
@@ -1728,7 +1742,12 @@ function openReviews(slug){
     gate.textContent=u?"Reviews come from readers of this deck. Yours unlocks with the deck itself.":"Sign in and read with this deck to leave a review.";
   }
   $("revStars").innerHTML=starRow(0); wireStars();
-  try{ $("revName").value=localStorage.getItem("astra.revname")||""; }catch(e){}
+  let savedName="";let savedAnon=false;
+  try{ savedName=localStorage.getItem("astra.revname")||""; savedAnon=localStorage.getItem("astra.revanon")==="1"; }catch(e){}
+  $("revName").value=savedName||accountName();
+  $("revAnon").checked=savedAnon;
+  $("revName").disabled=savedAnon;
+  $("revAnon").onchange=function(){ $("revName").disabled=this.checked; };
   $("reviewsModal").classList.remove("hidden");
   loadReviews(slug);
 }
@@ -1741,8 +1760,12 @@ $("revSubmit").onclick=async function(){
   try{
     const c=window.STELLAR._sb();
     const u=window.STELLAR.user;
-    const name=($("revName").value||"").trim()||null;
-    try{ if(name) localStorage.setItem("astra.revname",name); }catch(e){}
+    const anon=$("revAnon").checked;
+    const name=anon?null:((($("revName").value||"").trim()||accountName())||null);
+    try{
+      if(name) localStorage.setItem("astra.revname",name);
+      localStorage.setItem("astra.revanon",anon?"1":"0");
+    }catch(e){}
     const{error}=await c.from("deck_reviews").upsert({
       deck_slug:revDeck,user_id:u.id,rating:revRating,
       body:($("revBody").value||"").trim()||null,
