@@ -1423,6 +1423,13 @@ function renderArtistPage(){
     decksEl.innerHTML=mine.map(deckRowHTML).join("")
       +'<a href="#" class="ah-browse" id="ahBrowseAll">Browse the full deck library →</a>';
     wireDeckRows(decksEl);
+    decksEl.querySelectorAll(".deckrow").forEach(row=>{
+      row.style.cursor="pointer";
+      row.addEventListener("click",e=>{
+        if(e.target.closest("button,a,summary,details")) return; /* controls keep their own jobs */
+        showArtistPage(AP.code,row.dataset.deck);
+      });
+    });
     const sh=$("ahShop"); if(sh) sh.onclick=()=>shopClick(AP.code,null,ARTIST_VIEW.shop);
     const ba=$("ahBrowseAll"); if(ba) ba.onclick=e=>{
       e.preventDefault();closeArtistPage();
@@ -1441,7 +1448,7 @@ function deckRowHTML(dk){
   } else if(buyable){
     action='<button type="button" class="dk-use" data-buydeck="'+dk.id+'">Buy · '+deckPriceLabel(dk)+'</button>';
   }
-  return '<div class="deckrow'+(on?' on':'')+(dk.ready?'':' soon')+'">'
+  return '<div class="deckrow'+(on?' on':'')+(dk.ready?'':' soon')+'" data-deck="'+dk.id+'">'
     + '<div class="dk-thumbs">'+deckThumbs(dk)+'</div>'
     + '<div class="dk-body">'
     +   '<div class="dk-name">'+dk.name
