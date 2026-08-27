@@ -285,6 +285,17 @@
   .dk-more summary:hover{color:var(--gold)}
   .dk-more p{font-size:13.5px;line-height:1.65;color:var(--silver);margin-top:8px}
   .dk-meta{font-size:12px;color:var(--mist);font-style:italic;margin-top:4px}
+  .dk-reviews{white-space:nowrap}
+  .rev-stars{display:flex;gap:4px;margin:10px 0 8px}
+  .rev-stars button{background:none;border:none;font-size:24px;line-height:1;color:var(--line);cursor:pointer;padding:2px}
+  .rev-stars button.on{color:var(--gold)}
+  #revMine input,#revMine textarea{width:100%;box-sizing:border-box;background:var(--field-bg);border:1px solid var(--line);
+    border-radius:12px;color:var(--silver);font:inherit;font-size:14px;padding:10px 14px;margin-bottom:8px;resize:vertical}
+  #revMine input:focus,#revMine textarea:focus{outline:none;border-color:var(--gold)}
+  .rev-item{border-top:1px solid var(--line);padding:12px 0}
+  .rev-item .rv-stars{color:var(--gold);letter-spacing:2px;font-size:13px}
+  .rev-item .rv-who{font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-soft);margin-top:2px}
+  .rev-item p{font-size:13.5px;line-height:1.6;color:var(--silver);margin:6px 0 0}
   #deckShopList a,#deckList a{color:var(--gold);text-decoration:underline;text-decoration-color:var(--gold-soft);text-underline-offset:3px}
   #deckShopList a:hover,#deckList a:hover{color:var(--text-strong);text-decoration-color:var(--gold)}
   .dk-use{flex:none;align-self:center;font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.16em;
@@ -536,6 +547,24 @@
   </div>
 </div>
 
+<div class="deckmodal hidden" id="reviewsModal">
+  <div class="decksheet">
+    <div class="dk-head">
+      <h3 id="revTitle">Reviews</h3>
+      <button class="pmenu-close" id="revClose" type="button" aria-label="Close">✕</button>
+    </div>
+    <div id="revMine" class="hidden">
+      <div class="rev-stars" id="revStars" role="radiogroup" aria-label="Your rating"></div>
+      <input type="text" id="revName" maxlength="40" placeholder="Name to show with your review (optional)">
+      <textarea id="revBody" maxlength="2000" rows="3" placeholder="What is this deck like to read with?"></textarea>
+      <button type="button" class="dk-use" id="revSubmit">Post your review</button>
+      <p class="hint hidden" id="revMsg"></p>
+    </div>
+    <p class="hint hidden" id="revGate"></p>
+    <div id="revList"></div>
+  </div>
+</div>
+
 <svg width="0" height="0" style="position:absolute">
   <!-- shared card-back design: astrolabe -->
   <defs>
@@ -688,7 +717,7 @@
       </div>
       <input type="text" id="deckSearch" placeholder="Search a deck or an artist…" />
       <select id="deckSort" aria-label="Sort the shop">
-        <option value="featured">featured</option>
+        <option value="popular">most popular</option>
         <option value="deck">deck name A to Z</option>
         <option value="deck-desc">deck name Z to A</option>
         <option value="artist">artist A to Z</option>
@@ -1297,7 +1326,10 @@ function renderDeckListInto(list,mode){
   if(!filtered&&mode==="mine") rows=DECKS.filter(deckIsMine);
   if(!filtered&&mode==="shop") rows=DECKS.filter(d=>!deckIsMine(d));
   if(deckSearchQ&&list.id==="deckShopList") rows=rows.filter(deckMatchesSearch);
-  if(list.id==="deckShopList"&&!filtered&&deckSortBy!=="featured"){
+  if(list.id==="deckShopList"&&!filtered&&deckSortBy==="popular"){
+    rows=rows.slice().sort((a,b)=>(POP[b.id]||0)-(POP[a.id]||0)||((RATINGS[b.id]||{n:0}).n)-((RATINGS[a.id]||{n:0}).n));
+  }
+  if(list.id==="deckShopList"&&!filtered&&deckSortBy!=="popular"){
     const desc=deckSortBy.slice(-5)==="-desc"?-1:1;
     const by=deckSortBy.indexOf("artist")===0
       ?(a,b)=>artistNameOf(a.artist_code).localeCompare(artistNameOf(b.artist_code))||a.name.localeCompare(b.name)
@@ -1362,6 +1394,9 @@ function renderDeckListInto(list,mode){
   });
   list.querySelectorAll(".dk-artist").forEach(a=>{
     a.onclick=e=>{e.preventDefault();closeDeckSheet();openArtistPage(a.dataset.artist);};
+  });
+  list.querySelectorAll(".dk-reviews").forEach(a=>{
+    a.onclick=e=>{e.preventDefault();openReviews(a.dataset.reviews);};
   });
   list.querySelectorAll("[data-shopdeck]").forEach(a=>{
     a.onclick=e=>{
@@ -1436,7 +1471,18 @@ function artistDisplayName(){
   var c=ARTIST_VIEW.code||"";
   return c.charAt(0).toUpperCase()+c.slice(1);
 }
-const ARTISTS={};
+const ARTISTS={},RATINGS={},POP={};
+async function refreshDeckMeta(){
+  try{
+    const[r1,r2]=await Promise.all([
+      fetch(location.origin+"/sb/rest/v1/deck_ratings?select=*",{headers:{apikey:SB_PUB_KEY}}),
+      fetch(location.origin+"/sb/rest/v1/deck_popularity?select=*",{headers:{apikey:SB_PUB_KEY}})
+    ]);
+    if(r1.ok)(await r1.json()).forEach(x=>{RATINGS[x.deck_slug]={avg:Number(x.avg_rating),n:x.review_count};});
+    if(r2.ok)(await r2.json()).forEach(x=>{POP[x.deck_slug]=x.copies_sold;});
+    renderDeckSheet();
+  }catch(e){}
+}
 async function fetchArtistDirectory(){
   try{
     var res=await fetch(location.origin+"/sb/rest/v1/artist_directory?select=code,name,shop_url",{headers:{apikey:SB_PUB_KEY}});
@@ -1456,6 +1502,9 @@ function deckMetaHTML(dk){
   if(dk.artist_code){
     out+=' · <a href="#" class="dk-artist" data-artist="'+escA(dk.artist_code)+'">by '+escA(artistNameOf(dk.artist_code))+"</a>";
   }
+  const r=RATINGS[dk.id];
+  out+=' · <a href="#" class="dk-reviews" data-reviews="'+escA(dk.id)+'">'
+    +(r&&r.n?"★ "+r.avg.toFixed(1)+" · "+r.n+(r.n===1?" review":" reviews"):"no reviews yet")+"</a>";
   return out;
 }
 /* physical shop click-through: log it, then open the artist's shop */
@@ -1469,7 +1518,7 @@ function shopClick(artistCode,deckSlug,url){
   }catch(e){}
   try{window.open(url,"_blank","noopener");}catch(e){}
 }
-let deckFilterArtist=null,deckFilterDeck=null,deckShopTab="mine",deckSearchQ="",deckSortBy="featured";
+let deckFilterArtist=null,deckFilterDeck=null,deckShopTab="mine",deckSearchQ="",deckSortBy="popular";
 function artistNameOf(code){
   if(!code) return "";
   const a=ARTISTS[code];
@@ -1592,6 +1641,94 @@ function handleDeckReturn(){
   window.addEventListener("stellar:ready",function once(){ window.removeEventListener("stellar:ready",once); poll(); });
 }
 window.addEventListener("stellar:ready",refreshOwned);
+/* ───────── reviews ─────────
+   Read for everyone; write for signed-in readers who can use the deck
+   (they own it, or it is free). The RLS policy is the real gate; the
+   client only decides which prompt to show. */
+let revDeck=null,revRating=0;
+function starRow(n){
+  let h="";
+  for(let i=1;i<=5;i++) h+='<button type="button" data-star="'+i+'"'+(i<=n?' class="on"':'')+' aria-label="'+i+' star'+(i>1?'s':'')+'">★</button>';
+  return h;
+}
+function starsGlyphs(n){ return "★★★★★".slice(0,n)+"☆☆☆☆☆".slice(0,5-n); }
+function canReview(dk){
+  const u=window.STELLAR&&window.STELLAR.user;
+  if(!u||!dk) return false;
+  return OWNED.has(dk.id)||dk.is_free||!(dk.price_cents>0);
+}
+async function loadReviews(slug){
+  const listEl=$("revList");
+  listEl.innerHTML='<p class="hint">Fetching reviews…</p>';
+  try{
+    const res=await fetch(location.origin+"/sb/rest/v1/deck_reviews?select=rating,body,display_name,created_at,user_id&deck_slug=eq."+encodeURIComponent(slug)+"&order=created_at.desc&limit=50",{headers:{apikey:SB_PUB_KEY}});
+    const rows=res.ok?await res.json():[];
+    if(!rows.length){ listEl.innerHTML='<p class="hint">No reviews yet. The first one sets the tone.</p>'; return; }
+    listEl.innerHTML=rows.map(r=>
+      '<div class="rev-item"><span class="rv-stars">'+starsGlyphs(r.rating)+'</span>'
+      +'<div class="rv-who">'+escA(r.display_name||"A reader")+' · '+new Date(r.created_at).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})+'</div>'
+      +(r.body?'<p>'+escA(r.body)+'</p>':'')
+      +'</div>').join("");
+    const u=window.STELLAR&&window.STELLAR.user;
+    const mine=u&&rows.find(r=>r.user_id===u.id);
+    if(mine){
+      revRating=mine.rating; $("revStars").innerHTML=starRow(revRating);
+      wireStars();
+      $("revBody").value=mine.body||""; $("revName").value=mine.display_name||"";
+      $("revSubmit").textContent="Update your review";
+    }
+  }catch(e){ listEl.innerHTML='<p class="hint">Could not fetch reviews right now.</p>'; }
+}
+function wireStars(){
+  $("revStars").querySelectorAll("[data-star]").forEach(b=>{
+    b.onclick=()=>{revRating=parseInt(b.dataset.star,10);$("revStars").innerHTML=starRow(revRating);wireStars();};
+  });
+}
+function openReviews(slug){
+  const dk=DECKS.find(d=>d.id===slug); if(!dk) return;
+  revDeck=slug; revRating=0;
+  $("revTitle").textContent="Reviews · "+dk.name;
+  $("revSubmit").textContent="Post your review";
+  $("revBody").value=""; $("revMsg").classList.add("hidden");
+  const eligible=canReview(dk);
+  $("revMine").classList.toggle("hidden",!eligible);
+  const gate=$("revGate");
+  const u=window.STELLAR&&window.STELLAR.user;
+  if(eligible){ gate.classList.add("hidden"); }
+  else{
+    gate.classList.remove("hidden");
+    gate.textContent=u?"Reviews come from readers of this deck. Yours unlocks with the deck itself.":"Sign in and read with this deck to leave a review.";
+  }
+  $("revStars").innerHTML=starRow(0); wireStars();
+  try{ $("revName").value=localStorage.getItem("astra.revname")||""; }catch(e){}
+  $("reviewsModal").classList.remove("hidden");
+  loadReviews(slug);
+}
+document.addEventListener("click",function(e){
+  if(e.target&&(e.target.id==="reviewsModal"||e.target.id==="revClose")) $("reviewsModal").classList.add("hidden");
+});
+$("revSubmit").onclick=async function(){
+  const msg=$("revMsg"); msg.classList.remove("hidden");
+  if(!revRating){ msg.textContent="Pick a star rating first."; return; }
+  try{
+    const c=window.STELLAR._sb();
+    const u=window.STELLAR.user;
+    const name=($("revName").value||"").trim()||null;
+    try{ if(name) localStorage.setItem("astra.revname",name); }catch(e){}
+    const{error}=await c.from("deck_reviews").upsert({
+      deck_slug:revDeck,user_id:u.id,rating:revRating,
+      body:($("revBody").value||"").trim()||null,
+      display_name:name,updated_at:new Date().toISOString()
+    },{onConflict:"deck_slug,user_id"});
+    if(error) throw error;
+    msg.textContent="Thank you. Your review is up.";
+    loadReviews(revDeck); refreshDeckMeta();
+  }catch(err){
+    msg.textContent=(err&&err.message&&err.message.indexOf("policy")>=0)
+      ?"Reviews are for readers of this deck."
+      :"Could not save that. Try again in a moment.";
+  }
+};
 const _dso=$("deckSort");
 if(_dso) _dso.onchange=e=>{deckSortBy=e.target.value;renderDeckSheet();};
 const _dsq=$("deckSearch");
@@ -1607,6 +1744,7 @@ if(_dst) _dst.querySelectorAll("button").forEach(b=>{
 renderDeckSheet();
 refreshDecks();
 fetchArtistDirectory();
+refreshDeckMeta();
 handleDeckReturn();
 $("againBtn").onclick=()=>{
   state.drawn=[];buildDeck();
