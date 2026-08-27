@@ -1524,6 +1524,89 @@ function renderDeckSheet(){
   renderDeckListInto($("deckShopList"),deckShopTab);
   if(!$("artistPage").classList.contains("hidden")) renderArtistPage();
 }
+restoreDeckPref(); renderDeckPicker();
+
+/* ───────── live decks, ownership, and buying ─────────
+   The decks table is the source of truth; the hardcoded DECKS array above is
+   the fallback so a Supabase outage never leaves the app with no decks.
+   Ownership is per account (deck_ownership, RLS: own rows only). */
+const OWNED=new Set();
+const SB_PUB_KEY="sb_publishable_QXHauL9k0IEcPWKH7LsjTg_6mMzzGYy";
+
+/* ───────── artist profile links ─────────
+   tarot.stellarastro.app/orla and /orla/deck-slug are rewritten to this
+   page by vercel.json. The path becomes ?ref=orla before the referral
+   attribution block runs (it lives later in the document and reads
+   location.search), plus a deck view filtered to that artist. The
+   protected attribution block itself is untouched. */
+const ARTIST_VIEW={code:null,deck:null,name:null,shop:null,bio:null,opened:false,viaLink:false};
+(function(){
+  try{
+    var m=location.pathname.match(/^\/([a-z0-9][a-z0-9-]{1,30})(?:\/([a-z0-9][a-z0-9_-]{1,60}))?\/?$/);
+    if(!m||m[1]==="index") return;
+    ARTIST_VIEW.code=m[1]; ARTIST_VIEW.deck=m[2]||null; ARTIST_VIEW.viaLink=true;
+    var q=new URLSearchParams(location.search);
+    if(!q.get("ref")) q.set("ref",ARTIST_VIEW.code);
+    var qs=q.toString();
+    history.replaceState(null,"","/"+(qs?"?"+qs:"")+location.hash);
+  }catch(e){}
+})();
+function escA(v){return String(v==null?"":v).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+function artistDisplayName(){
+  if(ARTIST_VIEW.name) return ARTIST_VIEW.name;
+  var c=ARTIST_VIEW.code||"";
+  return c.charAt(0).toUpperCase()+c.slice(1);
+}
+const ARTISTS={},RATINGS={},POP={};
+async function refreshDeckMeta(){
+  try{
+    const[r1,r2]=await Promise.all([
+      fetch(location.origin+"/sb/rest/v1/deck_ratings?select=*",{headers:{apikey:SB_PUB_KEY}}),
+      fetch(location.origin+"/sb/rest/v1/deck_popularity?select=*",{headers:{apikey:SB_PUB_KEY}})
+    ]);
+    if(r1.ok)(await r1.json()).forEach(x=>{RATINGS[x.deck_slug]={avg:Number(x.avg_rating),n:x.review_count};});
+    if(r2.ok)(await r2.json()).forEach(x=>{POP[x.deck_slug]=x.copies_sold;});
+    renderDeckSheet();
+  }catch(e){}
+}
+async function fetchArtistDirectory(){
+  try{
+    var res=await fetch(location.origin+"/sb/rest/v1/artist_directory?select=code,name,shop_url,artist_bio",{headers:{apikey:SB_PUB_KEY}});
+    if(!res.ok) return; /* the view may not exist yet; codes stand in for names */
+    var rows=await res.json();
+    (rows||[]).forEach(function(r){ARTISTS[r.code]={name:r.name||null,shop:r.shop_url||null,bio:r.artist_bio||null};});
+    if(ARTIST_VIEW.code&&ARTISTS[ARTIST_VIEW.code]){
+      ARTIST_VIEW.name=ARTISTS[ARTIST_VIEW.code].name;
+      ARTIST_VIEW.shop=ARTIST_VIEW.shop||ARTISTS[ARTIST_VIEW.code].shop;
+      ARTIST_VIEW.bio=ARTISTS[ARTIST_VIEW.code].bio;
+    }
+    renderDeckSheet();
+  }catch(e){}
+}
+function deckMetaHTML(dk){
+  const n=dk.card_count||78;
+  let out=escA(n+" cards")+" · "+(n===78?"tarot":"oracle");
+  if(dk.artist_code){
+    out+=' · <a href="#" class="dk-artist" data-artist="'+escA(dk.artist_code)+'">by '+escA(artistNameOf(dk.artist_code))+"</a>";
+  }
+  if(!dk.ready) return out+" · coming soon";
+  const r=RATINGS[dk.id];
+  out+=' · <a href="#" class="dk-reviews" data-reviews="'+escA(dk.id)+'">'
+    +(r&&r.n?"★ "+r.avg.toFixed(1)+" · "+r.n+(r.n===1?" review":" reviews"):"no reviews yet")+"</a>";
+  return out;
+}
+/* physical shop click-through: log it, then open the artist's shop */
+function shopClick(artistCode,deckSlug,url){
+  try{
+    fetch(location.origin+"/sb/rest/v1/shop_clicks",{
+      method:"POST",
+      headers:{apikey:SB_PUB_KEY,"Content-Type":"application/json"},
+      body:JSON.stringify({artist_code:artistCode,deck_slug:deckSlug||null})
+    });
+  }catch(e){}
+  try{window.open(url,"_blank","noopener");}catch(e){}
+}
+
 let deckShopTab="mine",deckSearchQ="",deckSortBy="popular";
 function artistNameOf(code){
   if(!code) return "";
