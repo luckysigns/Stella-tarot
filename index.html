@@ -404,6 +404,10 @@
     color:var(--silver);font:inherit;font-size:14px;padding:10px 18px}
   .shop-controls input:focus{outline:none;border-color:var(--gold)}
   .shop-controls input::placeholder{color:var(--mist);font-style:italic}
+  .shop-controls select{background:var(--field-bg);border:1px solid var(--line);border-radius:999px;
+    color:var(--mist);font-family:"Trebuchet MS",sans-serif;font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+    padding:10px 14px;cursor:pointer}
+  .shop-controls select:focus{outline:none;border-color:var(--gold)}
   .lib-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
   .lib-card{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:16px;cursor:pointer;transition:.2s}
   .lib-card:hover{border-color:var(--gold);transform:translateY(-2px)}
@@ -681,15 +685,16 @@
       <div class="seg" id="deckShopTabs">
         <button type="button" data-t="mine" class="on">Your decks</button>
         <button type="button" data-t="shop">Deck shop</button>
+        <button type="button" data-t="artists">Artists</button>
       </div>
       <input type="text" id="deckSearch" placeholder="Search a deck or an artist…" />
+      <select id="deckSort" aria-label="Sort the shop">
+        <option value="featured">featured</option>
+        <option value="deck">deck name A to Z</option>
+        <option value="artist">artist A to Z</option>
+      </select>
     </div>
     <div id="deckShopList"></div>
-    <div id="artistBlock">
-      <div class="step-label" style="margin:22px 0 8px">Artists</div>
-      <p class="hint" style="margin-bottom:12px">The people drawing the decks. Their page gathers everything they have made.</p>
-      <div id="artistList"></div>
-    </div>
   </section>
 
   <!-- CARD LIBRARY -->
@@ -1290,6 +1295,7 @@ function renderArtistList(list){
       return hay.indexOf(deckSearchQ)>=0;
     });
   }
+  codes.sort((a,b)=>artistNameOf(a).localeCompare(artistNameOf(b)));
   if(!codes.length){
     list.innerHTML='<p class="hint">'+(deckSearchQ
       ?"No artist matches that search."
@@ -1330,7 +1336,12 @@ function renderDeckListInto(list,mode){
   }
   if(!filtered&&mode==="mine") rows=DECKS.filter(deckIsMine);
   if(!filtered&&mode==="shop") rows=DECKS.filter(d=>!deckIsMine(d));
+  if(!filtered&&mode==="artists"){ renderArtistList(list); return false; }
   if(deckSearchQ&&list.id==="deckShopList") rows=rows.filter(deckMatchesSearch);
+  if(list.id==="deckShopList"&&!filtered){
+    if(deckSortBy==="deck") rows=rows.slice().sort((a,b)=>a.name.localeCompare(b.name));
+    else if(deckSortBy==="artist") rows=rows.slice().sort((a,b)=>artistNameOf(a.artist_code).localeCompare(artistNameOf(b.artist_code))||a.name.localeCompare(b.name));
+  }
   const strip=filtered
     ? '<p class="hint" style="margin:2px 0 12px">You arrived through '+escA(artistDisplayName())+"'s link. Decks you buy here support them directly."
       +(ARTIST_VIEW.shop?' <a href="#" class="artist-shop-link">Visit their physical shop ↗</a>':'')
@@ -1415,11 +1426,8 @@ function renderDeckSheet(){
   if(tabs) tabs.style.display=f2?"none":"";
   const search=$("deckSearch");
   if(search) search.style.display=f2?"none":"";
-  const ab=$("artistBlock");
-  if(ab){
-    ab.style.display=f2?"none":"";
-    if(!f2) renderArtistList($("artistList"));
-  }
+  const sort=$("deckSort");
+  if(sort) sort.style.display=f2?"none":"";
   const lbl=$("deckShopLabel");
   if(lbl) lbl.textContent=f2?"Decks by "+artistDisplayName()+" · the deck shop":"Your decks · the deck shop";
 }
@@ -1498,7 +1506,7 @@ function shopClick(artistCode,deckSlug,url){
   }catch(e){}
   try{window.open(url,"_blank","noopener");}catch(e){}
 }
-let deckFilterArtist=null,deckFilterDeck=null,deckShopTab="mine",deckSearchQ="";
+let deckFilterArtist=null,deckFilterDeck=null,deckShopTab="mine",deckSearchQ="",deckSortBy="featured";
 function artistNameOf(code){
   if(!code) return "";
   const a=ARTISTS[code];
@@ -1621,6 +1629,8 @@ function handleDeckReturn(){
   window.addEventListener("stellar:ready",function once(){ window.removeEventListener("stellar:ready",once); poll(); });
 }
 window.addEventListener("stellar:ready",refreshOwned);
+const _dso=$("deckSort");
+if(_dso) _dso.onchange=e=>{deckSortBy=e.target.value;renderDeckSheet();};
 const _dsq=$("deckSearch");
 if(_dsq) _dsq.oninput=e=>{deckSearchQ=(e.target.value||"").trim().toLowerCase();renderDeckSheet();};
 const _dst=$("deckShopTabs");
