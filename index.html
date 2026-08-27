@@ -290,7 +290,16 @@
   .artist-hero h2{font-size:clamp(34px,6vw,54px);font-weight:400;line-height:1.02;color:var(--text-strong);margin:10px 0 0;text-shadow:0 0 30px rgba(233,196,106,.25)}
   .artist-hero h2 em{color:var(--gold)}
   .artist-hero .ah-bio{font-size:14.5px;font-style:italic;color:var(--mist);max-width:520px;margin:12px auto 0;line-height:1.6}
-  .artist-hero .ah-actions{margin-top:16px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+  .artist-hero .ah-actions{margin-top:18px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+  .artist-hero .ah-fan{display:flex;justify-content:center;gap:12px;margin-top:26px}
+  .artist-hero .ah-fan img{width:96px;height:160px;border-radius:9px;object-fit:cover;border:1px solid var(--gold-soft);box-shadow:0 12px 30px rgba(0,0,0,.5)}
+  .artist-hero .ah-fan img:first-child{transform:rotate(-7deg)}
+  .artist-hero .ah-fan img:last-child{transform:rotate(7deg)}
+  .artist-hero .ah-fan img:nth-child(2){width:104px;height:174px;border-color:var(--gold);position:relative;z-index:2;box-shadow:0 16px 36px rgba(0,0,0,.55)}
+  .artist-hero .ah-note{margin:24px auto 0;max-width:480px;border:1px dashed var(--line);border-radius:12px;padding:12px 18px;font-size:12.5px;font-style:italic;color:var(--mist)}
+  .artist-hero .ah-blurb{font-size:14.5px;font-style:italic;color:var(--mist);max-width:460px;margin:22px auto 0;line-height:1.65}
+  .dk-use.fill{background:var(--gold);color:var(--ink);border-color:var(--gold)}
+  .ah-browse{display:block;text-align:center;margin-top:24px;font-size:13.5px;font-style:italic}
   .dk-reviews{white-space:nowrap}
   .rev-stars{display:flex;gap:4px;margin:10px 0 8px}
   .rev-stars button{background:none;border:none;font-size:24px;line-height:1;color:var(--line);cursor:pointer;padding:2px}
@@ -792,7 +801,7 @@ const DECKS=[
   {id:"base",name:"Traditional",sub:"Rider–Waite–Smith · 1909",ready:true,card_count:78,
    samples:["major_00_fool","major_19_sun","cups_queen"],
    blurb:"The deck almost everyone pictures when they picture tarot. Pamela Colman Smith drew all seventy-eight in 1909, and hers were the first where the number cards show whole scenes rather than rows of cups and coins — which is why so much of what readers 'know' about a card traces back to her drawing of it. Meanings here follow that tradition plainly, with no extra theme laid over the top."},
-  {id:"astro",name:"Astra",sub:"Celestial · being drawn now",ready:false,card_count:78,
+  {id:"astro",name:"Astra",sub:"Celestial · being drawn now",ready:false,card_count:78,artist_code:"lucky", /* TEST ONLY on this branch: remove before merge */
    samples:[],
    blurb:"A cosmic retelling of the same seventy-eight cards: ornate black and gold borders, nebulae and sacred geometry, each Major carrying its ruling planet or sign and each number card its decan. The written readings are finished — every card interpreted through its correspondence — and the artwork is still being drawn, so the deck isn't selectable yet."}
 ];
@@ -1349,9 +1358,7 @@ function renderDeckListInto(list,mode){
     rows=rows.slice().sort((a,b)=>desc*by(a,b));
   }
   const strip=filtered
-    ? '<p class="hint" style="margin:2px 0 12px">'
-      +(ARTIST_VIEW.viaLink?"You arrived through "+escA(artistDisplayName())+"'s link. Decks you buy here support them directly. &middot; ":"")
-      +'<a href="#" class="show-all-decks">Show all decks</a></p>'
+    ? '<p class="hint" style="margin:2px 0 12px;text-align:center"><a href="#" class="show-all-decks">Browse the full deck library →</a></p>'
     : "";
   if(!rows.length){
     list.innerHTML=strip+'<p class="hint">'+(deckSearchQ&&list.id==="deckShopList"
@@ -1443,21 +1450,56 @@ function renderDeckSheet(){
   if(hint) hint.style.display=f2?"none":"";
   const hero=$("artistHero");
   if(hero){
-    hero.classList.toggle("hidden",!f2);
+    const singleDk=f2&&deckFilterDeck?DECKS.find(d=>d.id===deckFilterDeck&&d.artist_code===deckFilterArtist):null;
     hero.className=f2?"artist-hero":"hidden";
     if(f2){
       const nm=artistDisplayName();
-      const parts=nm.split(" ");
-      const last=parts.length>1?parts.pop():null;
-      const nameHTML=last?escA(parts.join(" "))+' <em>'+escA(last)+"</em>":'<em>'+escA(nm)+"</em>";
-      hero.innerHTML='<div class="ah-eyebrow">Decks by</div><h2>'+nameHTML+"</h2>"
-        +(ARTIST_VIEW.bio?'<div class="ah-bio">'+escA(ARTIST_VIEW.bio)+"</div>":"")
-        +'<div class="ah-actions">'
-        +(ARTIST_VIEW.shop?'<button type="button" class="dk-use" id="ahShop">Visit their physical shop ↗</button>':"")
-        +(deckFilterDeck?'<button type="button" class="dk-use" id="ahAll">All their decks</button>':"")
-        +"</div>";
-      const sh=$("ahShop"); if(sh) sh.onclick=()=>shopClick(ARTIST_VIEW.code,deckFilterDeck||null,ARTIST_VIEW.shop);
-      const al=$("ahAll"); if(al) al.onclick=()=>{deckFilterDeck=null;renderDeckSheet();};
+      function goldName(txt){
+        const parts=String(txt).split(" ");
+        const last=parts.length>1?parts.pop():null;
+        return last?escA(parts.join(" "))+' <em>'+escA(last)+"</em>":'<em>'+escA(txt)+"</em>";
+      }
+      const fan='<div class="ah-fan"><img src="cards/back-stellar.jpg" alt=""><img src="cards/back-stellar.jpg" alt=""><img src="cards/back-stellar.jpg" alt=""></div>';
+      const note=ARTIST_VIEW.viaLink
+        ?'<div class="ah-note">You arrived through '+escA(nm)+"'s link. Every deck you buy here supports them directly.</div>":"";
+      if(singleDk){
+        if($("deckShopList")) $("deckShopList").innerHTML="";
+        const r=RATINGS[singleDk.id];
+        let cta="";
+        if(singleDk.ready&&deckIsPaid(singleDk)&&!OWNED.has(singleDk.id)){
+          cta='<button type="button" class="dk-use fill" id="ahBuy">Buy this deck · '+deckPriceLabel(singleDk)+'</button>';
+        }else if(singleDk.ready){
+          cta='<button type="button" class="dk-use fill" id="ahUse">Use this deck</button>';
+        }else{
+          cta='<span class="dk-tag soon">being drawn</span>';
+        }
+        hero.innerHTML='<div class="ah-eyebrow">A deck by '+escA(nm)+"</div>"
+          +"<h2>"+goldName(singleDk.name)+"</h2>"
+          +fan
+          +'<div class="ah-blurb">'+escA(singleDk.blurb||singleDk.sub||"")+"</div>"
+          +'<div class="ah-actions">'+cta
+          +'<button type="button" class="dk-use" id="ahReviews">'+(r&&r.n?"★ "+r.avg.toFixed(1)+" · reviews":"Reviews")+"</button></div>"
+          +note
+          +'<a href="#" class="ah-browse" id="ahAllDecks">See all decks by '+escA(nm)+" →</a>";
+        const bb=$("ahBuy"); if(bb) bb.onclick=function(){buyDeck(singleDk.id,bb);};
+        const ub=$("ahUse"); if(ub) ub.onclick=function(){
+          state.deck=singleDk.id;persistDeck();renderDeckPicker();renderDeckSheet();
+          if(typeof buildLibrary==='function') buildLibrary();
+          const lib=$("library"); if(lib) lib.scrollIntoView({behavior:"smooth",block:"start"});
+        };
+        const rb=$("ahReviews"); if(rb) rb.onclick=()=>openReviews(singleDk.id);
+        const ad=$("ahAllDecks"); if(ad) ad.onclick=e=>{e.preventDefault();deckFilterDeck=null;renderDeckSheet();};
+      }else{
+        hero.innerHTML='<div class="ah-eyebrow">Decks by</div><h2>'+goldName(nm)+"</h2>"
+          +(ARTIST_VIEW.bio?'<div class="ah-bio">'+escA(ARTIST_VIEW.bio)+"</div>":"")
+          +'<div class="ah-actions">'
+          +(ARTIST_VIEW.shop?'<button type="button" class="dk-use" id="ahShop">Visit their physical shop ↗</button>':"")
+          +"</div>"+note
+          +'';
+        const sh=$("ahShop"); if(sh) sh.onclick=()=>shopClick(ARTIST_VIEW.code,null,ARTIST_VIEW.shop);
+      }
+    }else{
+      hero.innerHTML="";
     }
   }
 }
