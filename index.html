@@ -287,16 +287,7 @@
   .dk-meta{font-size:12px;color:var(--mist);font-style:italic;margin-top:4px}
   .artist-hero{text-align:center;margin:6px 0 22px}
   .artist-hero .ah-eyebrow{font-family:"Trebuchet MS",sans-serif;font-size:11px;letter-spacing:.42em;text-transform:uppercase;color:var(--gold-soft)}
-  .artist-hero{position:relative}
-  .artist-hero::before{content:"";position:absolute;left:50%;top:-40px;transform:translateX(-50%);
-    width:min(920px,100vw);height:320px;z-index:0;pointer-events:none;opacity:.95;
-    background:url("/cards/artist-bg.jpg") 16% 84%/190% auto no-repeat;
-    -webkit-mask-image:radial-gradient(70% 75% at 50% 45%,#000 25%,transparent 74%);
-    mask-image:radial-gradient(70% 75% at 50% 45%,#000 25%,transparent 74%)}
-  .artist-hero>*{position:relative;z-index:1}
-  .artist-hero h2{font-size:clamp(46px,8vw,84px);font-weight:400;line-height:1.02;color:var(--text-strong);margin:10px 0 0;
-    text-shadow:0 4px 26px rgba(5,4,16,.9),0 0 60px rgba(233,196,106,.3)}
-  :root[data-theme="light"] .artist-hero::before{opacity:.22}
+  .artist-hero h2{font-size:clamp(34px,6vw,54px);font-weight:400;line-height:1.02;color:var(--text-strong);margin:10px 0 0;text-shadow:0 0 30px rgba(233,196,106,.25)}
   :root[data-theme="light"] .artist-hero h2{text-shadow:none}
   .artist-hero h2 em{color:var(--gold)}
   .artist-hero .ah-bio{font-size:14.5px;font-style:italic;color:var(--mist);max-width:520px;margin:12px auto 0;line-height:1.6}
