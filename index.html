@@ -685,13 +685,14 @@
       <div class="seg" id="deckShopTabs">
         <button type="button" data-t="mine" class="on">Your decks</button>
         <button type="button" data-t="shop">Deck shop</button>
-        <button type="button" data-t="artists">Artists</button>
       </div>
       <input type="text" id="deckSearch" placeholder="Search a deck or an artist…" />
       <select id="deckSort" aria-label="Sort the shop">
         <option value="featured">featured</option>
         <option value="deck">deck name A to Z</option>
+        <option value="deck-desc">deck name Z to A</option>
         <option value="artist">artist A to Z</option>
+        <option value="artist-desc">artist Z to A</option>
       </select>
     </div>
     <div id="deckShopList"></div>
@@ -1285,47 +1286,6 @@ function openArtistPage(code){
   renderDeckSheet();
   const sec=$("deckshop"); if(sec) sec.scrollIntoView({behavior:"smooth",block:"start"});
 }
-function renderArtistList(list){
-  let codes=[];
-  DECKS.forEach(d=>{ if(d.artist_code&&codes.indexOf(d.artist_code)<0) codes.push(d.artist_code); });
-  Object.keys(ARTISTS).forEach(c=>{ if(codes.indexOf(c)<0) codes.push(c); });
-  if(deckSearchQ){
-    codes=codes.filter(code=>{
-      const hay=(artistNameOf(code)+" "+code+" "+DECKS.filter(d=>d.artist_code===code).map(d=>d.name).join(" ")).toLowerCase();
-      return hay.indexOf(deckSearchQ)>=0;
-    });
-  }
-  codes.sort((a,b)=>artistNameOf(a).localeCompare(artistNameOf(b)));
-  if(!codes.length){
-    list.innerHTML='<p class="hint">'+(deckSearchQ
-      ?"No artist matches that search."
-      :"No artists in the directory yet. They appear here the day their first deck goes live.")+'</p>';
-    return;
-  }
-  list.innerHTML=codes.map(code=>{
-    const a=ARTISTS[code]||{};
-    const name=a.name||code.charAt(0).toUpperCase()+code.slice(1);
-    const decks=DECKS.filter(d=>d.artist_code===code);
-    const live=decks.filter(d=>d.ready).length;
-    const soon=decks.length-live;
-    const first=decks[0];
-    const meta=[decks.length+(decks.length===1?" deck":" decks")];
-    if(live) meta.push(live+" in the shop");
-    if(soon) meta.push(soon+" being drawn");
-    return '<div class="deckrow">'
-      + '<div class="dk-thumbs">'+(first?deckThumbs(first):'<span class="dk-thumb back"></span><span class="dk-thumb back"></span><span class="dk-thumb back"></span>')+'</div>'
-      + '<div class="dk-body">'
-      +   '<div class="dk-name">'+escA(name)+'</div>'
-      +   '<div class="dk-sub">Deck artist</div>'
-      +   '<div class="dk-meta">'+escA(meta.join(" · "))+'</div>'
-      + '</div>'
-      + '<button type="button" class="dk-use" data-artistpage="'+escA(code)+'">Their artist page</button>'
-      + '</div>';
-  }).join("");
-  list.querySelectorAll("[data-artistpage]").forEach(b=>{
-    b.onclick=()=>openArtistPage(b.dataset.artistpage);
-  });
-}
 function renderDeckListInto(list,mode){
   if(!list) return false;
   let rows=DECKS,filtered=false;
@@ -1336,11 +1296,13 @@ function renderDeckListInto(list,mode){
   }
   if(!filtered&&mode==="mine") rows=DECKS.filter(deckIsMine);
   if(!filtered&&mode==="shop") rows=DECKS.filter(d=>!deckIsMine(d));
-  if(!filtered&&mode==="artists"){ renderArtistList(list); return false; }
   if(deckSearchQ&&list.id==="deckShopList") rows=rows.filter(deckMatchesSearch);
-  if(list.id==="deckShopList"&&!filtered){
-    if(deckSortBy==="deck") rows=rows.slice().sort((a,b)=>a.name.localeCompare(b.name));
-    else if(deckSortBy==="artist") rows=rows.slice().sort((a,b)=>artistNameOf(a.artist_code).localeCompare(artistNameOf(b.artist_code))||a.name.localeCompare(b.name));
+  if(list.id==="deckShopList"&&!filtered&&deckSortBy!=="featured"){
+    const desc=deckSortBy.slice(-5)==="-desc"?-1:1;
+    const by=deckSortBy.indexOf("artist")===0
+      ?(a,b)=>artistNameOf(a.artist_code).localeCompare(artistNameOf(b.artist_code))||a.name.localeCompare(b.name)
+      :(a,b)=>a.name.localeCompare(b.name);
+    rows=rows.slice().sort((a,b)=>desc*by(a,b));
   }
   const strip=filtered
     ? '<p class="hint" style="margin:2px 0 12px">You arrived through '+escA(artistDisplayName())+"'s link. Decks you buy here support them directly."
@@ -1374,7 +1336,7 @@ function renderDeckListInto(list,mode){
       +     (owned&&paid?' <span class="dk-tag">owned</span>':'')
       +     (dk.ready?'':' <span class="dk-tag soon">being drawn</span>')+'</div>'
       +   '<div class="dk-sub">'+dk.sub+'</div>'
-      +   '<div class="dk-meta">'+escA(deckMetaLine(dk))+'</div>'
+      +   '<div class="dk-meta">'+deckMetaHTML(dk)+'</div>'
       +   '<details class="dk-more"><summary>Learn more</summary><p>'+dk.blurb
       +     (dk.shop_url&&dk.artist_code?' <a href="#" class="dk-shop" data-shopdeck="'+dk.id+'">Buy the printed deck ↗</a>':'')
       +   '</p></details>'
@@ -1397,6 +1359,9 @@ function renderDeckListInto(list,mode){
   });
   list.querySelectorAll("[data-buydeck]").forEach(b=>{
     b.onclick=()=>buyDeck(b.dataset.buydeck,b);
+  });
+  list.querySelectorAll(".dk-artist").forEach(a=>{
+    a.onclick=e=>{e.preventDefault();closeDeckSheet();openArtistPage(a.dataset.artist);};
   });
   list.querySelectorAll("[data-shopdeck]").forEach(a=>{
     a.onclick=e=>{
@@ -1485,15 +1450,13 @@ async function fetchArtistDirectory(){
     renderDeckSheet();
   }catch(e){}
 }
-function deckMetaLine(dk){
-  const bits=[];
+function deckMetaHTML(dk){
   const n=dk.card_count||78;
-  bits.push(n+" cards");
-  bits.push(n===78?"tarot":"oracle");
-  const a=dk.artist_code?ARTISTS[dk.artist_code]:null;
-  if(a&&a.name) bits.push("by "+a.name);
-  else if(dk.artist_code) bits.push("by "+dk.artist_code.charAt(0).toUpperCase()+dk.artist_code.slice(1));
-  return bits.join(" · ");
+  let out=escA(n+" cards")+" · "+(n===78?"tarot":"oracle");
+  if(dk.artist_code){
+    out+=' · <a href="#" class="dk-artist" data-artist="'+escA(dk.artist_code)+'">by '+escA(artistNameOf(dk.artist_code))+"</a>";
+  }
+  return out;
 }
 /* physical shop click-through: log it, then open the artist's shop */
 function shopClick(artistCode,deckSlug,url){
