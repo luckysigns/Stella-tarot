@@ -396,6 +396,14 @@
   .clar-btn{font-size:11px!important;padding:8px 16px!important}
   .general-clar-wrap{margin-top:24px;border-top:1px solid var(--line);padding-top:20px}
   #capture.exporting .clar-btn{display:none}
+  .ask-actions{margin-top:18px;border-top:1px solid var(--line);padding-top:14px}
+  .ask-journal{width:100%;box-sizing:border-box;min-height:76px;background:var(--field-bg);border:1px solid var(--line);
+    border-radius:12px;color:var(--silver);font:inherit;font-size:14px;padding:10px 14px;margin-top:10px;resize:vertical}
+  .ask-journal:focus{outline:none;border-color:var(--gold)}
+  .ask-journalhint{margin-top:6px}
+  .ask-actionbtns{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+  .ask-entry.exporting .ask-del,.ask-entry.exporting .ask-addspread,.ask-entry.exporting .ask-actions{display:none}
+  .ask-entry.exporting{background:#0a0a1f}
   #capture.exporting .general-clar-empty{display:none}
 
   .synthesis{margin-top:26px;border:1px solid var(--line);border-radius:14px;background:rgba(233,196,106,.05);padding:24px}
@@ -714,6 +722,7 @@
     </div>
 
     <div class="export-bar">
+      <button class="btn hidden" id="saveSignin" type="button">✦ Sign in to keep this reading</button>
       <button class="btn" id="exportImg">⤓ Save as image</button>
       <button class="btn" id="exportPdf">⤓ Save as PDF</button>
       <button class="btn solid" id="againBtn">Draw again</button>
@@ -1945,8 +1954,7 @@ $("exportImg").onclick=()=>withBusy($("exportImg"),async()=>{
   a.download=fileStamp()+".png";
   a.click();
 });
-$("exportPdf").onclick=()=>withBusy($("exportPdf"),async()=>{
-  const canvas=await renderCanvas();
+function pdfFromCanvas(canvas,name){
   const img=canvas.toDataURL("image/png");
   const {jsPDF}=window.jspdf;
   const pw=595.28, ph=841.89; // A4 pt
@@ -1975,7 +1983,11 @@ $("exportPdf").onclick=()=>withBusy($("exportPdf"),async()=>{
       if(y<canvas.height) pdf.addPage();
     }
   }
-  pdf.save(fileStamp()+".pdf");
+  pdf.save(name+".pdf");
+}
+$("exportPdf").onclick=()=>withBusy($("exportPdf"),async()=>{
+  const canvas=await renderCanvas();
+  pdfFromCanvas(canvas,fileStamp());
 });
 
 /* shuffle helper */
@@ -2403,7 +2415,7 @@ function synth2(s){
   var pos=s.positions;
   var revCount=cards.filter(function(c){return c.reversed;}).length;
   function nm(d){ return d.card.name + (d.reversed?" reversed":""); }
-  function theme(d){ if(d.card.arcana!=="major") return ""; var k=(d.card.key||[]).slice(0,2); return k.length?(" — "+k.join(" and ")):""; }
+  function theme(d){ if(d.card.arcana!=="major") return ""; var k=(d.card.key||[]).slice(0,2); return k.length?(" ("+k.join(" and ")+")"):""; }
   if(cards.length===1){
     var c0=cards[0];
     var under = c0.card.arcana==="major" ? ("under "+c0.card.astro) : ("in the suit of "+c0.card.suit+" ("+c0.card.element+")");
@@ -2417,16 +2429,16 @@ function synth2(s){
   var parts=[];
   if(root && root!==core && root!==outcome) parts.push("It grows out of "+nm(root)+theme(root)+".");
   parts.push("At its heart is "+nm(core)+theme(core)+", setting the tone of the whole reading.");
-  if(crossing && crossing!==core){ parts.push("Crossing it is "+nm(crossing)+theme(crossing)+" — the friction to work through."); }
+  if(crossing && crossing!==core){ parts.push("Crossing it is "+nm(crossing)+theme(crossing)+", the friction to work through."); }
   if(outcome!==core && outcome!==root){ parts.push("From there it leans toward "+nm(outcome)+theme(outcome)+", the way this wants to resolve."); }
-  if(revCount===0) parts.push("Every card fell upright, so the energy here is flowing freely — a moment to act rather than untangle.");
+  if(revCount===0) parts.push("Every card fell upright, so the energy here is flowing freely: a moment to act rather than untangle.");
   else if(revCount===cards.length) parts.push("Every card fell reversed, turning the whole spread inward — toward what is blocked, held back, or waiting to be released before anything outward can move.");
   else parts.push("With "+revCount+" card"+(revCount>1?"s":"")+" reversed, the path mixes open momentum with a few knots to loosen; honour both.");
   var els={Fire:0,Water:0,Air:0,Earth:0};
   cards.forEach(function(c){ if(c.card.element && els[c.card.element]!==undefined) els[c.card.element]++; });
   var majors=cards.filter(function(c){return c.card.arcana==="major";}).length;
   if(majors>=Math.ceil(cards.length/2)){ parts.push("With "+majors+" Major Arcana in play, these are the larger forces and turning points of your life, not the day-to-day."); }
-  else { var top=Object.keys(els).sort(function(a,b){return els[b]-els[a];})[0]; var v={Fire:"drive and creative heat",Water:"emotion and intuition",Air:"thought, truth and the mind",Earth:"the body, work and material life"}; if(els[top]>0) parts.push("The suits lean toward "+top+" — "+v[top]+" — the register this reading is really speaking in."); }
+  else { var top=Object.keys(els).sort(function(a,b){return els[b]-els[a];})[0]; var v={Fire:"drive and creative heat",Water:"emotion and intuition",Air:"thought, truth and the mind",Earth:"the body, work and material life"}; if(els[top]>0) parts.push("The suits lean toward "+top+": "+v[top]+", the register this reading is really speaking in."); }
   return parts.join(" ");
 }
 function synth(s){
@@ -2442,9 +2454,9 @@ function synth(s){
   }
   const arc=`This reading opens with ${first} and arrives at ${last}.`;
   const tone=revCount===0
-    ? " Every card fell upright — the energies here are flowing freely, asking you to act rather than untangle."
+    ? " Every card fell upright: the energies here are flowing freely, asking you to act rather than untangle."
     : revCount===cards.length
-      ? " Every card fell reversed — the whole spread points inward, toward what's blocked, held back, or waiting to be released before anything outward can move."
+      ? " Every card fell reversed: the whole spread points inward, toward what's blocked, held back, or waiting to be released before anything outward can move."
       : ` With ${revCount} card${revCount>1?"s":""} reversed, the path mixes open momentum with knots to work loose; honor both.`;
   // element balance across minors
   const els={Fire:0,Water:0,Air:0,Earth:0};
@@ -2453,11 +2465,11 @@ function synth(s){
   const majors=cards.filter(c=>c.card.arcana==="major").length;
   let texture="";
   if(majors>=Math.ceil(cards.length/2)){
-    texture=` With ${majors} Major Arcana in play, this isn't small-weather — these are the larger forces and turning points of your life, not the day-to-day.`;
+    texture=` With ${majors} Major Arcana in play, this is not small weather: these are the larger forces and turning points of your life, not the day-to-day.`;
   } else if(elTotal){
     const top=Object.entries(els).sort((a,b)=>b[1]-a[1])[0];
     const elVoice={Fire:"drive and creative heat",Water:"emotion and intuition",Air:"thought, truth and the mind",Earth:"the body, work and material life"};
-    texture=` The deck leans toward ${top[0]} — ${elVoice[top[0]]} — so that's the register this reading is really speaking in.`;
+    texture=` The deck leans toward ${top[0]}: ${elVoice[top[0]]}, so that is the register this reading is really speaking in.`;
   }
   return arc+tone+texture;
 }
@@ -2659,6 +2671,19 @@ function askEntryHTML(entry){
         + '<button class="btn ghost" type="button" data-addspread="'+entry.id+'">✦ Add a card to this spread</button>'
         + '</div>')
     : '<p class="hint" style="margin-top:16px;text-align:center">Every card has been drawn for this question.</p>';
+  var actions='<div class="ask-actions">'
+    + '<details class="dk-more ask-journalwrap"'+(entry._jopen?' open':'')+'><summary>✎ Journal this reading</summary>'
+    +   '<textarea class="ask-journal" data-journal="'+entry.id+'" placeholder="What does this stir up? Impressions, what rings true, what you want to remember…">'+escapeHTML(entry.journal||"")+'</textarea>'
+    +   '<div class="hint ask-journalhint">'+(savesUser()
+          ?(entry.cloudId?"Notes save to your account.":"Saving to your account…")
+          :"Notes stay with this question. Sign in to keep them.")+'</div>'
+    + '</details>'
+    + '<div class="ask-actionbtns">'
+    +   '<button class="btn ghost" type="button" data-askimg="'+entry.id+'">⤓ Save as image</button>'
+    +   '<button class="btn ghost" type="button" data-askpdf="'+entry.id+'">⤓ Save as PDF</button>'
+    +   (savesUser()?'':'<button class="btn" type="button" data-asksignin="'+entry.id+'">✦ Sign in to keep this reading</button>')
+    + '</div>'
+    + '</div>';
   return '<div class="ask-entry" data-entry="'+entry.id+'">'
     + '<button class="ask-del" data-delentry="'+entry.id+'" title="Delete this question">×</button>'
     + '<blockquote class="ask-q">'+escapeHTML(entry.q)+'</blockquote>'
@@ -2666,6 +2691,7 @@ function askEntryHTML(entry){
     + '<div class="board ask-board">'+board+'</div>'
     + '<div class="reading">'+readings+'</div>'
     + addSpread
+    + actions
     + '</div>';
 }
 
@@ -2813,8 +2839,31 @@ $("askThread").addEventListener("click",function(e){
   var addsp=e.target.closest("[data-addspread]"); if(addsp){ var inp=addsp.parentNode.querySelector(".ask-addlabel"); addToSpread(+addsp.dataset.addspread, inp?inp.value:""); return; }
   if(e.target.closest("#askAnother")){ var qa=$("askQ"); if(qa){ qa.scrollIntoView({behavior:"smooth",block:"center"}); setTimeout(function(){qa.focus();},250); } return; }
   var cl=e.target.closest("[data-askclar]"); if(cl){ var parts=cl.dataset.askclar.split(":"); askDrawClarifier(+parts[0], +parts[1]); return; }
+  var xi=e.target.closest("[data-askimg]"); if(xi){ exportAskEntry(+xi.dataset.askimg,"png",xi); return; }
+  var xp=e.target.closest("[data-askpdf]"); if(xp){ exportAskEntry(+xp.dataset.askpdf,"pdf",xp); return; }
+  var si=e.target.closest("[data-asksignin]"); if(si){ askSigninSave(+si.dataset.asksignin); return; }
   var tc=e.target.closest(".tcard"); if(tc){ tc.classList.toggle("flipped"); return; }
 });
+$("askThread").addEventListener("input",function(e){
+  var ta=e.target.closest(".ask-journal"); if(!ta) return;
+  var entry=askThread.find(function(x){return x.id===+ta.dataset.journal;}); if(!entry) return;
+  entry.journal=ta.value; entry._jopen=true;
+  clearTimeout(entry._jt);
+  entry._jt=setTimeout(async function(){
+    if(!entry.cloudId) return; var c=savesClient(); if(!c) return;
+    try{
+      await c.from("tarot_readings").update({journal:(entry.journal||"").trim()||null}).eq("id",entry.cloudId);
+      var el=$("askThread").querySelector('.ask-entry[data-entry="'+entry.id+'"] .ask-journalhint');
+      if(el) el.textContent="Notes saved to your account ✓";
+    }catch(e2){}
+  },800);
+});
+$("askThread").addEventListener("toggle",function(e){
+  var d=e.target.closest(".ask-journalwrap"); if(!d) return;
+  var host=d.closest(".ask-entry"); if(!host) return;
+  var entry=askThread.find(function(x){return x.id===+host.dataset.entry;});
+  if(entry) entry._jopen=d.open;
+},true);
 renderAskCount();
 renderAskLabels();
 updatePullLabel();
@@ -2846,6 +2895,8 @@ function updateJournalHint(){
   el.textContent = SAVES.id ? "This reading and your notes save to your account."
     : (savesUser() ? "Saving to your account…"
                    : "Notes stay with this reading until you draw again. Sign in to keep readings.");
+  const b=$("saveSignin");
+  if(b) b.classList.toggle("hidden", !!savesUser() || !state.drawn.length);
 }
 async function savesCreateGuided(){
   SAVES.id=null; updateJournalHint();
@@ -2887,6 +2938,60 @@ async function savesUpdateAsk(entry){
   if(!entry||!entry.cloudId) return; const c=savesClient(); if(!c) return;
   try{ await c.from("tarot_readings").update({payload:askPayload(entry)}).eq("id",entry.cloudId); }catch(e){}
 }
+async function exportAskEntry(id,kind,btn){
+  const el=$("askThread").querySelector('.ask-entry[data-entry="'+id+'"]'); if(!el) return;
+  await withBusy(btn,async function(){
+    el.querySelectorAll(".tcard").forEach(function(c){c.classList.add("flipped");});
+    el.querySelectorAll("details").forEach(function(d){d.open=true;});
+    el.querySelector(".ask-journalwrap")&& (el.querySelector(".ask-journalwrap").open=false);
+    el.classList.add("exporting");
+    await new Promise(function(r){setTimeout(r,120);});
+    const canvas=await html2canvas(el,{backgroundColor:"#0a0a1f",scale:2,useCORS:true});
+    el.classList.remove("exporting");
+    const name="stellar-tarot-question-"+new Date().toISOString().slice(0,10);
+    if(kind==="png"){
+      const a=document.createElement("a");
+      a.href=canvas.toDataURL("image/png"); a.download=name+".png"; a.click();
+    } else {
+      pdfFromCanvas(canvas,name);
+    }
+  });
+}
+function openSigninSheet(){
+  $("pmenu").classList.remove("hidden");
+  $("profileBtn").setAttribute("aria-expanded","true");
+  const em=$("pmEmail"); if(em) em.focus();
+}
+/* Signed out, "keep this reading" stashes it locally; the first signed-in
+   load (this tab or the magic-link landing) writes it to the account. */
+function stashPending(p){ try{ p.at=Date.now(); localStorage.setItem("astra.pending",JSON.stringify(p)); }catch(e){} }
+function askSigninSave(id){
+  const entry=askThread.find(function(x){return x.id===id;}); if(!entry) return;
+  stashPending({kind:"ask",title:(entry.q||"Question").slice(0,300),deck_slug:state.deck||"base",
+    payload:askPayload(entry),journal:(entry.journal||"").trim()||null});
+  openSigninSheet();
+}
+$("saveSignin").onclick=function(){
+  if(!state.drawn.length) return;
+  stashPending({kind:"spread",title:(SPREADS[state.spread]&&SPREADS[state.spread].name)||"Reading",
+    deck_slug:state.deck||"base",payload:guidedPayload(),
+    journal:($("journalBox").value||"").trim()||null});
+  openSigninSheet();
+};
+window.addEventListener("stellar:ready",async function(){
+  const c=savesClient(),u=savesUser(); if(!c||!u) return;
+  let p=null; try{ p=JSON.parse(localStorage.getItem("astra.pending")||"null"); }catch(e){}
+  if(!p) return;
+  try{
+    if(Date.now()-(p.at||0) < 1000*60*60*72){
+      await c.from("tarot_readings").insert({user_id:u.id,kind:p.kind,title:p.title,
+        deck_slug:p.deck_slug||"base",payload:p.payload,journal:p.journal||null});
+    }
+    localStorage.removeItem("astra.pending");
+    renderSaves(); updateJournalHint();
+    if(typeof renderAskThread==="function"&&askThread.length) renderAskThread();
+  }catch(e){}
+});
 function saveRowHTML(r){
   const d=new Date(r.created_at);
   const when=d.toLocaleDateString(undefined,{month:"short",day:"numeric"})+" · "+d.toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"});
