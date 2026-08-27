@@ -400,6 +400,10 @@
     color:var(--silver);font-family:inherit;font-size:14px;padding:10px 18px}
   .lib-controls input:focus{outline:none;border-color:var(--gold)}
   .lib-controls input::placeholder{color:var(--mist);font-style:italic}
+  .shop-controls input{flex:1;min-width:160px;background:var(--field-bg);border:1px solid var(--line);border-radius:999px;
+    color:var(--silver);font:inherit;font-size:14px;padding:10px 18px}
+  .shop-controls input:focus{outline:none;border-color:var(--gold)}
+  .shop-controls input::placeholder{color:var(--mist);font-style:italic}
   .lib-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
   .lib-card{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:16px;cursor:pointer;transition:.2s}
   .lib-card:hover{border-color:var(--gold);transform:translateY(-2px)}
@@ -673,12 +677,19 @@
   <section class="panel" id="deckshop">
     <div class="step-label" style="margin-bottom:4px" id="deckShopLabel">The deck shop · pick your deck</div>
     <p class="hint" style="margin-bottom:14px">Every deck reads with the same depth. Browse them all, switch any time, and buy the ones that speak to you. Each purchase supports its artist directly.</p>
-    <div class="seg" id="deckShopTabs" style="margin-bottom:14px">
-      <button type="button" data-t="mine" class="on">Your decks</button>
-      <button type="button" data-t="shop">Deck shop</button>
-      <button type="button" data-t="artists">Artists</button>
+    <div class="shop-controls" style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:14px">
+      <div class="seg" id="deckShopTabs">
+        <button type="button" data-t="mine" class="on">Your decks</button>
+        <button type="button" data-t="shop">Deck shop</button>
+      </div>
+      <input type="text" id="deckSearch" placeholder="Search a deck or an artist…" />
     </div>
     <div id="deckShopList"></div>
+    <div id="artistBlock">
+      <div class="step-label" style="margin:22px 0 8px">Artists</div>
+      <p class="hint" style="margin-bottom:12px">The people drawing the decks. Their page gathers everything they have made.</p>
+      <div id="artistList"></div>
+    </div>
   </section>
 
   <!-- CARD LIBRARY -->
@@ -1270,11 +1281,19 @@ function openArtistPage(code){
   const sec=$("deckshop"); if(sec) sec.scrollIntoView({behavior:"smooth",block:"start"});
 }
 function renderArtistList(list){
-  const codes=[];
+  let codes=[];
   DECKS.forEach(d=>{ if(d.artist_code&&codes.indexOf(d.artist_code)<0) codes.push(d.artist_code); });
   Object.keys(ARTISTS).forEach(c=>{ if(codes.indexOf(c)<0) codes.push(c); });
+  if(deckSearchQ){
+    codes=codes.filter(code=>{
+      const hay=(artistNameOf(code)+" "+code+" "+DECKS.filter(d=>d.artist_code===code).map(d=>d.name).join(" ")).toLowerCase();
+      return hay.indexOf(deckSearchQ)>=0;
+    });
+  }
   if(!codes.length){
-    list.innerHTML='<p class="hint">No artists in the directory yet. They appear here the day their first deck goes live.</p>';
+    list.innerHTML='<p class="hint">'+(deckSearchQ
+      ?"No artist matches that search."
+      :"No artists in the directory yet. They appear here the day their first deck goes live.")+'</p>';
     return;
   }
   list.innerHTML=codes.map(code=>{
@@ -1311,16 +1330,18 @@ function renderDeckListInto(list,mode){
   }
   if(!filtered&&mode==="mine") rows=DECKS.filter(deckIsMine);
   if(!filtered&&mode==="shop") rows=DECKS.filter(d=>!deckIsMine(d));
-  if(!filtered&&mode==="artists"){ renderArtistList(list); return false; }
+  if(deckSearchQ&&list.id==="deckShopList") rows=rows.filter(deckMatchesSearch);
   const strip=filtered
     ? '<p class="hint" style="margin:2px 0 12px">You arrived through '+escA(artistDisplayName())+"'s link. Decks you buy here support them directly."
       +(ARTIST_VIEW.shop?' <a href="#" class="artist-shop-link">Visit their physical shop ↗</a>':'')
       +' &middot; <a href="#" class="show-all-decks">Show all decks</a></p>'
     : "";
   if(!rows.length){
-    list.innerHTML=strip+'<p class="hint">'+(mode==="shop"
-      ?"Nothing new in the shop right now. New decks land here as artists finish them."
-      :"No decks here yet. Visit the shop tab to find one.")+'</p>';
+    list.innerHTML=strip+'<p class="hint">'+(deckSearchQ&&list.id==="deckShopList"
+      ?"Nothing matches that search here. Try the other tab, or a different word."
+      :(mode==="shop"
+        ?"Nothing new in the shop right now. New decks land here as artists finish them."
+        :"No decks here yet. Visit the shop tab to find one."))+'</p>';
     return filtered;
   }
   list.innerHTML=strip+rows.map(dk=>{
@@ -1392,6 +1413,13 @@ function renderDeckSheet(){
   const f2=renderDeckListInto($("deckShopList"),deckFilterArtist?null:deckShopTab);
   const tabs=$("deckShopTabs");
   if(tabs) tabs.style.display=f2?"none":"";
+  const search=$("deckSearch");
+  if(search) search.style.display=f2?"none":"";
+  const ab=$("artistBlock");
+  if(ab){
+    ab.style.display=f2?"none":"";
+    if(!f2) renderArtistList($("artistList"));
+  }
   const lbl=$("deckShopLabel");
   if(lbl) lbl.textContent=f2?"Decks by "+artistDisplayName()+" · the deck shop":"Your decks · the deck shop";
 }
@@ -1470,7 +1498,16 @@ function shopClick(artistCode,deckSlug,url){
   }catch(e){}
   try{window.open(url,"_blank","noopener");}catch(e){}
 }
-let deckFilterArtist=null,deckFilterDeck=null,deckShopTab="mine";
+let deckFilterArtist=null,deckFilterDeck=null,deckShopTab="mine",deckSearchQ="";
+function artistNameOf(code){
+  if(!code) return "";
+  const a=ARTISTS[code];
+  return (a&&a.name)||code.charAt(0).toUpperCase()+code.slice(1);
+}
+function deckMatchesSearch(dk){
+  const hay=(dk.name+" "+(dk.sub||"")+" "+artistNameOf(dk.artist_code)+" "+(dk.artist_code||"")).toLowerCase();
+  return hay.indexOf(deckSearchQ)>=0;
+}
 async function refreshDecks(){
   try{
     const res=await fetch(location.origin+"/sb/rest/v1/decks?select=*&order=sort_order",{headers:{apikey:SB_PUB_KEY}});
@@ -1584,6 +1621,8 @@ function handleDeckReturn(){
   window.addEventListener("stellar:ready",function once(){ window.removeEventListener("stellar:ready",once); poll(); });
 }
 window.addEventListener("stellar:ready",refreshOwned);
+const _dsq=$("deckSearch");
+if(_dsq) _dsq.oninput=e=>{deckSearchQ=(e.target.value||"").trim().toLowerCase();renderDeckSheet();};
 const _dst=$("deckShopTabs");
 if(_dst) _dst.querySelectorAll("button").forEach(b=>{
   b.onclick=()=>{
