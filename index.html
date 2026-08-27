@@ -676,6 +676,7 @@
     <div class="seg" id="deckShopTabs" style="margin-bottom:14px">
       <button type="button" data-t="mine" class="on">Your decks</button>
       <button type="button" data-t="shop">Deck shop</button>
+      <button type="button" data-t="artists">Artists</button>
     </div>
     <div id="deckShopList"></div>
   </section>
@@ -1259,6 +1260,47 @@ function deckPriceLabel(dk){
   return "$"+(Number.isInteger(d)?d:d.toFixed(2));
 }
 function deckIsMine(d){ return d.ready && (!deckIsPaid(d)||OWNED.has(d.id)); }
+function openArtistPage(code){
+  ARTIST_VIEW.code=code;
+  ARTIST_VIEW.name=(ARTISTS[code]&&ARTISTS[code].name)||null;
+  ARTIST_VIEW.shop=(ARTISTS[code]&&ARTISTS[code].shop)||null;
+  deckFilterArtist=code; deckFilterDeck=null;
+  try{history.pushState(null,"","/"+code+location.search);}catch(e){}
+  renderDeckSheet();
+  const sec=$("deckshop"); if(sec) sec.scrollIntoView({behavior:"smooth",block:"start"});
+}
+function renderArtistList(list){
+  const codes=[];
+  DECKS.forEach(d=>{ if(d.artist_code&&codes.indexOf(d.artist_code)<0) codes.push(d.artist_code); });
+  Object.keys(ARTISTS).forEach(c=>{ if(codes.indexOf(c)<0) codes.push(c); });
+  if(!codes.length){
+    list.innerHTML='<p class="hint">No artists in the directory yet. They appear here the day their first deck goes live.</p>';
+    return;
+  }
+  list.innerHTML=codes.map(code=>{
+    const a=ARTISTS[code]||{};
+    const name=a.name||code.charAt(0).toUpperCase()+code.slice(1);
+    const decks=DECKS.filter(d=>d.artist_code===code);
+    const live=decks.filter(d=>d.ready).length;
+    const soon=decks.length-live;
+    const first=decks[0];
+    const meta=[decks.length+(decks.length===1?" deck":" decks")];
+    if(live) meta.push(live+" in the shop");
+    if(soon) meta.push(soon+" being drawn");
+    return '<div class="deckrow">'
+      + '<div class="dk-thumbs">'+(first?deckThumbs(first):'<span class="dk-thumb back"></span><span class="dk-thumb back"></span><span class="dk-thumb back"></span>')+'</div>'
+      + '<div class="dk-body">'
+      +   '<div class="dk-name">'+escA(name)+'</div>'
+      +   '<div class="dk-sub">Deck artist</div>'
+      +   '<div class="dk-meta">'+escA(meta.join(" · "))+'</div>'
+      + '</div>'
+      + '<button type="button" class="dk-use" data-artistpage="'+escA(code)+'">Their artist page</button>'
+      + '</div>';
+  }).join("");
+  list.querySelectorAll("[data-artistpage]").forEach(b=>{
+    b.onclick=()=>openArtistPage(b.dataset.artistpage);
+  });
+}
 function renderDeckListInto(list,mode){
   if(!list) return false;
   let rows=DECKS,filtered=false;
@@ -1269,6 +1311,7 @@ function renderDeckListInto(list,mode){
   }
   if(!filtered&&mode==="mine") rows=DECKS.filter(deckIsMine);
   if(!filtered&&mode==="shop") rows=DECKS.filter(d=>!deckIsMine(d));
+  if(!filtered&&mode==="artists"){ renderArtistList(list); return false; }
   const strip=filtered
     ? '<p class="hint" style="margin:2px 0 12px">You arrived through '+escA(artistDisplayName())+"'s link. Decks you buy here support them directly."
       +(ARTIST_VIEW.shop?' <a href="#" class="artist-shop-link">Visit their physical shop ↗</a>':'')
@@ -1334,7 +1377,11 @@ function renderDeckListInto(list,mode){
     a.onclick=e=>{e.preventDefault();shopClick(ARTIST_VIEW.code,deckFilterDeck||null,ARTIST_VIEW.shop);};
   });
   list.querySelectorAll(".show-all-decks").forEach(a=>{
-    a.onclick=e=>{e.preventDefault();deckFilterArtist=null;deckFilterDeck=null;renderDeckSheet();};
+    a.onclick=e=>{
+      e.preventDefault();deckFilterArtist=null;deckFilterDeck=null;
+      try{history.replaceState(null,"","/"+location.search);}catch(err){}
+      renderDeckSheet();
+    };
   });
   return filtered;
 }
