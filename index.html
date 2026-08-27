@@ -1471,14 +1471,15 @@ function renderDeckSheet(){
         }else if(singleDk.ready){
           cta='<button type="button" class="dk-use fill" id="ahUse">Use this deck</button>';
         }else{
-          cta='<span class="dk-tag soon">being drawn</span>';
+          cta='<span class="dk-tag soon">coming soon</span>';
         }
         hero.innerHTML='<div class="ah-eyebrow">A deck by '+escA(nm)+"</div>"
           +"<h2>"+goldName(singleDk.name)+"</h2>"
           +fan
           +'<div class="ah-blurb">'+escA(singleDk.blurb||singleDk.sub||"")+"</div>"
           +'<div class="ah-actions">'+cta
-          +'<button type="button" class="dk-use" id="ahReviews">'+(r&&r.n?"★ "+r.avg.toFixed(1)+" · reviews":"Reviews")+"</button></div>"
+          +(singleDk.ready?'<button type="button" class="dk-use" id="ahReviews">'+(r&&r.n?"★ "+r.avg.toFixed(1)+" · reviews":"Reviews")+"</button>":"")
+          +"</div>"
           +note
           +'<a href="#" class="ah-browse" id="ahAllDecks">See all decks by '+escA(nm)+" →</a>";
         const bb=$("ahBuy"); if(bb) bb.onclick=function(){buyDeck(singleDk.id,bb);};
