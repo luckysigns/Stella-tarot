@@ -1506,6 +1506,7 @@ function deckMetaHTML(dk){
     out+=' · <a href="#" class="dk-artist" data-artist="'+escA(dk.artist_code)+'">by '+escA(artistNameOf(dk.artist_code))+"</a>";
   }
   if(!dk.ready) return out+" · coming soon";
+  if(!dk.artist_code) return out; /* house decks are not reviewable */
   const r=RATINGS[dk.id];
   out+=' · <a href="#" class="dk-reviews" data-reviews="'+escA(dk.id)+'">'
     +(r&&r.n?"★ "+r.avg.toFixed(1)+" · "+r.n+(r.n===1?" review":" reviews"):"no reviews yet")+"</a>";
