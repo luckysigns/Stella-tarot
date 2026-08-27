@@ -666,6 +666,13 @@
     <div id="askThread"></div>
   </section>
 
+  <!-- DECK SHOP -->
+  <section class="panel" id="deckshop">
+    <div class="step-label" style="margin-bottom:4px" id="deckShopLabel">The deck shop · pick your deck</div>
+    <p class="hint" style="margin-bottom:14px">Every deck reads with the same depth. Browse them all, switch any time, and buy the ones that speak to you. Each purchase supports its artist directly.</p>
+    <div id="deckShopList"></div>
+  </section>
+
   <!-- CARD LIBRARY -->
   <section class="panel" id="library">
     <div class="step-label" style="margin-bottom:4px">Card Library · all 78 meanings</div>
@@ -1241,20 +1248,18 @@ function deckPriceLabel(dk){
   const d=(dk.price_cents||0)/100;
   return "$"+(Number.isInteger(d)?d:d.toFixed(2));
 }
-function renderDeckSheet(){
-  const list=$("deckList"); if(!list) return;
+function renderDeckListInto(list){
+  if(!list) return false;
   let rows=DECKS,filtered=false;
   if(deckFilterArtist){
     let mine=DECKS.filter(d=>d.artist_code===deckFilterArtist);
     if(deckFilterDeck){const one=mine.filter(d=>d.id===deckFilterDeck);if(one.length)mine=one;}
     if(mine.length){rows=mine;filtered=true;}
   }
-  const titleEl=$("deckSheetTitle");
-  if(titleEl) titleEl.textContent=filtered?"Decks by "+artistDisplayName():"Your deck";
   const strip=filtered
     ? '<p class="hint" style="margin:2px 0 12px">You arrived through '+escA(artistDisplayName())+"'s link. Decks you buy here support them directly."
-      +(ARTIST_VIEW.shop?' <a href="#" id="artistShopLink">Visit their physical shop ↗</a>':'')
-      +' &middot; <a href="#" id="showAllDecks">Show all decks</a></p>'
+      +(ARTIST_VIEW.shop?' <a href="#" class="artist-shop-link">Visit their physical shop ↗</a>':'')
+      +' &middot; <a href="#" class="show-all-decks">Show all decks</a></p>'
     : "";
   list.innerHTML=strip+rows.map(dk=>{
     const on=state.deck===dk.id;
@@ -1301,10 +1306,21 @@ function renderDeckSheet(){
       if(dk&&dk.shop_url) shopClick(dk.artist_code,dk.id,dk.shop_url);
     };
   });
-  const shopA=$("artistShopLink");
-  if(shopA) shopA.onclick=e=>{e.preventDefault();shopClick(ARTIST_VIEW.code,deckFilterDeck||null,ARTIST_VIEW.shop);};
-  const allA=$("showAllDecks");
-  if(allA) allA.onclick=e=>{e.preventDefault();deckFilterArtist=null;deckFilterDeck=null;renderDeckSheet();};
+  list.querySelectorAll(".artist-shop-link").forEach(a=>{
+    a.onclick=e=>{e.preventDefault();shopClick(ARTIST_VIEW.code,deckFilterDeck||null,ARTIST_VIEW.shop);};
+  });
+  list.querySelectorAll(".show-all-decks").forEach(a=>{
+    a.onclick=e=>{e.preventDefault();deckFilterArtist=null;deckFilterDeck=null;renderDeckSheet();};
+  });
+  return filtered;
+}
+function renderDeckSheet(){
+  const filtered=renderDeckListInto($("deckList"));
+  const titleEl=$("deckSheetTitle");
+  if(titleEl) titleEl.textContent=filtered?"Decks by "+artistDisplayName():"Your deck";
+  renderDeckListInto($("deckShopList"));
+  const lbl=$("deckShopLabel");
+  if(lbl) lbl.textContent=filtered?"Decks by "+artistDisplayName()+" · the deck shop":"The deck shop · pick your deck";
 }
 function openDeckSheet(){ renderDeckSheet(); $("deckModal").classList.remove("hidden"); }
 document.addEventListener("click",function(e){
@@ -1355,7 +1371,7 @@ async function fetchArtistCard(){
     if(rows&&rows[0]){
       ARTIST_VIEW.name=rows[0].name||null;
       ARTIST_VIEW.shop=rows[0].shop_url||null;
-      if(!$("deckModal").classList.contains("hidden")) renderDeckSheet();
+      renderDeckSheet();
     }
   }catch(e){}
 }
@@ -1404,14 +1420,15 @@ async function refreshDecks(){
       DECKS.forEach(d=>{ if(!seen[d.id]) mapped.push(d); });
       DECKS.length=0; mapped.forEach(m=>DECKS.push(m));
       renderDeckPicker();
-      if(!$("deckModal").classList.contains("hidden")) renderDeckSheet();
+      renderDeckSheet();
       if(ARTIST_VIEW.code&&!ARTIST_VIEW.opened){
         const mine=DECKS.filter(d=>d.artist_code===ARTIST_VIEW.code);
         if(mine.length){
           ARTIST_VIEW.opened=true;
           deckFilterArtist=ARTIST_VIEW.code;
           deckFilterDeck=(ARTIST_VIEW.deck&&mine.some(d=>d.id===ARTIST_VIEW.deck))?ARTIST_VIEW.deck:null;
-          openDeckSheet();
+          renderDeckSheet();
+          const sec=$("deckshop"); if(sec) sec.scrollIntoView({behavior:"smooth",block:"start"});
         }
       }
     }
@@ -1427,7 +1444,7 @@ async function refreshOwned(){
       ((res&&res.data)||[]).forEach(r=>OWNED.add(r.deck_slug));
     }
   }catch(e){}
-  if(!$("deckModal").classList.contains("hidden")) renderDeckSheet();
+  renderDeckSheet();
 }
 async function buyDeck(slug,btn){
   const u=window.STELLAR&&window.STELLAR.user;
@@ -1481,6 +1498,7 @@ function handleDeckReturn(){
   window.addEventListener("stellar:ready",function once(){ window.removeEventListener("stellar:ready",once); poll(); });
 }
 window.addEventListener("stellar:ready",refreshOwned);
+renderDeckSheet();
 refreshDecks();
 fetchArtistCard();
 handleDeckReturn();
