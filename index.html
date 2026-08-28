@@ -523,12 +523,14 @@
   .ask-threadfoot{margin-top:28px;text-align:center}
 </style>
 <script>
-  /* set the theme before first paint (no flash): saved choice, else dark */
+  /* set the theme before first paint (no flash): saved choice, else light.
+     The pair reads as one product: tarot defaults to paper and card stock,
+     the astrology app to the cosmos. The toggle still remembers a choice. */
   (function(){try{
     var t=localStorage.getItem("astra.theme");
-    if(t!=="light"&&t!=="dark") t="dark";
+    if(t!=="light"&&t!=="dark") t="light";
     document.documentElement.setAttribute("data-theme",t);
-  }catch(e){document.documentElement.setAttribute("data-theme","dark");}})();
+  }catch(e){document.documentElement.setAttribute("data-theme","light");}})();
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
