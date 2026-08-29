@@ -529,7 +529,7 @@
   .ask-addspread{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:18px;padding-top:16px;border-top:1px dashed var(--line)}
   .ask-addlabel{flex:1;min-width:150px;background:var(--field-bg);border:1px solid var(--line);border-radius:8px;color:var(--silver);font-family:inherit;font-size:14px;padding:9px 12px}
   .ask-addlabel:focus{outline:none;border-color:var(--gold)}
-  .ask-threadfoot{margin-top:28px;text-align:center}
+  .ask-threadfoot{margin-top:28px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
 </style>
 <script>
   /* set the theme before first paint (no flash): saved choice, else light.
@@ -2818,7 +2818,10 @@ function renderAskThread(animateId){
   var wrap=$("askThread"); if(!wrap) return;
   var sy=window.pageYOffset||document.documentElement.scrollTop||0;   // hold scroll across the rebuild
   wrap.innerHTML=askThread.map(askEntryHTML).join("")
-    + (askThread.length ? '<div class="ask-threadfoot"><button class="btn ghost" type="button" id="askAnother">✦ Ask another question in this thread</button></div>' : "");
+    + (askThread.length ? '<div class="ask-threadfoot">'
+        + '<button class="btn ghost" type="button" id="askAnother">✦ Ask another question in this thread</button>'
+        + '<button class="btn ghost" type="button" id="askFresh">Start a fresh reading</button>'
+        + '</div>' : "");
   askThread.forEach(function(entry){
     var box=wrap.querySelector('.ask-entry[data-entry="'+entry.id+'"] .ask-board');
     if(!box) return;
@@ -2957,7 +2960,18 @@ function setMode(mode){
 /* wiring */
 $("modeSeg").querySelectorAll("button").forEach(function(b){ b.onclick=function(){ setMode(b.dataset.mode); }; });
 $("askPull").onclick=askPull;
-$("askClear").onclick=function(){ askThread=[]; renderAskThread(); };
+function startFreshThread(){
+  /* a reading that never reached an account disappears when it is cleared,
+     so say so rather than wiping it silently */
+  const unsaved=askThread.filter(function(e){ return !e.cloudId; }).length;
+  if(unsaved && !confirm(savesUser()
+      ? "Start a fresh reading? These questions stay in your saved readings."
+      : "Start a fresh reading? The questions on this page will be cleared, and they are not saved to an account.")) return;
+  askThread=[]; renderAskThread();
+  const q=$("askQ");
+  if(q){ q.value=""; q.scrollIntoView({behavior:"smooth",block:"center"}); setTimeout(function(){q.focus();},260); }
+}
+$("askClear").onclick=startFreshThread;
 $("askReversals").onchange=function(e){ state.reversals=e.target.checked; var r=$("reversals"); if(r) r.checked=e.target.checked; };
 $("askPresets").querySelectorAll(".chip").forEach(function(b){ b.onclick=function(){ applyPreset(b.dataset.preset); }; });
 $("askLabelInputs").addEventListener("click",function(e){
@@ -2973,6 +2987,7 @@ $("askThread").addEventListener("click",function(e){
   var del=e.target.closest("[data-delentry]"); if(del){ var did=+del.dataset.delentry; askThread=askThread.filter(function(x){return x.id!==did;}); renderAskThread(); return; }
   var addsp=e.target.closest("[data-addspread]"); if(addsp){ var inp=addsp.parentNode.querySelector(".ask-addlabel"); addToSpread(+addsp.dataset.addspread, inp?inp.value:""); return; }
   if(e.target.closest("#askAnother")){ var qa=$("askQ"); if(qa){ qa.scrollIntoView({behavior:"smooth",block:"center"}); setTimeout(function(){qa.focus();},250); } return; }
+  if(e.target.closest("#askFresh")){ startFreshThread(); return; }
   var cl=e.target.closest("[data-askclar]"); if(cl){ var parts=cl.dataset.askclar.split(":"); askDrawClarifier(+parts[0], +parts[1]); return; }
   var xi=e.target.closest("[data-askimg]"); if(xi){ exportAskEntry(+xi.dataset.askimg,"png",xi); return; }
   var xp=e.target.closest("[data-askpdf]"); if(xp){ exportAskEntry(+xp.dataset.askpdf,"pdf",xp); return; }
