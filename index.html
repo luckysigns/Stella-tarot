@@ -2048,25 +2048,39 @@ function pdfFromCanvas(canvas,name){
     const pageImgH=ph-margin*2;
     const pageCanvasH=pageImgH*(canvas.width/usableW);
     const src=canvas.getContext("2d");
-    /* a row is quiet when nothing is drawn across it, so cutting there
-       never slices through a line of type */
-    function quietRow(y){
+    /* A row is safe to cut through when it carries no type. Panels have
+       borders and tinted grounds, so a row is never uniform end to end;
+       what marks a line of text is a scatter of pixels much darker than
+       that row's own background. Ignore the outer edges where borders sit. */
+    const inset=Math.floor(canvas.width*0.06);
+    function rowHasType(y){
       try{
-        const row=src.getImageData(0,y,canvas.width,1).data;
-        const step=Math.max(4,Math.floor(canvas.width/60))*4;
-        let r0=row[0],g0=row[1],b0=row[2];
-        for(let i=0;i<row.length;i+=step){
-          if(Math.abs(row[i]-r0)>6||Math.abs(row[i+1]-g0)>6||Math.abs(row[i+2]-b0)>6) return false;
-        }
-        return true;
-      }catch(e){ return true; }
+        const row=src.getImageData(inset,y,canvas.width-inset*2,1).data;
+        const n=row.length/4;
+        const lum=new Array(n);
+        for(let i=0;i<n;i++) lum[i]=(row[i*4]*299+row[i*4+1]*587+row[i*4+2]*114)/1000;
+        const sorted=lum.slice().sort(function(a,b){return a-b;});
+        const bg=sorted[Math.floor(n*0.75)];               // the row's own ground
+        let dark=0;
+        for(let i=0;i<n;i++){ if(bg-lum[i]>38) dark++; }
+        return dark>Math.max(3,n*0.004);                   // a few stray pixels are not a line
+      }catch(e){ return true; }                            // unreadable: assume busy, do not cut
     }
     function cutHeight(y){
       const ideal=Math.min(pageCanvasH,canvas.height-y);
       if(y+ideal>=canvas.height) return ideal;             // last page, nothing to avoid
-      const slack=Math.floor(pageCanvasH*0.12);            // how far back we will look
-      for(let h=ideal;h>ideal-slack;h--){ if(quietRow(y+h)) return h; }
-      return ideal;                                        // dense page: cut where it falls
+      const slack=Math.floor(pageCanvasH*0.2);             // how far back we will look
+      let best=0;
+      for(let h=ideal;h>ideal-slack;h--){
+        if(!rowHasType(y+h)){
+          /* prefer a gap, not the single blank row between two lines */
+          let run=0;
+          while(run<10 && h-run>0 && !rowHasType(y+h-run)) run++;
+          if(run>=6) return h;
+          if(!best) best=h;
+        }
+      }
+      return best||ideal;                                  // dense page: cut where it falls
     }
     let y=0;
     while(y<canvas.height){
