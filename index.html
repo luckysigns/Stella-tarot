@@ -2960,16 +2960,31 @@ function setMode(mode){
 /* wiring */
 $("modeSeg").querySelectorAll("button").forEach(function(b){ b.onclick=function(){ setMode(b.dataset.mode); }; });
 $("askPull").onclick=askPull;
-function startFreshThread(){
-  /* a reading that never reached an account disappears when it is cleared,
-     so say so rather than wiping it silently */
-  const unsaved=askThread.filter(function(e){ return !e.cloudId; }).length;
-  if(unsaved && !confirm(savesUser()
-      ? "Start a fresh reading? These questions stay in your saved readings."
-      : "Start a fresh reading? The questions on this page will be cleared, and they are not saved to an account.")) return;
+/* Clearing the page never costs you the reading: signed in, anything not
+   yet in the account is written first; signed out, it is stashed so the
+   next sign-in picks it up. Then the page is yours again. */
+async function startFreshThread(){
+  const keeping=askThread.slice();
   askThread=[]; renderAskThread();
   const q=$("askQ");
   if(q){ q.value=""; q.scrollIntoView({behavior:"smooth",block:"center"}); setTimeout(function(){q.focus();},260); }
+  let note="Ask your next question above.";
+  try{
+    if(savesUser()){
+      for(const entry of keeping){ if(!entry.cloudId) await savesCreateAsk(entry); }
+      if(keeping.length) note="Kept in your saved readings. Ask your next question above.";
+      renderSaves();
+    } else if(keeping.length){
+      const items=keeping.map(function(entry){
+        return {kind:"ask",title:(entry.q||"Question").slice(0,300),deck_slug:state.deck||"base",
+          payload:askPayload(entry),journal:(entry.journal||"").trim()||null};
+      });
+      stashReadings(items);
+      note="Held for you. Sign in and it lands in your saved readings.";
+    }
+  }catch(e){}
+  const wrap=$("askThread");
+  if(wrap&&!askThread.length) wrap.innerHTML='<p class="hint" style="text-align:center;margin-top:18px">'+note+'</p>';
 }
 $("askClear").onclick=startFreshThread;
 $("askReversals").onchange=function(e){ state.reversals=e.target.checked; var r=$("reversals"); if(r) r.checked=e.target.checked; };
@@ -2988,6 +3003,7 @@ $("askThread").addEventListener("click",function(e){
   var addsp=e.target.closest("[data-addspread]"); if(addsp){ var inp=addsp.parentNode.querySelector(".ask-addlabel"); addToSpread(+addsp.dataset.addspread, inp?inp.value:""); return; }
   if(e.target.closest("#askAnother")){ var qa=$("askQ"); if(qa){ qa.scrollIntoView({behavior:"smooth",block:"center"}); setTimeout(function(){qa.focus();},250); } return; }
   if(e.target.closest("#askFresh")){ startFreshThread(); return; }
+  if(e.target.closest("#askFreshTop")){ startFreshThread(); return; }
   var cl=e.target.closest("[data-askclar]"); if(cl){ var parts=cl.dataset.askclar.split(":"); askDrawClarifier(+parts[0], +parts[1]); return; }
   var xi=e.target.closest("[data-askimg]"); if(xi){ exportAskEntry(+xi.dataset.askimg,"png",xi); return; }
   var xp=e.target.closest("[data-askpdf]"); if(xp){ exportAskEntry(+xp.dataset.askpdf,"pdf",xp); return; }
