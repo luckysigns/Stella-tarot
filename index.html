@@ -2703,8 +2703,8 @@ applyThemeBtn();
    card already in that question. Respects the deck picker (state.deck) and reversals. */
 var askThread=[];        // [{id,q,count,labels[],pool[deckIdx],cards[{deckIdx,reversed,clar[]}],time,_revealed}]
 var askCount=3, askId=0, askSavedGuided=null;
-const ASK_MAX=6;          // quick-pick buttons
-const ASK_MAX_ROWS=10;    // how far "+ Add a card" can extend the meaning rows
+const ASK_MAX=6;          // quick-pick buttons, then a 6+ chooser
+const ASK_MAX_ROWS=78;    // the deck itself is the only real ceiling
 function escapeHTML(s){return String(s==null?"":s).replace(/[&<>"]/g,function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m];});}
 function entryLabel(entry,i){ var L=entry.labels&&entry.labels[i]?entry.labels[i]:""; return L||("Card "+(i+1)); }
 
@@ -2873,8 +2873,24 @@ function updatePullLabel(){ var b=$("askPull"); if(b) b.textContent="✦ Pull "+
 function readLabelVals(){ return [].map.call($("askLabelInputs").querySelectorAll(".ask-label-row input"), function(i){return i.value;}); }
 function renderAskCount(){
   var seg=$("askCountSeg");
-  seg.innerHTML=""; for(var n=1;n<=ASK_MAX;n++){ seg.innerHTML+='<button data-n="'+n+'" class="'+(n===askCount?"on":"")+'">'+n+'</button>'; }
-  seg.querySelectorAll("button").forEach(function(b){ b.onclick=function(){ askCount=+b.dataset.n; renderAskCount(); renderAskLabels(); updatePullLabel(); }; });
+  var html="";
+  for(var n=1;n<ASK_MAX;n++){ html+='<button data-n="'+n+'" class="'+(n===askCount?"on":"")+'">'+n+'</button>'; }
+  /* the last chip is a doorway: 6, or as many as you like up to the deck */
+  var big=askCount>=ASK_MAX;
+  html+='<button data-more="1" class="'+(big?"on":"")+'">'+(big?askCount+" +":ASK_MAX+" +")+'</button>';
+  seg.innerHTML=html;
+  seg.querySelectorAll("[data-n]").forEach(function(b){
+    b.onclick=function(){ askCount=+b.dataset.n; renderAskCount(); renderAskLabels(); updatePullLabel(); };
+  });
+  var more=seg.querySelector("[data-more]");
+  if(more) more.onclick=function(){
+    var want=prompt("How many cards for this question? Anything from "+ASK_MAX+" to "+ASK_MAX_ROWS+".", String(Math.max(askCount,ASK_MAX)));
+    if(want===null) return;
+    var n=parseInt(want,10);
+    if(!n||n<1) return;
+    askCount=Math.max(1,Math.min(ASK_MAX_ROWS,n));
+    renderAskCount(); renderAskLabels(); updatePullLabel();
+  };
 }
 /* meaning rows: one per card, each definable, with per-row × and a "+ Add a card" that
    extends the draw (so you can grow "Month 1,2,3…" or "Yes/No/Maybe" as far as you like) */
