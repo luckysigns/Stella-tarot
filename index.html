@@ -525,7 +525,8 @@
   .ask-entry:first-child{border-top:none;margin-top:16px;padding-top:6px}
   .ask-del{position:absolute;top:8px;right:2px;background:none;border:none;color:var(--mist);font-size:24px;line-height:1;cursor:pointer;padding:0 6px}
   .ask-del:hover{color:var(--rose)}
-  .ask-q{border-left:3px solid var(--gold);padding:4px 0 4px 14px;margin:0 34px 8px 0;font-style:italic;color:var(--silver);font-size:1.06rem;line-height:1.5}
+  .ask-q{border-left:3px solid var(--gold);padding:6px 0 6px 16px;margin:0 34px 10px 0;font-style:italic;
+    color:var(--text-strong);font-size:1.34rem;font-weight:600;line-height:1.35;letter-spacing:.005em}
   .ask-meta{font-size:12px;color:var(--mist);letter-spacing:.06em;text-transform:uppercase;margin-bottom:12px}
   .ask-board{margin:6px 0 20px}
   .ask-addspread{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:18px;padding-top:16px;border-top:1px dashed var(--line)}
@@ -2026,11 +2027,32 @@ function pdfFromCanvas(canvas,name){
     // paginate a tall reading across multiple pages
     const pageImgH=ph-margin*2;
     const pageCanvasH=pageImgH*(canvas.width/usableW);
+    const src=canvas.getContext("2d");
+    /* a row is quiet when nothing is drawn across it, so cutting there
+       never slices through a line of type */
+    function quietRow(y){
+      try{
+        const row=src.getImageData(0,y,canvas.width,1).data;
+        const step=Math.max(4,Math.floor(canvas.width/60))*4;
+        let r0=row[0],g0=row[1],b0=row[2];
+        for(let i=0;i<row.length;i+=step){
+          if(Math.abs(row[i]-r0)>6||Math.abs(row[i+1]-g0)>6||Math.abs(row[i+2]-b0)>6) return false;
+        }
+        return true;
+      }catch(e){ return true; }
+    }
+    function cutHeight(y){
+      const ideal=Math.min(pageCanvasH,canvas.height-y);
+      if(y+ideal>=canvas.height) return ideal;             // last page, nothing to avoid
+      const slack=Math.floor(pageCanvasH*0.12);            // how far back we will look
+      for(let h=ideal;h>ideal-slack;h--){ if(quietRow(y+h)) return h; }
+      return ideal;                                        // dense page: cut where it falls
+    }
     let y=0;
     while(y<canvas.height){
       const slice=document.createElement("canvas");
       slice.width=canvas.width;
-      slice.height=Math.min(pageCanvasH,canvas.height-y);
+      slice.height=cutHeight(y);
       const ctx=slice.getContext("2d");
       ctx.drawImage(canvas,0,y,canvas.width,slice.height,0,0,canvas.width,slice.height);
       const sliceImg=slice.toDataURL("image/png");
