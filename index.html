@@ -395,6 +395,12 @@
   .clar-note{color:var(--mist)!important;font-style:italic;font-size:13px!important;margin-top:8px}
   .clar-btn{font-size:11px!important;padding:8px 16px!important}
   .general-clar-wrap{margin-top:24px;border-top:1px solid var(--line);padding-top:20px}
+  /* html2canvas cannot rasterise 3D transforms, so the flip is flattened for
+     the capture: the back face is dropped and the front laid flat */
+  .exporting .tcard .inner{transform:none !important;transform-style:flat !important;transition:none !important}
+  .exporting .tcard .side{backface-visibility:visible !important}
+  .exporting .tcard .back{display:none !important}
+  .exporting .tcard .front{transform:none !important}
   #capture.exporting .clar-btn{display:none}
   .ask-actions{margin-top:18px;border-top:1px solid var(--line);padding-top:14px}
   .ask-journal{width:100%;box-sizing:border-box;min-height:76px;background:var(--field-bg);border:1px solid var(--line);
@@ -1913,6 +1919,22 @@ $("againBtn").onclick=()=>{
 };
 
 /* ───────── export (image / pdf) ───────── */
+/* lazy images never load inside a collapsed or offscreen block, and an
+   unloaded image renders as a blank space in the capture */
+async function readyForCapture(node){
+  const r=node.getBoundingClientRect();
+  if(!r.width||!node.scrollHeight) throw new Error("nothing to export yet");
+  const imgs=[].slice.call(node.querySelectorAll("img"));
+  imgs.forEach(function(im){ im.loading="eager"; });
+  await Promise.all(imgs.map(function(im){
+    if(im.complete&&im.naturalWidth) return Promise.resolve();
+    return new Promise(function(res){
+      const done=function(){ im.removeEventListener("load",done); im.removeEventListener("error",done); res(); };
+      im.addEventListener("load",done); im.addEventListener("error",done);
+      setTimeout(done,4000);
+    });
+  }));
+}
 function exportBG(){ return document.documentElement.getAttribute("data-theme")==="light" ? "#f2e8d5" : "#0a0a1f"; }
 function exportRGB(){ return document.documentElement.getAttribute("data-theme")==="light" ? [242,232,213] : [10,10,31]; }
 function prepCapture(){
@@ -1958,6 +1980,7 @@ async function renderCanvas(){
   const node=$("capture");
   node.classList.add("exporting");
   try{
+    await readyForCapture(node);
     await new Promise(r=>setTimeout(r,120)); // let layout settle
     return await html2canvas(node,{backgroundColor:exportBG(),scale:2,useCORS:true});
   } finally {
@@ -1973,7 +1996,12 @@ function fileStamp(){
 async function withBusy(btn,fn){
   const label=btn.textContent;btn.disabled=true;btn.textContent="Preparing…";
   try{ await fn(); }
-  catch(e){ console.error(e); alert("Export hit a snag — try again in a moment."); }
+  catch(e){
+    console.error(e);
+    alert(e&&e.message==="nothing to export yet"
+      ? "Open the reading you want to save first, then try again."
+      : "Export hit a snag. Try again in a moment.");
+  }
   finally{ btn.disabled=false;btn.textContent=label; }
 }
 $("exportImg").onclick=()=>withBusy($("exportImg"),async()=>{
@@ -2980,6 +3008,7 @@ async function exportAskEntry(id,kind,btn){
     });
     el.classList.add("exporting");
     try{
+      await readyForCapture(el);
       await new Promise(function(r){setTimeout(r,120);});
       const canvas=await html2canvas(el,{backgroundColor:exportBG(),scale:2,useCORS:true});
       const name="stellar-tarot-question-"+new Date().toISOString().slice(0,10);
