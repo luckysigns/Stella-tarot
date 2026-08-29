@@ -395,12 +395,9 @@
   .clar-note{color:var(--mist)!important;font-style:italic;font-size:13px!important;margin-top:8px}
   .clar-btn{font-size:11px!important;padding:8px 16px!important}
   .general-clar-wrap{margin-top:24px;border-top:1px solid var(--line);padding-top:20px}
-  /* html2canvas cannot rasterise 3D transforms, so the flip is flattened for
-     the capture: the back face is dropped and the front laid flat */
-  .exporting .tcard .inner{transform:none !important;transform-style:flat !important;transition:none !important}
-  .exporting .tcard .side{backface-visibility:visible !important}
-  .exporting .tcard .back{display:none !important}
-  .exporting .tcard .front{transform:none !important}
+  .capture-card{display:block;overflow:hidden;border-radius:12px;background:var(--void)}
+  .capture-card>*{position:relative !important;inset:auto !important;transform:none !important;
+    backface-visibility:visible !important;width:100% !important;height:100% !important}
   #capture.exporting .clar-btn{display:none}
   .ask-actions{margin-top:18px;border-top:1px solid var(--line);padding-top:14px}
   .ask-journal{width:100%;box-sizing:border-box;min-height:76px;background:var(--field-bg);border:1px solid var(--line);
@@ -1920,6 +1917,27 @@ $("againBtn").onclick=()=>{
 };
 
 /* ───────── export (image / pdf) ───────── */
+/* The flip card is a 3D construction that html2canvas measures and paints
+   wrongly, so each face-up card is stood in for by a plain, statically
+   positioned copy of its front face for the duration of the capture. */
+function standInCards(node){
+  const undo=[];
+  node.querySelectorAll(".tcard").forEach(function(card){
+    const front=card.querySelector(".front");
+    if(!front||!front.querySelector("img")) return;      // no art to stand in for
+    const w=card.offsetWidth, h=card.offsetHeight;
+    if(!w||!h) return;
+    const holder=document.createElement("div");
+    holder.className="capture-card";
+    holder.style.width=w+"px"; holder.style.height=h+"px";
+    holder.appendChild(front.cloneNode(true));
+    card.parentElement.insertBefore(holder,card);
+    const prev=card.style.display;
+    card.style.display="none";
+    undo.push(function(){ holder.remove(); card.style.display=prev; });
+  });
+  return function(){ undo.forEach(function(f){ try{f();}catch(e){} }); };
+}
 /* lazy images never load inside a collapsed or offscreen block, and an
    unloaded image renders as a blank space in the capture */
 async function readyForCapture(node){
@@ -1980,11 +1998,13 @@ async function renderCanvas(){
   const undo=prepCapture();stamp();
   const node=$("capture");
   node.classList.add("exporting");
+  const undoCards=standInCards(node);
   try{
     await readyForCapture(node);
     await new Promise(r=>setTimeout(r,120)); // let layout settle
     return await html2canvas(node,{backgroundColor:exportBG(),scale:2,useCORS:true});
   } finally {
+    undoCards();
     node.classList.remove("exporting");
     undo();
   }
@@ -3029,6 +3049,7 @@ async function exportAskEntry(id,kind,btn){
       d.open=true; undo.push(function(){d.open=false;});
     });
     el.classList.add("exporting");
+    const undoCards=standInCards(el);
     try{
       await readyForCapture(el);
       await new Promise(function(r){setTimeout(r,120);});
@@ -3041,6 +3062,7 @@ async function exportAskEntry(id,kind,btn){
         pdfFromCanvas(canvas,name);
       }
     } finally {
+      undoCards();
       el.classList.remove("exporting");
       undo.forEach(function(f){ try{f();}catch(e){} });
     }
