@@ -404,6 +404,11 @@
   .ask-actionbtns{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
   .ask-entry.exporting .ask-del,.ask-entry.exporting .ask-addspread,.ask-entry.exporting .ask-actions{display:none}
   .ask-entry.exporting{background:#0a0a1f}
+  :root[data-theme="light"] .ask-entry.exporting{background:#f2e8d5}
+  .signin-row{display:flex;justify-content:center;margin-top:26px}
+  .capture-foot,.cap-foot{text-align:center;font-size:12px;font-style:italic;color:var(--mist);margin-top:18px}
+  .ask-entry .cap-foot{display:none}
+  .ask-entry.exporting .cap-foot{display:block}
   #capture.exporting .general-clar-empty{display:none}
 
   .synthesis{margin-top:26px;border:1px solid var(--line);border-radius:14px;background:rgba(233,196,106,.05);padding:24px}
@@ -713,6 +718,7 @@
         <div class="step-label">Journal</div>
         <p id="journalPrintText"></p>
       </div>
+      <div class="capture-foot hidden" id="captureFoot"></div>
     </div>
 
     <div class="journal">
@@ -723,8 +729,10 @@
       </div>
     </div>
 
+    <div class="signin-row hidden" id="saveSigninRow">
+      <button class="btn" id="saveSignin" type="button">✦ Sign in to keep this reading</button>
+    </div>
     <div class="export-bar">
-      <button class="btn hidden" id="saveSignin" type="button">✦ Sign in to keep this reading</button>
       <button class="btn" id="exportImg">⤓ Save as image</button>
       <button class="btn" id="exportPdf">⤓ Save as PDF</button>
       <button class="btn solid" id="againBtn">Draw again</button>
@@ -1715,9 +1723,7 @@ async function buyDeck(slug,btn){
   if(!u){
     /* ownership is per account, so sign in first */
     closeDeckSheet();
-    $("pmenu").classList.remove("hidden");
-    $("profileBtn").setAttribute("aria-expanded","true");
-    const em=$("pmEmail"); if(em) em.focus();
+    openSigninSheet();
     return;
   }
   const orig=btn?btn.textContent:"";
@@ -1907,20 +1913,38 @@ $("againBtn").onclick=()=>{
 };
 
 /* ───────── export (image / pdf) ───────── */
+function exportBG(){ return document.documentElement.getAttribute("data-theme")==="light" ? "#f2e8d5" : "#0a0a1f"; }
+function exportRGB(){ return document.documentElement.getAttribute("data-theme")==="light" ? [242,232,213] : [10,10,31]; }
 function prepCapture(){
-  // ensure all cards are face-up in the export
-  document.querySelectorAll("#board .tcard").forEach(c=>c.classList.add("flipped"));
-  // expand all life-area context panels so they appear in the export
-  document.querySelectorAll("#capture .contexts").forEach(d=>d.open=true);
-  document.querySelectorAll("#capture .deeper").forEach(d=>d.open=true);
-  // fold journal text into the printable block
+  /* every change here is recorded and undone after the capture, so the
+     page comes back exactly as the reader left it */
+  const undo=[];
+  document.querySelectorAll("#board .tcard:not(.flipped)").forEach(c=>{
+    c.classList.add("flipped"); undo.push(function(){c.classList.remove("flipped");});
+  });
+  document.querySelectorAll("#capture .contexts:not([open])").forEach(d=>{
+    d.open=true; undo.push(function(){d.open=false;});
+  });
+  document.querySelectorAll("#capture .deeper:not([open])").forEach(d=>{
+    d.open=true; undo.push(function(){d.open=false;});
+  });
   const txt=$("journalBox").value.trim();
   if(txt){
     $("journalPrintText").textContent=txt;
     $("journalPrint").classList.remove("hidden");
+    undo.push(function(){$("journalPrint").classList.add("hidden");});
   } else {
     $("journalPrint").classList.add("hidden");
   }
+  const foot=$("captureFoot");
+  if(foot){
+    foot.textContent=savesUser()
+      ? "tarot.stellarastro.app"
+      : "tarot.stellarastro.app · sign in to keep readings like this one";
+    foot.classList.remove("hidden");
+    undo.push(function(){foot.classList.add("hidden");});
+  }
+  return function(){ undo.forEach(function(f){ try{f();}catch(e){} }); };
 }
 function stamp(){
   const s=SPREADS[state.spread];
@@ -1930,13 +1954,16 @@ function stamp(){
   return {date};
 }
 async function renderCanvas(){
-  prepCapture();stamp();
+  const undo=prepCapture();stamp();
   const node=$("capture");
   node.classList.add("exporting");
-  await new Promise(r=>setTimeout(r,120)); // let layout settle
-  const canvas=await html2canvas(node,{backgroundColor:"#0a0a1f",scale:2,useCORS:true});
-  node.classList.remove("exporting");
-  return canvas;
+  try{
+    await new Promise(r=>setTimeout(r,120)); // let layout settle
+    return await html2canvas(node,{backgroundColor:exportBG(),scale:2,useCORS:true});
+  } finally {
+    node.classList.remove("exporting");
+    undo();
+  }
 }
 function fileStamp(){
   const s=SPREADS[state.spread].name.replace(/\s+/g,"-").toLowerCase();
@@ -1964,7 +1991,8 @@ function pdfFromCanvas(canvas,name){
   const margin=24, usableW=pw-margin*2;
   const imgH=canvas.height*(usableW/canvas.width);
   if(imgH<=ph-margin*2){
-    pdf.setFillColor(10,10,31);pdf.rect(0,0,pw,ph,"F");
+    const bg1=exportRGB();
+    pdf.setFillColor(bg1[0],bg1[1],bg1[2]);pdf.rect(0,0,pw,ph,"F");
     pdf.addImage(img,"PNG",margin,margin,usableW,imgH);
   } else {
     // paginate a tall reading across multiple pages
@@ -1979,7 +2007,8 @@ function pdfFromCanvas(canvas,name){
       ctx.drawImage(canvas,0,y,canvas.width,slice.height,0,0,canvas.width,slice.height);
       const sliceImg=slice.toDataURL("image/png");
       const sliceH=slice.height*(usableW/canvas.width);
-      pdf.setFillColor(10,10,31);pdf.rect(0,0,pw,ph,"F");
+      const bg2=exportRGB();
+      pdf.setFillColor(bg2[0],bg2[1],bg2[2]);pdf.rect(0,0,pw,ph,"F");
       pdf.addImage(sliceImg,"PNG",margin,margin,usableW,sliceH);
       y+=slice.height;
       if(y<canvas.height) pdf.addPage();
@@ -2674,12 +2703,13 @@ function askEntryHTML(entry){
         + '</div>')
     : '<p class="hint" style="margin-top:16px;text-align:center">Every card has been drawn for this question.</p>';
   var actions='<div class="ask-actions">'
-    + '<details class="dk-more ask-journalwrap"'+(entry._jopen?' open':'')+'><summary>✎ Journal this reading</summary>'
+    + '<div class="ask-journalwrap">'
+    +   '<div class="step-label" style="font-size:11px;margin:0 0 2px">✎ Your notes</div>'
     +   '<textarea class="ask-journal" data-journal="'+entry.id+'" placeholder="What does this stir up? Impressions, what rings true, what you want to remember…">'+escapeHTML(entry.journal||"")+'</textarea>'
     +   '<div class="hint ask-journalhint">'+(savesUser()
           ?(entry.cloudId?"Notes save to your account.":"Saving to your account…")
           :"Notes stay with this question. Sign in to keep them.")+'</div>'
-    + '</details>'
+    + '</div>'
     + '<div class="ask-actionbtns">'
     +   '<button class="btn ghost" type="button" data-askimg="'+entry.id+'">⤓ Save as image</button>'
     +   '<button class="btn ghost" type="button" data-askpdf="'+entry.id+'">⤓ Save as PDF</button>'
@@ -2694,6 +2724,9 @@ function askEntryHTML(entry){
     + '<div class="reading">'+readings+'</div>'
     + addSpread
     + actions
+    + '<div class="cap-foot">'+(savesUser()
+        ?"tarot.stellarastro.app"
+        :"tarot.stellarastro.app · sign in to keep readings like this one")+'</div>'
     + '</div>';
 }
 
@@ -2849,7 +2882,7 @@ $("askThread").addEventListener("click",function(e){
 $("askThread").addEventListener("input",function(e){
   var ta=e.target.closest(".ask-journal"); if(!ta) return;
   var entry=askThread.find(function(x){return x.id===+ta.dataset.journal;}); if(!entry) return;
-  entry.journal=ta.value; entry._jopen=true;
+  entry.journal=ta.value;
   clearTimeout(entry._jt);
   entry._jt=setTimeout(async function(){
     if(!entry.cloudId) return; var c=savesClient(); if(!c) return;
@@ -2860,12 +2893,7 @@ $("askThread").addEventListener("input",function(e){
     }catch(e2){}
   },800);
 });
-$("askThread").addEventListener("toggle",function(e){
-  var d=e.target.closest(".ask-journalwrap"); if(!d) return;
-  var host=d.closest(".ask-entry"); if(!host) return;
-  var entry=askThread.find(function(x){return x.id===+host.dataset.entry;});
-  if(entry) entry._jopen=d.open;
-},true);
+
 renderAskCount();
 renderAskLabels();
 updatePullLabel();
@@ -2897,7 +2925,7 @@ function updateJournalHint(){
   el.textContent = SAVES.id ? "This reading and your notes save to your account."
     : (savesUser() ? "Saving to your account…"
                    : "Notes stay with this reading until you draw again. Sign in to keep readings.");
-  const b=$("saveSignin");
+  const b=$("saveSigninRow");
   if(b) b.classList.toggle("hidden", !!savesUser() || !state.drawn.length);
 }
 async function savesCreateGuided(){
@@ -2943,26 +2971,38 @@ async function savesUpdateAsk(entry){
 async function exportAskEntry(id,kind,btn){
   const el=$("askThread").querySelector('.ask-entry[data-entry="'+id+'"]'); if(!el) return;
   await withBusy(btn,async function(){
-    el.querySelectorAll(".tcard").forEach(function(c){c.classList.add("flipped");});
-    el.querySelectorAll("details").forEach(function(d){d.open=true;});
-    el.querySelector(".ask-journalwrap")&& (el.querySelector(".ask-journalwrap").open=false);
+    const undo=[];
+    el.querySelectorAll(".tcard:not(.flipped)").forEach(function(c){
+      c.classList.add("flipped"); undo.push(function(){c.classList.remove("flipped");});
+    });
+    el.querySelectorAll("details:not([open])").forEach(function(d){
+      d.open=true; undo.push(function(){d.open=false;});
+    });
     el.classList.add("exporting");
-    await new Promise(function(r){setTimeout(r,120);});
-    const canvas=await html2canvas(el,{backgroundColor:"#0a0a1f",scale:2,useCORS:true});
-    el.classList.remove("exporting");
-    const name="stellar-tarot-question-"+new Date().toISOString().slice(0,10);
-    if(kind==="png"){
-      const a=document.createElement("a");
-      a.href=canvas.toDataURL("image/png"); a.download=name+".png"; a.click();
-    } else {
-      pdfFromCanvas(canvas,name);
+    try{
+      await new Promise(function(r){setTimeout(r,120);});
+      const canvas=await html2canvas(el,{backgroundColor:exportBG(),scale:2,useCORS:true});
+      const name="stellar-tarot-question-"+new Date().toISOString().slice(0,10);
+      if(kind==="png"){
+        const a=document.createElement("a");
+        a.href=canvas.toDataURL("image/png"); a.download=name+".png"; a.click();
+      } else {
+        pdfFromCanvas(canvas,name);
+      }
+    } finally {
+      el.classList.remove("exporting");
+      undo.forEach(function(f){ try{f();}catch(e){} });
     }
   });
 }
 function openSigninSheet(){
-  $("pmenu").classList.remove("hidden");
-  $("profileBtn").setAttribute("aria-expanded","true");
-  const em=$("pmEmail"); if(em) em.focus();
+  /* deferred: the click that called this is still bubbling, and the
+     document-level outside-click handler would close the menu again */
+  setTimeout(function(){
+    $("pmenu").classList.remove("hidden");
+    $("profileBtn").setAttribute("aria-expanded","true");
+    const em=$("pmEmail"); if(em) em.focus();
+  },0);
 }
 /* Signed out, "keep this reading" stashes it locally; the first signed-in
    load (this tab or the magic-link landing) writes it to the account. */
