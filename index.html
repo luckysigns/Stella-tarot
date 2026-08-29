@@ -3006,7 +3006,26 @@ function openSigninSheet(){
 }
 /* Signed out, "keep this reading" stashes it locally; the first signed-in
    load (this tab or the magic-link landing) writes it to the account. */
-function stashPending(p){ try{ p.at=Date.now(); localStorage.setItem("astra.pending",JSON.stringify(p)); }catch(e){} }
+function stashPending(p){ stashReadings([p]); }
+function stashReadings(items){
+  if(!items||!items.length) return;
+  try{ localStorage.setItem("astra.pending",JSON.stringify({at:Date.now(),items:items})); }catch(e){}
+}
+/* everything on the page that has not reached the account yet */
+function unsavedReadings(){
+  const items=[];
+  if(state.drawn.length && !SAVES.id){
+    items.push({kind:"spread",title:(SPREADS[state.spread]&&SPREADS[state.spread].name)||"Reading",
+      deck_slug:state.deck||"base",payload:guidedPayload(),
+      journal:($("journalBox").value||"").trim()||null});
+  }
+  askThread.forEach(function(entry){
+    if(entry.cloudId) return;
+    items.push({kind:"ask",title:(entry.q||"Question").slice(0,300),deck_slug:state.deck||"base",
+      payload:askPayload(entry),journal:(entry.journal||"").trim()||null});
+  });
+  return items;
+}
 function askSigninSave(id){
   const entry=askThread.find(function(x){return x.id===id;}); if(!entry) return;
   stashPending({kind:"ask",title:(entry.q||"Question").slice(0,300),deck_slug:state.deck||"base",
@@ -3022,17 +3041,34 @@ $("saveSignin").onclick=function(){
 };
 window.addEventListener("stellar:ready",async function(){
   const c=savesClient(),u=savesUser(); if(!c||!u) return;
+  let changed=false;
+  /* 1. anything stashed before a sign-in, from this tab or another */
   let p=null; try{ p=JSON.parse(localStorage.getItem("astra.pending")||"null"); }catch(e){}
-  if(!p) return;
+  if(p){
+    try{
+      const items=p.items||(p.kind?[p]:[]);
+      if(Date.now()-(p.at||0) < 1000*60*60*72){
+        for(const it of items){
+          await c.from("tarot_readings").insert({user_id:u.id,kind:it.kind,title:it.title,
+            deck_slug:it.deck_slug||"base",payload:it.payload,journal:it.journal||null});
+          changed=true;
+        }
+      }
+      localStorage.removeItem("astra.pending");
+    }catch(e){}
+  }
+  /* 2. a session arriving over a live page (the magic link opened in another
+     tab, or the Stellar hand-off) saves whatever is still on screen */
   try{
-    if(Date.now()-(p.at||0) < 1000*60*60*72){
-      await c.from("tarot_readings").insert({user_id:u.id,kind:p.kind,title:p.title,
-        deck_slug:p.deck_slug||"base",payload:p.payload,journal:p.journal||null});
+    if(state.drawn.length && !SAVES.id){ await savesCreateGuided(); changed=true; }
+    for(const entry of askThread){
+      if(!entry.cloudId){ await savesCreateAsk(entry); changed=true; }
     }
-    localStorage.removeItem("astra.pending");
+  }catch(e){}
+  if(changed||p){
     renderSaves(); updateJournalHint();
     if(typeof renderAskThread==="function"&&askThread.length) renderAskThread();
-  }catch(e){}
+  }
 });
 function saveRowHTML(r){
   const d=new Date(r.created_at);
@@ -3212,6 +3248,9 @@ window.addEventListener("stellar:ready",function(){ renderSaves(); updateJournal
     e.preventDefault();
     var email=($("pmEmail").value||"").trim();
     if(!email) return;
+    /* the magic link may land in a new tab, so whatever reading is on this
+       page travels via the stash and is saved on the first signed-in load */
+    try{ stashReadings(unsavedReadings()); }catch(err){}
     var go=$("pmSignIn"); go.disabled=true;
     $("pmNote").textContent="Sending your link…";
     var p; try{ p=window.STELLAR&&window.STELLAR.signIn?window.STELLAR.signIn(email):Promise.reject(new Error("unavailable")); }
