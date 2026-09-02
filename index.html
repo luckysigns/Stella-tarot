@@ -482,6 +482,18 @@
   .lib-card .lc-body h6{font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--rose);margin:12px 0 3px}
   .lib-card .lc-body p{margin-bottom:4px}
   .lib-empty{color:var(--mist);font-style:italic;text-align:center;padding:30px;grid-column:1/-1}
+  /* library opens on demand so 78 card images aren't fetched until they're wanted */
+  #libToggle{display:flex;align-items:center;gap:10px;width:100%;background:none;border:0;padding:0;
+    margin:0;cursor:pointer;text-align:left;color:inherit;font:inherit}
+  #libToggle .lib-chev{margin-left:auto;color:var(--gold);font-size:12px;line-height:1;transition:transform .25s ease}
+  #library.lib-open #libToggle .lib-chev{transform:rotate(180deg)}
+  #libToggle:hover .lib-chev{opacity:.75}
+  /* the card's own art from whichever deck is selected; sigil shows through if there's no file */
+  .lib-card .lc-thumb{position:relative;flex:0 0 auto;width:46px;height:69px;border-radius:6px;
+    border:1px solid var(--line);background:var(--field-bg);overflow:hidden;
+    display:flex;align-items:center;justify-content:center}
+  .lib-card .lc-thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+  .lib-card:hover .lc-thumb{border-color:var(--gold)}
   .hidden{display:none!important}
   footer{text-align:center;color:var(--mist);font-size:12px;margin-top:50px;opacity:.7;letter-spacing:.05em}
 
@@ -792,8 +804,13 @@
 
   <!-- CARD LIBRARY -->
   <section class="panel" id="library">
-    <div class="step-label" style="margin-bottom:4px" id="libLabel">Card Library · all 78 meanings</div>
-    <p class="hint" style="margin-bottom:14px">Search or tap any card for its full reading — the same depth a drawn card gets. Drew from a physical deck? Look it up here, and reveal the reversed reading if it came out upside down.</p>
+    <button type="button" id="libToggle" aria-expanded="false" aria-controls="libBody">
+      <span class="step-label" style="margin-bottom:0" id="libLabel">Card Library · all 78 meanings</span>
+      <span class="lib-chev">▾</span>
+    </button>
+    <p class="hint" id="libShutHint" style="margin:8px 0 0">Tap to browse all seventy-eight, illustrated in the deck you have selected.</p>
+    <div id="libBody" class="hidden">
+    <p class="hint" style="margin:8px 0 14px">Search or tap any card for its full reading — the same depth a drawn card gets. Drew from a physical deck? Look it up here, and reveal the reversed reading if it came out upside down.</p>
     <div class="lib-controls">
       <div class="lib-filtergroups">
         <div class="lib-fgroup">
@@ -818,6 +835,7 @@
       <input type="text" id="libSearch" placeholder="Search a card…" />
     </div>
     <div class="lib-grid" id="libGrid"></div>
+    </div>
   </section>
 
   <p class="upload-note">Card meanings researched with reference to <a href="https://www.thetarotguide.com" target="_blank" rel="noopener" style="color:var(--gold-soft)">The Tarot Guide</a>, reworded in the deck's own voice. For reflection and play.</p>
@@ -1440,7 +1458,7 @@ function renderArtistPage(){
     const bb=$("ahBuy"); if(bb) bb.onclick=function(){buyDeck(singleDk.id,bb);};
     const ub=$("ahUse"); if(ub) ub.onclick=function(){
       state.deck=singleDk.id;persistDeck();renderDeckPicker();renderDeckSheet();
-      if(typeof buildLibrary==='function') buildLibrary();
+      if(typeof refreshLibrary==='function') refreshLibrary();
       closeArtistPage();
       const lib=$("library"); if(lib) setTimeout(function(){lib.scrollIntoView({behavior:"smooth",block:"start"});},80);
     };
@@ -1501,7 +1519,7 @@ function wireDeckRows(list){
     b.onclick=()=>{
       state.deck=b.dataset.usedeck; persistDeck(); renderDeckPicker(); renderDeckSheet();
       if(state.drawn.length && !$("step-read").classList.contains("hidden")) renderDetail();
-      if(typeof buildLibrary==='function') buildLibrary();
+      if(typeof refreshLibrary==='function') refreshLibrary();
       if(typeof renderAskThread==='function' && typeof askThread!=='undefined' && askThread.length) renderAskThread();
       closeDeckSheet();
       const inOverlay=!!(list.closest&&list.closest("#artistPage"));
@@ -2635,8 +2653,20 @@ function libFullReading(c){
     + '<div class="lc-rev">'+rev+'</div></div>'
     + libDeckLayer(c);
 }
+/* the library thumbnail for a card, from whichever deck is selected. Same source as the
+   table art (DECK_ART); a deck with no art yet just falls back to the sigil. */
+function libArtIMG(c){
+  const dir=(c&&c.id)?DECK_ART[state.deck]:null;
+  if(!dir) return "";
+  return '<img src="'+dir+c.id+'.jpg" alt="" loading="lazy" decoding="async" onerror="this.remove()">';
+}
+function libIsOpen(){ const b=$("libBody"); return !!b && !b.classList.contains("hidden"); }
 function buildLibrary(){
-  const grid=$("libGrid");grid.innerHTML="";
+  const grid=$("libGrid");
+  /* nothing is rendered while the panel is shut, so the 78 images are never fetched
+     until the reader actually asks for them */
+  if(!grid||!libIsOpen()) return;
+  grid.innerHTML="";
   const q=libState.query.trim().toLowerCase();
   const list=DECK.filter(c=>{
     const passType = libState.types.size===0 || libState.types.has(c.arcana);       // Major/Courts/Numbers (OR within group)
@@ -2650,7 +2680,7 @@ function buildLibrary(){
     const keys=(c.key||[]).slice(0,4).map(k=>`<span>${k}</span>`).join("");
     el.innerHTML=`
       <div class="lc-head">
-        <div class="lc-sigil">${c.sigil}</div>
+        <div class="lc-thumb"><div class="lc-sigil">${c.sigil}</div>${libArtIMG(c)}</div>
         <div><div class="lc-name">${c.name}</div><div class="lc-sub">${libSub(c)}</div></div>
       </div>
       <div class="lc-keys">${keys}</div>
@@ -2693,7 +2723,22 @@ document.querySelectorAll("#libSuitSeg button").forEach(function(b){ b.onclick=f
 };});
 $("libClearFilter").onclick=function(){ libState.types.clear(); libState.suits.clear(); applyLibFilterUI(); };
 $("libSearch").oninput=e=>{libState.query=e.target.value;buildLibrary();};
-buildLibrary();
+
+/* ── library open / close ──
+   Shut on load: the grid isn't built and none of the 78 deck images are requested.
+   Opening builds it against the current deck; picking a deck opens it and reskins it. */
+function setLibraryOpen(open){
+  const body=$("libBody"), sec=$("library"), btn=$("libToggle"), hint=$("libShutHint");
+  if(!body||!sec) return;
+  body.classList.toggle("hidden",!open);
+  sec.classList.toggle("lib-open",open);
+  if(hint) hint.classList.toggle("hidden",open);
+  if(btn) btn.setAttribute("aria-expanded",open?"true":"false");
+  if(open) buildLibrary(); else $("libGrid").innerHTML="";
+}
+/* called when the reader picks a deck — show the library in that deck's art */
+function refreshLibrary(){ setLibraryOpen(true); }
+if($("libToggle")) $("libToggle").onclick=()=>setLibraryOpen(!libIsOpen());
 
 /* ── light / dark theme toggle ── */
 function applyThemeBtn(){

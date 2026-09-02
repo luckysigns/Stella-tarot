@@ -17,3 +17,6 @@ cards/Astro deck/
 .DS_Store
 .vercel
 .env*
+
+# generated deck art + run scratch (unreleased) — never publish
+art-build/
