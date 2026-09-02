@@ -1382,8 +1382,11 @@ $("changeSpreadBtn").onclick=()=>{
 };
 $("reversals").onchange=e=>state.reversals=e.target.checked;
 /* ===== deck picker (data-driven; extend DECKS to add more decks) ===== */
-function persistDeck(){ try{ if(state.deck) localStorage.setItem("astra.deck", state.deck); else localStorage.removeItem("astra.deck"); }catch(e){} }
-function restoreDeckPref(){ try{ const v=localStorage.getItem("astra.deck"); if(v && DECKS.some(x=>x.id===v && x.ready)) state.deck=v; }catch(e){} }
+/* the deck is a per-visit choice, not a remembered setting: every load starts with none in
+   use and a shut library, and picking one is always a deliberate act. Old saved values are
+   cleared so a previous visit can't quietly select a deck. */
+function persistDeck(){}
+function restoreDeckPref(){ try{ localStorage.removeItem("astra.deck"); }catch(e){} }
 function deckById(id){ return DECKS.find(d=>d.id===id)||DECKS[0]; }
 function deckThumbs(dk){
   if(!dk.ready||!dk.samples.length) return '<span class="dk-thumb back"></span><span class="dk-thumb back"></span><span class="dk-thumb back"></span>';
