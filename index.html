@@ -808,7 +808,7 @@
       <span class="step-label" style="margin-bottom:0" id="libLabel">Card Library · all 78 meanings</span>
       <span class="lib-chev">▾</span>
     </button>
-    <p class="hint" id="libShutHint" style="margin:8px 0 0">Tap to browse all seventy-eight, illustrated in the deck you have selected.</p>
+    <p class="hint" id="libShutHint" style="margin:8px 0 0">Pick a deck above to browse all seventy-eight, illustrated.</p>
     <div id="libBody" class="hidden">
     <p class="hint" style="margin:8px 0 14px">Search or tap any card for its full reading — the same depth a drawn card gets. Drew from a physical deck? Look it up here, and reveal the reversed reading if it came out upside down.</p>
     <div class="lib-controls">
@@ -1312,7 +1312,9 @@ const SPREADS = {
 };
 
 /* ───────── STATE ───────── */
-let state={spread:null,method:"fan",reversals:true,drawn:[],need:0,clarifiers:{},deck:"base"};
+/* deck starts unchosen: no deck is "in use" until the reader picks one in the deck shop,
+   and until then cards wear their sigil face rather than any deck's art */
+let state={spread:null,method:"fan",reversals:true,drawn:[],need:0,clarifiers:{},deck:null};
 const $=id=>document.getElementById(id);
 const backSVG=`<svg class="face" viewBox="0 0 100 160" preserveAspectRatio="none"><use href="#astrolabe"/></svg><img class="backimg" src="/cards/back-stellar.jpg" alt="" onerror="this.remove()">`;
 
@@ -1363,7 +1365,7 @@ $("changeSpreadBtn").onclick=()=>{
 };
 $("reversals").onchange=e=>state.reversals=e.target.checked;
 /* ===== deck picker (data-driven; extend DECKS to add more decks) ===== */
-function persistDeck(){ try{ localStorage.setItem("astra.deck", state.deck); }catch(e){} }
+function persistDeck(){ try{ if(state.deck) localStorage.setItem("astra.deck", state.deck); else localStorage.removeItem("astra.deck"); }catch(e){} }
 function restoreDeckPref(){ try{ const v=localStorage.getItem("astra.deck"); if(v && DECKS.some(x=>x.id===v && x.ready)) state.deck=v; }catch(e){} }
 function deckById(id){ return DECKS.find(d=>d.id===id)||DECKS[0]; }
 function deckThumbs(dk){
@@ -1373,13 +1375,18 @@ function deckThumbs(dk){
 function renderDeckPicker(){
   ["deckSeg","askDeckSeg"].forEach(id=>{
     const seg=$(id); if(!seg) return;
-    const cur=deckById(state.deck);
-    seg.innerHTML='<button type="button" class="deck-btn"><span class="dk-now">'+cur.name+'</span><span class="dk-change">Pick your deck</span></button>';
+    const cur=state.deck?deckById(state.deck):null;
+    seg.innerHTML='<button type="button" class="deck-btn"><span class="dk-now">'+(cur?cur.name:"No deck yet")+'</span><span class="dk-change">Pick your deck</span></button>';
     seg.querySelector("button").onclick=openDeckSheet;
   });
   /* the Card Library below the shop browses whichever deck is in use */
   const ll=$("libLabel");
-  if(ll) ll.textContent="Card Library · "+deckById(state.deck).name+" · all 78 meanings";
+  if(ll) ll.textContent="Card Library · "+(state.deck?deckById(state.deck).name+" · ":"")+"all 78 meanings";
+  /* until a deck is chosen the library has no art to show, so say so */
+  const sh=$("libShutHint");
+  if(sh) sh.textContent=state.deck
+    ? "Tap to browse all seventy-eight, illustrated in the deck you have selected."
+    : "Pick a deck above to browse all seventy-eight, illustrated.";
 }
 function deckIsPaid(dk){ return !dk.is_free && (dk.price_cents||0)>0; }
 function deckPriceLabel(dk){
@@ -1459,6 +1466,7 @@ function renderArtistPage(){
     const ub=$("ahUse"); if(ub) ub.onclick=function(){
       state.deck=singleDk.id;persistDeck();renderDeckPicker();renderDeckSheet();
       if(typeof refreshLibrary==='function') refreshLibrary();
+      if(typeof reskinTableArt==='function') reskinTableArt();
       closeArtistPage();
       const lib=$("library"); if(lib) setTimeout(function(){lib.scrollIntoView({behavior:"smooth",block:"start"});},80);
     };
@@ -1520,6 +1528,7 @@ function wireDeckRows(list){
       state.deck=b.dataset.usedeck; persistDeck(); renderDeckPicker(); renderDeckSheet();
       if(state.drawn.length && !$("step-read").classList.contains("hidden")) renderDetail();
       if(typeof refreshLibrary==='function') refreshLibrary();
+      if(typeof reskinTableArt==='function') reskinTableArt();
       if(typeof renderAskThread==='function' && typeof askThread!=='undefined' && askThread.length) renderAskThread();
       closeDeckSheet();
       const inOverlay=!!(list.closest&&list.closest("#artistPage"));
@@ -2273,7 +2282,7 @@ function reveal(){
       <div class="inner">
         <div class="side back">${backSVG}</div>
         <div class="side front">
-          <div class="front-art" data-arcana="${d.card.arcana}">
+          <div class="front-art" data-arcana="${d.card.arcana}" data-cardid="${d.card.id}">
             <div class="num">${cardTopLabel(d.card)}</div>
             <div class="sigil">${d.card.sigil}</div>
             <div class="nm">${d.card.name}</div>
@@ -2738,6 +2747,17 @@ function setLibraryOpen(open){
 }
 /* called when the reader picks a deck — show the library in that deck's art */
 function refreshLibrary(){ setLibraryOpen(true); }
+/* cards already face-up on the table keep their positions and flip state; only the art
+   overlay is swapped, so switching decks re-skins the reading in place */
+function reskinTableArt(){
+  document.querySelectorAll(".front-art[data-cardid]").forEach(function(fa){
+    const old=fa.querySelector(".card-art"); if(old) old.remove();
+    const card=DECK.find(function(c){ return c.id===fa.dataset.cardid; });
+    if(!card) return;
+    const html=cardArtIMG(card);
+    if(html) fa.insertAdjacentHTML("beforeend",html);
+  });
+}
 if($("libToggle")) $("libToggle").onclick=()=>setLibraryOpen(!libIsOpen());
 
 /* ── light / dark theme toggle ── */
@@ -2769,7 +2789,7 @@ function entryLabel(entry,i){ var L=entry.labels&&entry.labels[i]?entry.labels[i
 
 /* one flip-card, reusing the guided reveal markup */
 function tcardHTML(d,i){
-  return '<div class="tcard materialize'+(d.reversed?" rev":"")+'" style="animation-delay:'+(i*0.1)+'s"><div class="inner"><div class="side back">'+backSVG+'</div><div class="side front"><div class="front-art" data-arcana="'+d.card.arcana+'"><div class="num">'+cardTopLabel(d.card)+'</div><div class="sigil">'+d.card.sigil+'</div><div class="nm">'+d.card.name+'</div><div class="astro">'+cardBottomLabel(d.card)+'</div>'+cardArtIMG(d.card)+'</div></div></div></div>';
+  return '<div class="tcard materialize'+(d.reversed?" rev":"")+'" style="animation-delay:'+(i*0.1)+'s"><div class="inner"><div class="side back">'+backSVG+'</div><div class="side front"><div class="front-art" data-arcana="'+d.card.arcana+'" data-cardid="'+d.card.id+'"><div class="num">'+cardTopLabel(d.card)+'</div><div class="sigil">'+d.card.sigil+'</div><div class="nm">'+d.card.name+'</div><div class="astro">'+cardBottomLabel(d.card)+'</div>'+cardArtIMG(d.card)+'</div></div></div></div>';
 }
 
 /* one card's full reading in an ask entry — label as its position, deep read + contexts + clarifier */
