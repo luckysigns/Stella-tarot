@@ -880,7 +880,7 @@ const DECKS=[
   {id:"base",name:"Traditional",sub:"Rider–Waite–Smith · 1909",ready:true,card_count:78,
    samples:["major_00_fool","major_19_sun","cups_queen"],
    blurb:"The deck almost everyone pictures when they picture tarot. Pamela Colman Smith drew all seventy-eight in 1909, and hers were the first where the number cards show whole scenes rather than rows of cups and coins — which is why so much of what readers 'know' about a card traces back to her drawing of it. Meanings here follow that tradition plainly, with no extra theme laid over the top."},
-  {id:"astro",name:"Astra",sub:"Celestial · being drawn now",ready:false,card_count:78,artist_code:"lucky",
+  {id:"astro",name:"Astra",sub:"Celestial",ready:false,card_count:78,artist_code:"lucky",
    samples:[],
    blurb:"A cosmic retelling of the same seventy-eight cards: ornate black and gold borders, nebulae and sacred geometry, each Major carrying its ruling planet or sign and each number card its decan. The written readings are finished — every card interpreted through its correspondence — and the artwork is still being drawn, so the deck isn't selectable yet."}
 ];
@@ -1532,7 +1532,7 @@ function deckRowHTML(dk){
     +   '<div class="dk-name">'+dk.name
     +     (on?' <span class="dk-tag">in use</span>':'')
     +     (owned&&paid?' <span class="dk-tag">owned</span>':'')
-    +     (dk.ready?'':' <span class="dk-tag soon">being drawn</span>')+'</div>'
+    +     (dk.ready?'':' <span class="dk-tag soon">coming soon</span>')+'</div>'
     +   '<div class="dk-sub">'+dk.sub+'</div>'
     +   '<div class="dk-meta">'+deckMetaHTML(dk)+'</div>'
     +   '<details class="dk-more"><summary>Learn more</summary><p>'+dk.blurb
@@ -1682,7 +1682,7 @@ function deckMetaHTML(dk){
   if(dk.artist_code){
     out+=' · <a href="#" class="dk-artist" data-artist="'+escA(dk.artist_code)+'">by '+escA(artistNameOf(dk.artist_code))+"</a>";
   }
-  if(!dk.ready) return out+" · coming soon";
+  if(!dk.ready) return out;   /* the "coming soon" tag beside the name already says it */
   if(!dk.artist_code) return out; /* house decks are not reviewable */
   const r=RATINGS[dk.id];
   out+=' · <a href="#" class="dk-reviews" data-reviews="'+escA(dk.id)+'">'
@@ -2386,9 +2386,10 @@ function deepRead(d, position, posRead){
   if(!baseEntry || !baseEntry.detail){ return { trad: legacyDeepRead(d, position, posRead), deck: null }; }
   function readFrom(entry, withAstro){
     const det = entry.detail; const out=[];
-    if(withAstro && det.astrology) out.push(det.astrology);   /* correspondence lives in the deck layer, not the traditional read */
     const para = rev ? det.reversed : det.upright;
     if(para) out.push(para);
+    /* correspondence lives in the deck layer, not the traditional read, and closes it */
+    if(withAstro && det.astrology) out.push(det.astrology);
     return out;
   }
   const trad = readFrom(baseEntry, false);
@@ -2647,11 +2648,11 @@ function libDeckLayer(c){
   const dk=DECKS.find(x=>x.id===sel), dd=CONTENT[sel][cid].detail;
   return `<div class="lib-deck-layer" style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line)">`
     +`<h6 style="color:var(--gold)">${sel==="astro"?"✷ ":""}Through the ${dk?dk.name:sel} deck</h6>`
-    +(dd.astrology?`<p>${dd.astrology}</p>`:"")
     +`<h6>Upright</h6><p>${dd.upright}</p><h6>Reversed</h6><p>${dd.reversed}</p>`
     +(dd.love?`<h6>♡ Love</h6><p>${dd.love}</p>`:"")
     +(dd.career?`<h6>✦ Career</h6><p>${dd.career}</p>`:"")
     +(dd.health?`<h6>✚ Health</h6><p>${dd.health}</p>`:"")
+    +(dd.astrology?`<h6>✷ Astrology</h6><p>${dd.astrology}</p>`:"")
     +`</div>`;
 }
 /* the full "big reading" for a card, straight from CONTENT.base detail — the same depth a
@@ -2663,13 +2664,14 @@ function libFullReading(c){
   var AREAS=[["love","♡ Love"],["career","✦ Career"],["money","◈ Money"],["health","✚ Health"],["spirituality","✷ Spirituality"]];
   // upright (always shown)
   var up='<h6>Upright</h6><p>'+((det&&det.upright)||c.up)+'</p>';
-  if(det&&det.astrology) up+='<h6>✷ Astrology</h6><p>'+det.astrology+'</p>';
   up+=AREAS.map(function(x){
     var v=det?det[x[0]]:null;
     if(!v){ var fb=(x[0]==="love"?c.love:x[0]==="career"?c.career:x[0]==="health"?c.health:""); return fb?('<h6>'+x[1]+'</h6><p>'+fb+'</p>'):""; }
     if(typeof v==="string") return '<h6>'+x[1]+'</h6><p>'+v+'</p>';
     return v.upright?('<h6>'+x[1]+'</h6><p>'+v.upright+'</p>'):"";
   }).join("");
+  // the correspondence closes the card rather than interrupting the reading
+  if(det&&det.astrology) up+='<h6>✷ Astrology</h6><p>'+det.astrology+'</p>';
   // reversed (hidden until revealed)
   var rev='<h6>Reversed</h6><p>'+((det&&det.reversed)||c.rev)+'</p>';
   rev+=AREAS.map(function(x){
