@@ -494,6 +494,23 @@
     display:flex;align-items:center;justify-content:center}
   .lib-card .lc-thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
   .lib-card:hover .lc-thumb{border-color:var(--gold)}
+  /* one card opened reads as a centred feature — the grid is replaced outright, so an open
+     card never stretches its row-mates into tall empty boxes */
+  #libGrid.lib-featured{display:block}
+  #library.lib-featuring .lib-controls{display:none}
+  .lib-back{display:block;margin:0 auto 18px}
+  .lib-card.lf{max-width:760px;margin:0 auto;cursor:default;padding:24px}
+  .lib-card.lf:hover{border-color:var(--line);transform:none}
+  .lib-card.lf .lc-head{align-items:flex-start;gap:20px;margin-bottom:12px}
+  .lib-card.lf .lc-thumb{width:132px;height:198px;border-radius:10px}
+  .lib-card.lf .lc-name{font-size:28px;line-height:1.2}
+  .lib-card.lf .lc-sub{font-size:10px;margin-top:6px}
+  .lib-card.lf .lc-keys{margin-top:10px}
+  @media(max-width:560px){
+    .lib-card.lf{padding:16px}
+    .lib-card.lf .lc-thumb{width:96px;height:144px}
+    .lib-card.lf .lc-name{font-size:22px}
+  }
   .hidden{display:none!important}
   footer{text-align:center;color:var(--mist);font-size:12px;margin-top:50px;opacity:.7;letter-spacing:.05em}
 
@@ -2670,12 +2687,50 @@ function libArtIMG(c){
   return '<img src="'+dir+c.id+'.jpg" alt="" loading="lazy" decoding="async" onerror="this.remove()">';
 }
 function libIsOpen(){ const b=$("libBody"); return !!b && !b.classList.contains("hidden"); }
+/* one library card. In the grid it's a tappable summary; as a feature it's already open,
+   centred, and doesn't respond to clicks — the Back button takes you out instead. */
+function libCardEl(c,feature){
+  const el=document.createElement("div");
+  el.className="lib-card"+(feature?" open lf":"");
+  const keys=(c.key||[]).slice(0,4).map(k=>`<span>${k}</span>`).join("");
+  el.innerHTML=`
+      <div class="lc-head">
+        <div class="lc-thumb"><div class="lc-sigil">${c.sigil}</div>${libArtIMG(c)}</div>
+        <div><div class="lc-name">${c.name}</div><div class="lc-sub">${libSub(c)}</div></div>
+      </div>
+      <div class="lc-keys">${keys}</div>
+      <div class="lc-body">${libFullReading(c)}</div>`;
+  if(!feature) el.onclick=()=>libOpenCard(c.id);
+  const rb=el.querySelector(".lc-revbtn");
+  if(rb) rb.onclick=(ev)=>{ ev.stopPropagation(); el.classList.toggle("show-rev");
+    rb.textContent = el.classList.contains("show-rev") ? "↺ Hide the reversed reading" : "↺ Drew it reversed? Show the reversed reading"; };
+  return el;
+}
+function libScrollTop(){ const lb=$("library"); if(lb) lb.scrollIntoView({behavior:"smooth",block:"start"}); }
+function libOpenCard(id){ libState.openId=id; buildLibrary(); libScrollTop(); }
+function libCloseCard(){ libState.openId=null; buildLibrary(); libScrollTop(); }
 function buildLibrary(){
   const grid=$("libGrid");
   /* nothing is rendered while the panel is shut, so the 78 images are never fetched
      until the reader actually asks for them */
   if(!grid||!libIsOpen()) return;
   grid.innerHTML="";
+  /* feature mode: just this one card, centred, with a way back to the whole deck */
+  const feat=libState.openId?DECK.find(x=>x.id===libState.openId):null;
+  if(feat){
+    grid.classList.add("lib-featured");
+    $("library").classList.add("lib-featuring");
+    const back=document.createElement("button");
+    back.type="button"; back.className="btn ghost lib-back";
+    back.textContent="← Back to all 78 cards";
+    back.onclick=libCloseCard;
+    grid.appendChild(back);
+    grid.appendChild(libCardEl(feat,true));
+    return;
+  }
+  libState.openId=null;
+  grid.classList.remove("lib-featured");
+  $("library").classList.remove("lib-featuring");
   const q=libState.query.trim().toLowerCase();
   const list=DECK.filter(c=>{
     const passType = libState.types.size===0 || libState.types.has(c.arcana);       // Major/Courts/Numbers (OR within group)
@@ -2684,24 +2739,9 @@ function buildLibrary(){
     return passType && passSuit && passQ;   // groups AND together, e.g. Courts + Wands = Wands courts
   });
   if(!list.length){grid.innerHTML='<div class="lib-empty">No cards match that search.</div>';return;}
-  list.forEach(c=>{
-    const el=document.createElement("div");el.className="lib-card";
-    const keys=(c.key||[]).slice(0,4).map(k=>`<span>${k}</span>`).join("");
-    el.innerHTML=`
-      <div class="lc-head">
-        <div class="lc-thumb"><div class="lc-sigil">${c.sigil}</div>${libArtIMG(c)}</div>
-        <div><div class="lc-name">${c.name}</div><div class="lc-sub">${libSub(c)}</div></div>
-      </div>
-      <div class="lc-keys">${keys}</div>
-      <div class="lc-body">${libFullReading(c)}</div>`;
-    el.onclick=()=>el.classList.toggle("open");
-    const rb=el.querySelector(".lc-revbtn");
-    if(rb) rb.onclick=(ev)=>{ ev.stopPropagation(); el.classList.toggle("show-rev");
-      rb.textContent = el.classList.contains("show-rev") ? "↺ Hide the reversed reading" : "↺ Drew it reversed? Show the reversed reading"; };
-    grid.appendChild(el);
-  });
+  list.forEach(c=>grid.appendChild(libCardEl(c,false)));
 }
-const libState={types:new Set(),suits:new Set(),query:""};
+const libState={types:new Set(),suits:new Set(),query:"",openId:null};
 /* two multi-select groups (Arcana above, Suit below). Groups AND together; within a group
    it's OR. Major has no suit, so Major and any suit are mutually exclusive — selecting one
    clears the other, and the incompatible buttons are dimmed as a hint. */
@@ -2716,6 +2756,7 @@ function applyLibFilterUI(){
     b.classList.toggle("dim", hasMajor);
   });
   var clr=$("libClearFilter"); if(clr) clr.classList.toggle("hidden", !(libState.types.size||libState.suits.size));
+  libState.openId=null;   // filtering means you want the grid back, not the card you were reading
   buildLibrary();
 }
 document.querySelectorAll("#libTypeSeg button").forEach(function(b){ b.onclick=function(){
@@ -2731,7 +2772,7 @@ document.querySelectorAll("#libSuitSeg button").forEach(function(b){ b.onclick=f
   applyLibFilterUI();
 };});
 $("libClearFilter").onclick=function(){ libState.types.clear(); libState.suits.clear(); applyLibFilterUI(); };
-$("libSearch").oninput=e=>{libState.query=e.target.value;buildLibrary();};
+$("libSearch").oninput=e=>{libState.query=e.target.value;libState.openId=null;buildLibrary();};
 
 /* ── library open / close ──
    Shut on load: the grid isn't built and none of the 78 deck images are requested.
@@ -2743,6 +2784,7 @@ function setLibraryOpen(open){
   sec.classList.toggle("lib-open",open);
   if(hint) hint.classList.toggle("hidden",open);
   if(btn) btn.setAttribute("aria-expanded",open?"true":"false");
+  if(!open) libState.openId=null;   // reopening always lands on the full grid
   if(open) buildLibrary(); else $("libGrid").innerHTML="";
 }
 /* called when the reader picks a deck — show the library in that deck's art */
