@@ -495,6 +495,7 @@
   .aw-chartlist.hidden{display:none}
   .aw-chartlist button{display:block;width:100%;text-align:left;background:none;border:1px solid transparent;border-radius:8px;color:var(--silver);font:inherit;font-size:13px;padding:9px 11px;cursor:pointer}
   .aw-chartlist button:hover,.aw-chartlist button.on{border-color:var(--gold);color:var(--gold)}
+  .aw-chartlist a.aw-new:hover{color:var(--gold)}
   .aw-chartlist button.aw-new{color:var(--gold-soft);border-top:1px solid var(--line);border-radius:0;margin-top:4px;padding-top:10px}
   .aw-back{width:auto;padding:8px 14px;font-size:12px;margin:0}
   .aw-stellar{text-decoration:none;color:var(--gold)}
@@ -934,7 +935,7 @@
   <section class="panel" id="astroView">
     <div class="aw-top">
       <button class="btn ghost aw-back" id="awBack" type="button">← Tarot readings</button>
-      <a class="btn ghost aw-back aw-stellar" id="awStellar" href="https://www.stellarastro.app/" target="_blank" rel="noopener">✷ &nbsp;Your astrology on Stellar ↗</a>
+      <a class="btn ghost aw-back aw-stellar" id="awStellar" href="https://www.stellarastro.app/?view=natal" target="_blank" rel="noopener">✷ &nbsp;Your astrology on Stellar ↗</a>
       <button type="button" class="aw-chip hidden" id="awChip" aria-haspopup="listbox" aria-expanded="false"></button>
       <div class="aw-chartlist hidden" id="awChartList" role="listbox"></div>
     </div>
@@ -965,7 +966,7 @@
         <button class="btn" id="awcSave" type="submit">✷ &nbsp;Save my chart</button>
         <p class="hint" id="awcMsg" style="min-height:16px;margin:8px 0 0">Saved to your Stellar account, so it's there in both apps. Birth time is optional; without it there's no Rising sign.</p>
       </form>
-      <p class="aw-natal" style="margin:18px 0 0"><a class="btn ghost" style="display:inline-flex;width:auto;padding:10px 22px;text-decoration:none" href="https://www.stellarastro.app/" target="_blank" rel="noopener">✷ &nbsp;Check out your astrology on Stellar ↗</a></p>
+      <p class="aw-natal" style="margin:18px 0 0"><a class="btn ghost" style="display:inline-flex;width:auto;padding:10px 22px;text-decoration:none" href="https://www.stellarastro.app/?view=natal" target="_blank" rel="noopener">✷ &nbsp;Check out your astrology on Stellar ↗</a></p>
     </div>
     <div id="awBody"></div>
   </section>
@@ -3203,7 +3204,8 @@ async function awToggleChartList(){
   if(!list.classList.contains("hidden")){ list.classList.add("hidden"); chip.setAttribute("aria-expanded","false"); return; }
   const cur=window.STELLAR&&window.STELLAR.chart, profiles=await awLoadProfiles();
   list.innerHTML=profiles.map(p=>'<button type="button" role="option" data-awchart="'+awEsc(p.id)+'"'+(cur&&cur.id===p.id?' class="on"':'')+'>'+awEsc(p.name||"Unnamed")+(p.date?' <span class="dim" style="font-size:11px">· '+awEsc(p.date)+'</span>':'')+'</button>').join("")
-    +'<button type="button" class="aw-new" data-awnewchart>+ New chart</button>';
+    +'<button type="button" class="aw-new" data-awnewchart>+ New chart</button>'
+    +'<a class="aw-new" href="https://www.stellarastro.app/?view=natal" target="_blank" rel="noopener" style="display:block;text-decoration:none;border-top:0;margin-top:0;padding-top:9px">✷ Edit in Stellar ↗</a>';
   list.classList.remove("hidden"); chip.setAttribute("aria-expanded","true");
   list.querySelectorAll("[data-awchart]").forEach(b=>b.addEventListener("click",e=>{ e.stopPropagation(); list.classList.add("hidden"); if(!(cur&&cur.id===b.dataset.awchart)) awSetActive(b.dataset.awchart); }));
   const nb=list.querySelector("[data-awnewchart]"); if(nb) nb.addEventListener("click",e=>{ e.stopPropagation(); list.classList.add("hidden"); AW.newChart=true; awRender(); });
