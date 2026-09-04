@@ -487,8 +487,17 @@
   #astroView{display:none}
   body.astro-open .wrap > *:not(#astroView){display:none}
   body.astro-open #astroView{display:block}
-  .aw-top{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+  .aw-top{display:flex;align-items:center;gap:12px;margin-bottom:14px;position:relative}
+  button.aw-chip{cursor:pointer;background:none}
+  button.aw-chip.aw-pick::after{content:" ▾";opacity:.8}
+  .aw-chartlist{position:absolute;right:0;top:calc(100% + 6px);z-index:40;min-width:220px;background:var(--bg,#0a0a1f);border:1px solid var(--line);border-radius:12px;padding:6px;box-shadow:0 10px 30px rgba(0,0,0,.28)}
+  :root[data-theme="light"] .aw-chartlist{background:var(--bg,#f2e8d5)}
+  .aw-chartlist.hidden{display:none}
+  .aw-chartlist button{display:block;width:100%;text-align:left;background:none;border:1px solid transparent;border-radius:8px;color:var(--silver);font:inherit;font-size:13px;padding:9px 11px;cursor:pointer}
+  .aw-chartlist button:hover,.aw-chartlist button.on{border-color:var(--gold);color:var(--gold)}
+  .aw-chartlist button.aw-new{color:var(--gold-soft);border-top:1px solid var(--line);border-radius:0;margin-top:4px;padding-top:10px}
   .aw-back{width:auto;padding:8px 14px;font-size:12px;margin:0}
+  .aw-stellar{text-decoration:none;color:var(--gold)}
   .aw-chip{margin-left:auto;font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-soft);border:1px solid var(--line);border-radius:999px;padding:6px 11px;white-space:nowrap}
   .aw-tabs{margin:12px 0 18px;flex-wrap:wrap}
   .aw-empty{border:1px dashed var(--line);border-radius:14px;padding:24px 18px;text-align:center}
@@ -520,6 +529,7 @@
   .aw-sub{font-family:"Trebuchet MS",sans-serif;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-soft);text-align:center;margin-bottom:10px}
   .aw-item p{font-size:13.5px;line-height:1.6;color:var(--silver);margin:0}
   .aw-clause{color:var(--gold)}
+  .aw-item .aw-how{font-size:12.5px;line-height:1.55;color:var(--mist);font-style:italic;border-left:2px solid var(--line);padding-left:10px;margin:0 0 10px}
   .aw-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
   .aw-actions .btn{width:auto;display:inline-flex;padding:10px 20px;margin:0}
   /* the Year Ahead start month: a stepper in the same pill language as the switches */
@@ -541,6 +551,7 @@
   #astroView.exporting .aw-actions,#astroView.exporting #awTabs,#astroView.exporting .aw-top,#astroView.exporting .aw-note-st,#astroView.exporting #awLede{display:none}
   .aw-note-print{margin-top:10px;padding:8px 11px;border-left:2px solid var(--gold);color:var(--silver);font-size:13px;line-height:1.5;font-style:italic}
   .aw-note{font-size:13px;color:var(--mist);font-style:italic;margin:0 0 14px}
+  .aw-intro{font-size:14.5px;line-height:1.65;color:var(--silver);max-width:720px;margin:0 0 12px}
   .aw-placements{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}
   .aw-placements span{font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);border:1px solid var(--line);border-radius:999px;padding:6px 11px}
   @media(max-width:560px){ .aw-item .tcard{width:126px;height:202px} .aw-chip{display:none} }
@@ -863,7 +874,8 @@
   <!-- DECK SHOP -->
   <section class="panel" id="deckshop">
     <div class="step-label" style="margin-bottom:4px" id="deckShopLabel">The deck shop · pick your deck</div>
-    <p class="hint" style="margin-bottom:14px" id="deckShopHint">Every deck reads with the same depth. Browse them all, switch any time, and buy the ones that speak to you. Each purchase supports its artist directly.</p>
+    <p class="hint" style="margin-bottom:6px" id="deckShopHint">Every deck reads with the same depth. Browse them all, switch any time, and buy the ones that speak to you. Each purchase supports its artist directly.</p>
+    <p class="hint" style="margin-bottom:14px">Are you a tarot deck designer? <a href="mailto:create@creatorapps.app?subject=Selling%20my%20deck%20on%20Stellar%20Tarot" style="color:var(--gold)">Sell your digital decks here.</a></p>
     <div class="shop-controls" style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:14px">
       <div class="seg" id="deckShopTabs">
         <button type="button" data-t="mine" class="on">Your decks</button>
@@ -922,7 +934,9 @@
   <section class="panel" id="astroView">
     <div class="aw-top">
       <button class="btn ghost aw-back" id="awBack" type="button">← Tarot readings</button>
-      <span class="aw-chip hidden" id="awChip"></span>
+      <a class="btn ghost aw-back aw-stellar" id="awStellar" href="https://www.stellarastro.app/" target="_blank" rel="noopener">✷ &nbsp;Your astrology on Stellar ↗</a>
+      <button type="button" class="aw-chip hidden" id="awChip" aria-haspopup="listbox" aria-expanded="false"></button>
+      <div class="aw-chartlist hidden" id="awChartList" role="listbox"></div>
     </div>
     <div class="step-label">Astrology readings</div>
     <p class="hint" id="awLede">Your chart, read through the cards.</p>
@@ -951,6 +965,7 @@
         <button class="btn" id="awcSave" type="submit">✷ &nbsp;Save my chart</button>
         <p class="hint" id="awcMsg" style="min-height:16px;margin:8px 0 0">Saved to your Stellar account, so it's there in both apps. Birth time is optional; without it there's no Rising sign.</p>
       </form>
+      <p class="aw-natal" style="margin:18px 0 0"><a class="btn ghost" style="display:inline-flex;width:auto;padding:10px 22px;text-decoration:none" href="https://www.stellarastro.app/" target="_blank" rel="noopener">✷ &nbsp;Check out your astrology on Stellar ↗</a></p>
     </div>
     <div id="awBody"></div>
   </section>
@@ -2924,8 +2939,16 @@ const AW_LABELS={
 };
 /* a sample chart so the wing can be reviewed before an account is linked: ?demo=1 */
 const AW_DEMO={name:"Sample chart",date:"1990-08-12",time:"14:30",lat:-33.8688,lng:151.2093,tz:"Australia/Sydney"};
-function awIsDemo(){ try{ return /[?&]demo=1/.test(location.search); }catch(e){ return false; } }
-function awChart(){ const S=window.STELLAR; if(S&&S.chart) return S.chart; return awIsDemo()?AW_DEMO:null; }
+/* No reading without an account. A chart only counts when a signed-in user stands behind
+   it, and the sample chart exists solely for reviewing previews: it answers to ?demo=1 on
+   a preview or local host, never on the live site. */
+function awPreviewHost(){ try{ return /\.vercel\.app$/.test(location.hostname)||location.hostname==="localhost"||location.hostname==="127.0.0.1"; }catch(e){ return false; } }
+function awIsDemo(){ try{ return awPreviewHost()&&/[?&]demo=1/.test(location.search); }catch(e){ return false; } }
+function awChart(){
+  const S=window.STELLAR;
+  if(S&&S.user&&S.chart) return S.chart;
+  return awIsDemo()?AW_DEMO:null;
+}
 function awDeck(){ return state.deck==="astro"?"astro":"base"; }   // content voice; other decks read in the base voice
 function awCard(id){ return DECK.find(c=>c.id===id)||null; }
 /* the wing always shows the Rider-Waite art, whatever deck the tarot side has chosen
@@ -2953,14 +2976,27 @@ function awRenderCards(chart){
   const glyph={sun:"☉",moon:"☽",rising:"↑"};
   const chips=["sun","moon","rising"].filter(k=>P[k]&&P[k].sign).map(k=>'<span>'+glyph[k]+' '+awEsc(P[k].sign)+'</span>').join("");
   const rows=[
-    ["sun","Your Sun card","the Major that rules your Sun"],
-    ["moon","Your Moon card","the Major that rules your Moon"],
+    ["sun","Your Sun card","the Major that rules your Sun sign"],
+    ["moon","Your Moon card","the Major that rules your Moon sign"],
     ["rising","Your Rising card","the Major that rules your Ascendant"],
-    ["birth","Your birth card","the Major hidden in your birthdate"],
-    ["sunDecan","Your decan card","the minor card of your Sun's exact degree"]
+    ["birth","Your birth card","the Major your birthdate adds up to"],
+    ["sunDecan","Your decan card","the Minor card of your Sun's exact degree"]
   ];
+  /* where the two less obvious cards come from, in the person's own numbers */
+  const ord=["first","second","third"], span=["0-9°","10-19°","20-29°"], FACE=["Mars","Sun","Venus","Mercury","Moon","Saturn","Jupiter"];
+  function howBirth(){
+    const digits=String(chart.date||"").replace(/[^0-9]/g,"").split("").map(Number); if(!digits.length) return "";
+    let sum=digits.reduce((x,y)=>x+y,0); let steps=digits.join("+")+" = "+sum;
+    while(sum>22){ const d=String(sum).split("").map(Number); sum=d.reduce((x,y)=>x+y,0); steps+=" → "+d.join("+")+" = "+sum; }
+    const note=sum===22?" (22 is The Fool, card 0)":"";
+    return "Add up every digit of your birthdate, and keep adding until it's 22 or under: "+steps+note+". That number is this Major. It's the numerology of the day you arrived - a lifelong pattern rather than a mood.";
+  }
+  function howDecan(it){
+    const su=P.sun||{}; if(su.degInSign==null) return "";
+    const di=it.decan||0, face=FACE[((su.index||0)*3+di)%7];
+    return "Your Sun sits at "+Math.floor(su.degInSign)+"° "+su.sign+", in its "+ord[di]+" decan ("+span[di]+"). Every sign is cut into three ten-degree decans, each with a ruling planet and one Minor card assigned to it in the Golden Dawn system; this one is ruled by "+face+", and its card is this one. It's the finer grain of your Sun - the flavour of "+su.sign+" you actually carry.";
+  }
   let html=chips?'<div class="aw-placements">'+chips+'</div>':'';
-  if(window.STELLAR&&window.STELLAR.chart) html+='<p class="aw-natal"><a href="https://www.stellarastro.app/" target="_blank" rel="noopener">✷ &nbsp;See your full natal chart and astrology in Stellar ↗</a><br><span class="hint">Same account - it may ask you to sign in there.</span></p>';
   html+='<div class="aw-actions">'+awExportButtons()+'</div>';
   html+='<div class="aw-grid">';
   rows.forEach(([k,title,sub])=>{
@@ -2970,8 +3006,10 @@ function awRenderCards(chart){
       return;
     }
     const c=awCard(cid); if(!c) return;
+    const how=k==="birth"?howBirth():k==="sunDecan"?howDecan(it):"";
     html+='<div class="aw-item"><div class="aw-pos">'+title+(it.sign?' · '+awEsc(it.sign):'')+'</div>'
       +awCardHTML(c,false)+'<h4>'+awEsc(c.name)+'</h4><div class="aw-sub">'+awEsc(sub)+'</div>'
+      +(how?'<p class="aw-how">'+awEsc(how)+'</p>':'')
       +'<p>'+awEsc(it.reading||"")+'</p></div>';
   });
   return html+'</div>';
@@ -2991,12 +3029,22 @@ function awClause(kind,i,P){
 }
 function awRenderSpread(kind,chart){
   const S=window.STELLAR, labels=AW_LABELS[kind];
-  const intro={
-    big3:"Three cards, one for each pillar of your chart - your light, your tides and your mask - each read against your actual Sun, Moon and Rising rather than in general terms.",
-    houses:"Twelve cards laid around your own wheel, one per house, each read for what that house speaks about.",
-    year:"Your solar-return spread: twelve cards, one for each month of your new year."
+  /* before the first draw, a proper introduction to what the reading is and what to expect;
+     once cards are down, a single line so the reading has the room */
+  const INTRO={
+    big3:["Your Big Three are the three placements astrologers reach for first. Your Sun is the core of who you are and what you're here to do. Your Moon is how you feel and what you need in order to feel safe. Your Rising is the face you show the world and the way you walk into a room. Together they're the shortest honest description of a chart.",
+      "This spread draws one card for each. The card for your light is read against your actual Sun sign, the card for your tides against your Moon, and the card for your mask against your Rising, so every reading names the placement and speaks to it. Where a card pulls against the sign it lands on, that tension is left standing; it's usually the most useful part. Expect three short readings, each closing with a line on how it meets your chart, with a note box under each card. Draw again whenever you like, and each draw is kept in your saved readings."],
+    houses:["The twelve houses are the areas of a life as a chart divides them: self, money, voice, home, play, health, partners, depths, horizons, career, community and dreams. One card is laid in each and read for what that house speaks about, so instead of one question answered you get a picture of where things stand across the whole of your life at once.",
+      "It's a long reading, and it's meant to be taken a house at a time. Each card closes with a line on what that house is about, and there's a note box under every one. Reversals are on by default; switch them off if you'd rather read twelve cards upright."],
+    year:["A solar return is the Sun coming back to the exact place it held when you were born: your own new year. This spread lays twelve cards, one for each month from whichever month you choose to start, and reads each as the theme colouring that month.",
+      "Set the start to your birthday month to read your solar year, or leave it on the current month to read the twelve months ahead. Each month's card is read on its own, so the year can be dipped into as it arrives rather than all at once."]
   }[kind];
-  let html='<p class="aw-note">'+intro+'</p>';
+  const short={
+    big3:"Three cards for your light, your tides and your mask, each read against your actual Sun, Moon and Rising.",
+    houses:"Twelve cards, one per house, each read for what that house speaks about.",
+    year:"Twelve cards, one for each month of your year, from the month you chose."
+  }[kind];
+  let html=AW.draws[kind]?'<p class="aw-note">'+short+'</p>':INTRO.map(t=>'<p class="aw-intro">'+t+'</p>').join("");
   /* the reversals switch is the tarot side's own setting (state.reversals), surfaced here so a
      twelve-card spread can be drawn all-upright without leaving the wing */
   html+='<div class="aw-actions"><button class="btn" type="button" data-awdraw="'+kind+'">'+(AW.draws[kind]?"Draw again":"Draw the cards")+'</button>'
@@ -3109,10 +3157,10 @@ async function awSaveChart(ev){
     return;
   }
   if(btn){ btn.disabled=true; btn.textContent="Saving…"; }
-  try{ await awWriteChart(chart); try{ localStorage.removeItem(AW_DRAFT_KEY); }catch(e){} }
+  try{ await awWriteChart(chart); AW.newChart=false; awResetDraws(); try{ localStorage.removeItem(AW_DRAFT_KEY); }catch(e){} awRender(); }
   catch(e){
     if(msg){
-      if(e&&e.message==="cap") msg.innerHTML="Your Stellar plan holds "+e.cap+" chart"+(e.cap===1?"":"s")+" and you have "+e.have+". <a href=\"https://www.stellarastro.app/\" target=\"_blank\" rel=\"noopener\" style=\"color:var(--gold)\">Upgrade in Stellar ↗</a> for more.";
+      if(e&&e.message==="cap") msg.innerHTML="Your Stellar plan holds "+e.cap+" chart"+(e.cap===1?"":"s")+" and you have "+e.have+". <a href=\"https://www.stellarastro.app/?upgrade=charts\" target=\"_blank\" rel=\"noopener\" style=\"color:var(--gold)\">Upgrade in Stellar ↗</a> for more.";
       else msg.textContent="That didn't save. Give it another try in a moment.";
     }
   }
@@ -3126,15 +3174,54 @@ async function awFlushDraft(){
   if(window.STELLAR.chart){ try{ localStorage.removeItem(AW_DRAFT_KEY); }catch(e){} return; }
   try{ await awWriteChart(d); try{ localStorage.removeItem(AW_DRAFT_KEY); }catch(e){} }catch(e){}
 }
+/* ---- switching charts: the chip lists the account's charts and sets the active one the way
+   Stellar does (stellar.activeId), or opens the form for another. Each chart starts with a
+   clean slate of draws, so cards drawn for one are never re-woven against another. ---- */
+async function awLoadProfiles(){
+  const S=window.STELLAR, sb=S&&S._sb&&S._sb(), u=S&&S.user; let profiles=[];
+  if(sb&&u){ try{
+    const res=await sb.from("stellar_state").select("value").eq("user_id",u.id).eq("key","stellar.profiles").maybeSingle();
+    const v=res&&res.data&&res.data.value; const parsed=(typeof v==="string")?JSON.parse(v):v; if(Array.isArray(parsed)) profiles=parsed;
+  }catch(e){} }
+  if(!profiles.length){ try{ const l=JSON.parse(localStorage.getItem("stellar.profiles")||"[]"); if(Array.isArray(l)) profiles=l; }catch(e){} }
+  AW.profiles=profiles.filter(p=>p&&p.id); return AW.profiles;
+}
+function awResetDraws(){ AW.draws={}; AW.notes={}; AW.saveIds={}; AW.opened=null; }
+async function awSetActive(id){
+  const S=window.STELLAR, sb=S&&S._sb&&S._sb(), u=S&&S.user; if(!sb||!u) return;
+  try{
+    const w=await sb.from("stellar_state").upsert({user_id:u.id,key:"stellar.activeId",value:id,updated_at:new Date().toISOString()},{onConflict:"user_id,key"});
+    if(w&&w.error) throw w.error;
+    try{ localStorage.setItem("stellar.activeId",id); }catch(e){}
+    awResetDraws(); AW.newChart=false;
+    await S.refresh();
+    awRender();   // the bridge re-renders on stellar:ready too; this doesn't wait for it
+  }catch(e){}
+}
+async function awToggleChartList(){
+  const list=$("awChartList"), chip=$("awChip"); if(!list) return;
+  if(!list.classList.contains("hidden")){ list.classList.add("hidden"); chip.setAttribute("aria-expanded","false"); return; }
+  const cur=window.STELLAR&&window.STELLAR.chart, profiles=await awLoadProfiles();
+  list.innerHTML=profiles.map(p=>'<button type="button" role="option" data-awchart="'+awEsc(p.id)+'"'+(cur&&cur.id===p.id?' class="on"':'')+'>'+awEsc(p.name||"Unnamed")+(p.date?' <span class="dim" style="font-size:11px">· '+awEsc(p.date)+'</span>':'')+'</button>').join("")
+    +'<button type="button" class="aw-new" data-awnewchart>+ New chart</button>';
+  list.classList.remove("hidden"); chip.setAttribute("aria-expanded","true");
+  list.querySelectorAll("[data-awchart]").forEach(b=>b.addEventListener("click",e=>{ e.stopPropagation(); list.classList.add("hidden"); if(!(cur&&cur.id===b.dataset.awchart)) awSetActive(b.dataset.awchart); }));
+  const nb=list.querySelector("[data-awnewchart]"); if(nb) nb.addEventListener("click",e=>{ e.stopPropagation(); list.classList.add("hidden"); AW.newChart=true; awRender(); });
+  setTimeout(()=>document.addEventListener("click",()=>{ list.classList.add("hidden"); chip.setAttribute("aria-expanded","false"); },{once:true}),0);
+}
 function awRender(){
-  const chart=awChart(), link=$("awLink"), body=$("awBody"), chip=$("awChip"), lede=$("awLede");
+  const chart=AW.newChart?null:awChart(), link=$("awLink"), body=$("awBody"), chip=$("awChip"), lede=$("awLede");
   document.querySelectorAll("#awTabs button").forEach(b=>b.classList.toggle("on",b.dataset.aw===AW.tab));
   if(!chart){
     const signed=!!(window.STELLAR&&window.STELLAR.user);
     link.classList.remove("hidden"); body.innerHTML=""; chip.classList.add("hidden"); lede.textContent="Your chart, read through the cards.";
     $("awSignIn").classList.toggle("hidden",signed); $("awOr").classList.toggle("hidden",signed);
-    $("awLinkTitle").textContent=signed?"Make your chart":"Link your chart";
-    $("awLinkText").textContent=signed?"You're signed in, but there's no chart on your account yet. Enter your birth details and it's saved to Stellar - then the cards read from it.":"Your birth chart lives in your Stellar account. Sign in and the cards read from it - the Majors you were born holding, your houses, your year ahead.";
+    const another=AW.newChart&&!!(window.STELLAR&&window.STELLAR.chart);
+    $("awLinkTitle").textContent=another?"Make another chart":signed?"Make your chart":"Link your chart";
+    $("awLinkText").textContent=another?"Enter their birth details and the chart is saved to your Stellar account, alongside your others.":signed?"You're signed in, but there's no chart on your account yet. Enter your birth details and it's saved to Stellar - then the cards read from it.":"Your birth chart lives in your Stellar account. Sign in and the cards read from it - the Majors you were born holding, your houses, your year ahead.";
+    let cancel=$("awcCancel");
+    if(another&&!cancel){ cancel=document.createElement("button"); cancel.type="button"; cancel.id="awcCancel"; cancel.className="btn ghost"; cancel.textContent="Back to readings"; cancel.style.marginTop="10px"; $("awChartForm").appendChild(cancel); cancel.addEventListener("click",()=>{ AW.newChart=false; awRender(); }); }
+    else if(!another&&cancel) cancel.remove();
     return;
   }
   link.classList.add("hidden");
@@ -3142,6 +3229,7 @@ function awRender(){
   const P=awPlacements(), who=AW.opened?awChartLabel(AW.opened.name,P):(linked?awChartLabel(chart.name,P):"Sample chart");
   const trio=["sun","moon","rising"].filter(k=>P[k]&&P[k].sign).map(k=>P[k].sign+" "+({sun:"Sun",moon:"Moon",rising:"Rising"})[k]).join(" · ");
   chip.textContent=(AW.opened?"Saved · ":linked?"Chart · ":"")+who;
+  chip.classList.toggle("aw-pick",linked); chip.disabled=!linked;
   chip.classList.remove("hidden");
   lede.textContent=(AW.opened?"A reading kept for "+who+(trio?" · "+trio:""):linked?"Read from "+who+" on your Stellar account"+(trio?" · "+trio:""):"A sample chart, so you can see the wing before linking your own"+(trio?" · "+trio:""))+".";
   body.innerHTML=(AW.tab==="cards")?awRenderCards(chart):awRenderSpread(AW.tab,chart);
@@ -3262,11 +3350,29 @@ function closeAstro(){
   const pm=$("pmenu");
   const closePM=()=>{ if(pm) pm.classList.add("hidden"); };
   const openPM=()=>{ if(pm) pm.classList.remove("hidden"); };
-  if($("pmAstro")) $("pmAstro").addEventListener("click",()=>{ closePM(); openAstro(); });
+  /* signed out, the sign-in pops up over the wing; the wing is the destination, so it's
+     already open underneath, and it's remembered for when the magic link brings them back */
+  const AW_AFTER="astra.afterSignIn";
+  const askSignIn=()=>{
+    try{ localStorage.setItem(AW_AFTER,"astro"); }catch(e){}
+    const note=$("pmNote"); if(note) note.textContent="Sign in with Stellar to make your chart - then the cards read from it.";
+    openPM(); const em=$("pmEmail"); if(em) setTimeout(()=>{ try{ em.focus(); }catch(e){} },60);
+  };
+  if($("pmAstro")) $("pmAstro").addEventListener("click",()=>{
+    openAstro();
+    if(window.STELLAR&&window.STELLAR.user) closePM(); else askSignIn();
+  });
   if($("awBack")) $("awBack").addEventListener("click",closeAstro);
-  if($("awSignIn")) $("awSignIn").addEventListener("click",openPM);
+  if($("awChip")) $("awChip").addEventListener("click",e=>{ e.stopPropagation(); if(window.STELLAR&&window.STELLAR.user&&window.STELLAR.chart) awToggleChartList(); });
+  if($("awSignIn")) $("awSignIn").addEventListener("click",askSignIn);
   document.querySelectorAll("#awTabs button").forEach(b=>b.addEventListener("click",()=>{ AW.tab=b.dataset.aw; awRender(); }));
-  window.addEventListener("stellar:ready",()=>{ awFlushDraft(); if(AW.open) awRender(); });   // the linked chart lands after boot
+  window.addEventListener("stellar:ready",()=>{
+    awFlushDraft();
+    // back from the sign-in link: carry on to the wing (the chart form, or the readings)
+    let after=null; try{ after=localStorage.getItem(AW_AFTER); }catch(e){}
+    if(after==="astro"&&window.STELLAR&&window.STELLAR.user){ try{ localStorage.removeItem(AW_AFTER); }catch(e){} openAstro(); return; }
+    if(AW.open) awRender();
+  });
   const f=$("awChartForm"); if(f) f.addEventListener("submit",awSaveChart);
   const pl=$("awcPlace"); if(pl){
     pl.addEventListener("input",()=>{ awPlace=null; $("awcPicked").textContent=""; clearTimeout(awGeoTimer);
