@@ -606,6 +606,10 @@
     .fan{height:240px}
     .controls{justify-content:center}
     #askDeckSeg{margin-left:0 !important}
+    /* deck rows: the buy / use pill drops under the text instead of crushing it */
+    .deckrow{flex-wrap:wrap}
+    .deckrow>.dk-use{flex:1 1 100%;align-self:stretch;text-align:center;margin-top:2px}
+    .dk-tag{white-space:nowrap}
   }
 /* ===== selection gather + dissolve animation ===== */
 @keyframes astraBurstRing{0%{transform:translate(-50%,-50%) scale(.2);opacity:.9}70%{opacity:.5}100%{transform:translate(-50%,-50%) scale(2.6);opacity:0}}
