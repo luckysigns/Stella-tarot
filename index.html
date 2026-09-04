@@ -506,6 +506,23 @@
   .aw-clause{color:var(--gold)}
   .aw-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
   .aw-actions .btn{width:auto;display:inline-flex;padding:10px 20px;margin:0}
+  /* the Year Ahead start month: a stepper in the same pill language as the switches */
+  .aw-mstep{position:relative}
+  .aw-mstep button{min-width:34px;font-size:16px;line-height:1}
+  .aw-mstep .aw-mname{min-width:108px;font-family:"Trebuchet MS",sans-serif;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
+  /* tapping the month name opens the twelve, three to a row, under the stepper */
+  .aw-mlist{position:absolute;top:calc(100% + 6px);left:0;z-index:40;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:6px;display:grid;grid-template-columns:repeat(3,1fr);gap:4px;min-width:222px;box-shadow:0 10px 30px rgba(0,0,0,.28)}
+  .aw-mlist.hidden{display:none}
+  .aw-mlist button{min-width:0;border:1px solid transparent;border-radius:8px;padding:8px 6px;font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--silver);background:none;cursor:pointer}
+  .aw-mlist button:hover,.aw-mlist button.on{border-color:var(--gold);color:var(--gold)}
+  /* a note on each drawn card, kept with the reading */
+  .aw-note-in{width:100%;box-sizing:border-box;margin-top:12px;min-height:52px;resize:vertical;background:var(--field-bg);border:1px solid var(--line);border-radius:10px;color:var(--silver);font:inherit;font-size:13px;line-height:1.5;padding:9px 11px}
+  .aw-note-in:focus{outline:none;border-color:var(--gold)}
+  .aw-note-in::placeholder{color:var(--mist);font-style:italic}
+  .aw-note-st{font-family:"Trebuchet MS",sans-serif;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-soft);margin-top:5px;min-height:11px}
+  /* while a capture runs: controls step out, notes read as quoted text */
+  #astroView.exporting .aw-actions,#astroView.exporting #awTabs,#astroView.exporting .aw-top,#astroView.exporting .aw-note-st,#astroView.exporting #awLede{display:none}
+  .aw-note-print{margin-top:10px;padding:8px 11px;border-left:2px solid var(--gold);color:var(--silver);font-size:13px;line-height:1.5;font-style:italic}
   .aw-note{font-size:13px;color:var(--mist);font-style:italic;margin:0 0 14px}
   .aw-placements{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}
   .aw-placements span{font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);border:1px solid var(--line);border-radius:999px;padding:6px 11px}
@@ -2865,7 +2882,8 @@ if($("libToggle")) $("libToggle").onclick=()=>setLibraryOpen(!libIsOpen());
    ONE clause for the placement it's read against, clause last. Identity cards are
    standalone. It reads the chosen deck and the reversals setting; it touches nothing
    else on the tarot side. */
-const AW={tab:"cards",draws:{},open:false};
+const AW={tab:"cards",draws:{},notes:{},open:false,yearStart:new Date().getMonth()};
+const AW_MONTHS=["January","February","March","April","May","June","July","August","September","October","November","December"];
 const awEsc=s=>String(s==null?"":s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
 const AW_LABELS={
   big3:["Your light","Your tides","Your mask"],
@@ -2910,6 +2928,7 @@ function awRenderCards(chart){
     ["sunDecan","Your decan card","the minor card of your Sun's exact degree"]
   ];
   let html=chips?'<div class="aw-placements">'+chips+'</div>':'';
+  html+='<div class="aw-actions">'+awExportButtons()+'</div>';
   html+='<div class="aw-grid">';
   rows.forEach(([k,title,sub])=>{
     const it=idn.cards[k]; const cid=it&&(it.cardId||it.pipId);   // decan entries carry pipId
@@ -2926,6 +2945,9 @@ function awRenderCards(chart){
 }
 /* ---- Big Three / The Houses / Year Ahead: drawn, then woven against the chart ---- */
 function awDraw(kind){
+  if(AW.saveIds) delete AW.saveIds[kind];   // a new draw is a new saved reading
+  AW.opened=null;                            // and it's for the live chart again
+  AW.notes[kind]=[];
   const n=AW_LABELS[kind].length;
   AW.draws[kind]=shuffled().slice(0,n).map(idx=>({deckIdx:idx,reversed:state.reversals&&Math.random()<0.2}));
 }
@@ -2945,9 +2967,11 @@ function awRenderSpread(kind,chart){
   /* the reversals switch is the tarot side's own setting (state.reversals), surfaced here so a
      twelve-card spread can be drawn all-upright without leaving the wing */
   html+='<div class="aw-actions"><button class="btn" type="button" data-awdraw="'+kind+'">'+(AW.draws[kind]?"Draw again":"Draw the cards")+'</button>'
-    +'<span class="hint" style="font-style:normal">Reversals</span><div class="seg" id="awRev"><button type="button" data-rev="1"'+(state.reversals?' class="on"':'')+'>On</button><button type="button" data-rev="0"'+(state.reversals?'':' class="on"')+'>Off</button></div></div>';
+    +(kind==="year"?'<span class="hint" style="font-style:normal">Starting</span><div class="seg aw-mstep" id="awYearStart"><button type="button" data-awstep="-1" aria-label="Earlier month">‹</button><button type="button" class="aw-mname" data-awmenu aria-haspopup="listbox" aria-expanded="false">'+AW_MONTHS[AW.yearStart]+'</button><button type="button" data-awstep="1" aria-label="Later month">›</button><div class="aw-mlist hidden" role="listbox">'+AW_MONTHS.map((m,i)=>'<button type="button" role="option" data-awmonth="'+i+'"'+(i===AW.yearStart?' class="on"':'')+'>'+m.slice(0,3)+'</button>').join("")+'</div></div>':'')
+    +'<span class="hint" style="font-style:normal">Reversals</span><div class="seg" id="awRev"><button type="button" data-rev="1"'+(state.reversals?' class="on"':'')+'>On</button><button type="button" data-rev="0"'+(state.reversals?'':' class="on"')+'>Off</button></div>'
+    +(AW.draws[kind]?awExportButtons():'')+'</div>';
   if(!AW.draws[kind]) return html;
-  let P={}; try{ P=S.placementsFor(chart)||{}; }catch(e){}
+  const P=awPlacements();
   const deck=awDeck();
   html+='<div class="aw-grid">';
   AW.draws[kind].forEach((d,i)=>{
@@ -2961,10 +2985,12 @@ function awRenderSpread(kind,chart){
       if(kind==="big3"&&i===2&&!cl) missing="Add a birth time to this chart in Stellar and this card reads against your Rising too.";
     }
     let bottom=""; try{ bottom=cardBottomLabel(c)||""; }catch(e){}
-    html+='<div class="aw-item"><div class="aw-pos">'+awEsc(label)+(d.reversed?' · reversed':'')+'</div>'
+    const shown=(kind==="year")?(label+" · "+AW_MONTHS[(AW.yearStart+i)%12]):label;
+    html+='<div class="aw-item"><div class="aw-pos">'+awEsc(shown)+(d.reversed?' · reversed':'')+'</div>'
       +awCardHTML(c,d.reversed)+'<h4>'+awEsc(c.name)+'</h4><div class="aw-sub">'+awEsc(bottom)+'</div>'
       +'<p>'+awEsc(text)+(clause?' <span class="aw-clause">'+awEsc(clause)+'</span>':'')+'</p>'
-      +(missing?'<p class="aw-note" style="margin-top:8px">'+missing+'</p>':'')+'</div>';
+      +(missing?'<p class="aw-note" style="margin-top:8px">'+missing+'</p>':'')
+      +'<textarea class="aw-note-in" data-awnote="'+i+'" placeholder="Your note on this card" rows="2">'+awEsc(((AW.notes[kind]||[])[i])||"")+'</textarea><div class="aw-note-st" data-awnotest="'+i+'"></div></div>';
   });
   return html+'</div>';
 }
@@ -2974,16 +3000,109 @@ function awRender(){
   if(!chart){ link.classList.remove("hidden"); body.innerHTML=""; chip.classList.add("hidden"); lede.textContent="Your chart, read through the cards."; return; }
   link.classList.add("hidden");
   const linked=!!(window.STELLAR&&window.STELLAR.chart);
-  chip.textContent=linked?("Chart · "+(chart.name||"yours")):"Sample chart";
+  const P=awPlacements(), who=AW.opened?awChartLabel(AW.opened.name,P):(linked?awChartLabel(chart.name,P):"Sample chart");
+  const trio=["sun","moon","rising"].filter(k=>P[k]&&P[k].sign).map(k=>P[k].sign+" "+({sun:"Sun",moon:"Moon",rising:"Rising"})[k]).join(" · ");
+  chip.textContent=(AW.opened?"Saved · ":linked?"Chart · ":"")+who;
   chip.classList.remove("hidden");
-  lede.textContent=linked?"Read from the chart on your Stellar account.":"A sample chart, so you can see the wing before linking your own.";
+  lede.textContent=(AW.opened?"A reading kept for "+who+(trio?" · "+trio:""):linked?"Read from "+who+" on your Stellar account"+(trio?" · "+trio:""):"A sample chart, so you can see the wing before linking your own"+(trio?" · "+trio:""))+".";
   body.innerHTML=(AW.tab==="cards")?awRenderCards(chart):awRenderSpread(AW.tab,chart);
-  body.querySelectorAll("[data-awdraw]").forEach(b=>b.addEventListener("click",()=>{ awDraw(b.dataset.awdraw); awRender(); }));
+  body.querySelectorAll("[data-awdraw]").forEach(b=>b.addEventListener("click",()=>{ awDraw(b.dataset.awdraw); awRender(); awSave(b.dataset.awdraw); }));
+  body.querySelectorAll("[data-awexp]").forEach(b=>b.addEventListener("click",()=>awExport(b.dataset.awexp,b)));
+  body.querySelectorAll("[data-awnote]").forEach(t=>t.addEventListener("change",async()=>{
+    const i=+t.dataset.awnote, kind=AW.tab; AW.notes[kind]=AW.notes[kind]||[]; AW.notes[kind][i]=t.value;
+    const st=body.querySelector('[data-awnotest="'+i+'"]');
+    const r=await awSave(kind);
+    if(st) st.textContent=r==="saved"?"Saved ✦":r==="stashed"?"Kept · saves when you sign in":"Sign in with Stellar to keep notes";
+  }));
+  const setStart=m=>{ AW.yearStart=(m+12)%12; awRender(); if(AW.draws.year) awSave("year"); };
+  body.querySelectorAll("[data-awstep]").forEach(b=>b.addEventListener("click",()=>setStart(AW.yearStart+(+b.dataset.awstep))));
+  const menuBtn=body.querySelector("[data-awmenu]"), mlist=body.querySelector(".aw-mlist");
+  if(menuBtn&&mlist){
+    menuBtn.addEventListener("click",e=>{ e.stopPropagation(); const open=mlist.classList.toggle("hidden")===false; menuBtn.setAttribute("aria-expanded",open?"true":"false"); });
+    mlist.querySelectorAll("[data-awmonth]").forEach(b=>b.addEventListener("click",e=>{ e.stopPropagation(); setStart(+b.dataset.awmonth); }));
+    document.addEventListener("click",()=>{ if(!mlist.classList.contains("hidden")){ mlist.classList.add("hidden"); menuBtn.setAttribute("aria-expanded","false"); } },{once:true});
+  }
   body.querySelectorAll("#awRev button").forEach(b=>b.addEventListener("click",()=>{
     state.reversals=(b.dataset.rev==="1");
     const cb=$("reversals"); if(cb) cb.checked=state.reversals;   // keep the tarot side's checkbox in step
     awRender();
   }));
+}
+/* ---- saves: the same tarot_readings rows the tarot side writes, kind "astro", so they sit
+   in the one list and reopen into the wing. A sample-chart draw is never saved. ---- */
+const AW_TITLES={big3:"Big Three",houses:"The Houses",year:"Year Ahead"};
+function awLivePlacements(){ let P={}; try{ P=window.STELLAR.placementsFor(awChart())||{}; }catch(e){} return P; }
+/* the placements a reading is woven against: the saved ones when a reading was reopened,
+   the live chart's otherwise */
+function awPlacements(){ return AW.opened?AW.opened.placements:awLivePlacements(); }
+function awChartLabel(name,P){ return name||((P.sun&&P.sun.sign)?(P.sun.sign+" Sun"):"your chart"); }
+function awPayload(kind){
+  const P=awLivePlacements(), chart=awChart()||{};
+  const pl={}; ["sun","moon","rising"].forEach(k=>{ if(P[k]&&P[k].sign) pl[k]=P[k].sign; });
+  const notes=AW.notes[kind]||[];
+  return {view:kind,cards:(AW.draws[kind]||[]).map((d,i)=>({id:DECK[d.deckIdx].id,reversed:!!d.reversed,note:(notes[i]||"").trim()||undefined})),startMonth:AW.yearStart,placements:pl,chartName:chart.name||""};
+}
+async function awSave(kind){
+  if(!AW.draws[kind]) return "none";
+  if(!(window.STELLAR&&window.STELLAR.chart)) return "none";      // a sample chart is for looking, not keeping
+  const pay=awPayload(kind);
+  const row={kind:"astro",title:(AW_TITLES[kind]||"Astrology reading")+" · "+awChartLabel(pay.chartName,awLivePlacements()),deck_slug:state.deck||"base",payload:pay};
+  const u=savesUser(), c=(typeof savesClient==="function")?savesClient():null;
+  if(!u||!c){ try{ stashPending(row); }catch(e){} return "stashed"; }
+  try{
+    if(AW.saveIds&&AW.saveIds[kind]){ await c.from("tarot_readings").update({payload:row.payload}).eq("id",AW.saveIds[kind]); }
+    else{
+      const res=await c.from("tarot_readings").insert(Object.assign({user_id:u.id},row)).select("id").single();
+      AW.saveIds=AW.saveIds||{}; if(res&&res.data&&res.data.id) AW.saveIds[kind]=res.data.id;
+    }
+    try{ renderSaves(); }catch(e){}
+    return "saved";
+  }catch(e){ return "none"; }
+}
+function awOpenSaved(r){
+  const p=r.payload||{}; const kind=AW_LABELS[p.view]?p.view:"big3";
+  AW.tab=kind; AW.yearStart=(typeof p.startMonth==="number")?p.startMonth:AW.yearStart;
+  AW.draws[kind]=(p.cards||[]).map(cc=>({deckIdx:DECK_BY_ID[cc.id],reversed:!!cc.reversed})).filter(d=>d.deckIdx!=null);
+  AW.notes[kind]=(p.cards||[]).map(cc=>cc.note||"");
+  AW.saveIds=AW.saveIds||{}; if(r.id) AW.saveIds[kind]=r.id;
+  // remember whose chart this was drawn for; the clauses and the chip follow it, not the live chart
+  const pl={}; Object.keys(p.placements||{}).forEach(k=>{ pl[k]={sign:p.placements[k]}; });
+  AW.opened={name:p.chartName||"",placements:pl};
+  openAstro();
+}
+/* ---- export: the same capture path the tarot side uses (html2canvas -> PNG or paged PDF),
+   with a header naming the reading and the chart, and notes shown as text rather than boxes ---- */
+function awExportButtons(){ return '<button class="btn ghost" type="button" data-awexp="png">⤓ Save as image</button><button class="btn ghost" type="button" data-awexp="pdf">⤓ Save as PDF</button>'; }
+async function awCapture(){
+  const el=$("astroView"); const undo=[];
+  const P=awPlacements();
+  const who=AW.opened?awChartLabel(AW.opened.name,P):(window.STELLAR&&window.STELLAR.chart)?awChartLabel(awChart().name,P):"Sample chart";
+  const trio=["sun","moon","rising"].filter(k=>P[k]&&P[k].sign).map(k=>P[k].sign+" "+({sun:"Sun",moon:"Moon",rising:"Rising"})[k]).join(" · ");
+  const title=AW.tab==="cards"?"Your Cards":(AW_TITLES[AW.tab]||"Astrology reading");
+  const head=document.createElement("div"); head.className="capture-head aw-cap-head";
+  head.innerHTML='<div class="step-label" style="justify-content:center">Stellar Tarot · Astrology readings</div><h2 style="margin:6px 0 4px;font-size:26px;color:var(--text-strong)">'+awEsc(title)+'</h2><p class="hint">for '+awEsc(who)+(trio?' · '+awEsc(trio):'')+' · '+new Date().toLocaleDateString(undefined,{day:"numeric",month:"long",year:"numeric"})+'</p>';
+  el.insertBefore(head,el.firstChild); undo.push(()=>head.remove());
+  el.querySelectorAll(".aw-note-in").forEach(t=>{
+    const v=(t.value||"").trim(); const pr=document.createElement("p"); pr.className="aw-note-print"; pr.textContent=v;
+    if(!v) pr.style.display="none";
+    t.parentNode.insertBefore(pr,t); t.style.display="none";
+    undo.push(()=>{ pr.remove(); t.style.display=""; });
+  });
+  el.classList.add("exporting"); undo.push(()=>el.classList.remove("exporting"));
+  const undoCards=standInCards(el); undo.push(undoCards);
+  try{
+    await readyForCapture(el);
+    await new Promise(r=>setTimeout(r,120));
+    return await html2canvas(el,{backgroundColor:exportBG(),scale:2,useCORS:true});
+  } finally { undo.reverse().forEach(f=>{ try{f();}catch(e){} }); }
+}
+async function awExport(kind,btn){
+  await withBusy(btn,async()=>{
+    const canvas=await awCapture();
+    const name="stellar-tarot-"+(AW.tab==="cards"?"your-cards":AW.tab)+"-"+new Date().toISOString().slice(0,10);
+    if(kind==="png"){ const a=document.createElement("a"); a.href=canvas.toDataURL("image/png"); a.download=name+".png"; a.click(); }
+    else pdfFromCanvas(canvas,name);
+  });
 }
 function openAstro(){
   AW.open=true; document.body.classList.add("astro-open");
@@ -3521,7 +3640,7 @@ function saveRowHTML(r){
   const n=(r.payload&&r.payload.cards&&r.payload.cards.length)||0;
   const j=(r.journal||"").trim();
   return '<div class="pm-save" data-save="'+r.id+'">'
-    +'<div class="pm-save-t"><span>'+(r.kind==="ask"?"❝ ":"")+escapeHTML(r.title)+'</span>'
+    +'<div class="pm-save-t"><span>'+(r.kind==="ask"?"❝ ":r.kind==="astro"?"✷ ":"")+escapeHTML(r.title)+'</span>'
     +'<button class="ren" data-ren="'+r.id+'" aria-label="Rename this reading">Rename</button>'
     +'<button class="del" data-del="'+r.id+'" aria-label="Delete this reading" title="Delete">✕</button></div>'
     +'<div class="pm-save-m">'+when+' · '+n+(n===1?" card":" cards")+'</div>'
@@ -3579,6 +3698,7 @@ function openSaved(r){
   try{ $("pmenu").classList.add("hidden"); $("profileBtn").setAttribute("aria-expanded","false"); }catch(e){}
   if(r.deck_slug && DECKS.some(function(x){ return x.id===r.deck_slug&&x.ready; })) state.deck=r.deck_slug;
   const p=r.payload||{};
+  if(r.kind==="astro"){ awOpenSaved(r); return; }
   if(r.kind==="ask"){
     setMode("ask");
     const entry={id:++askId,q:p.q||r.title,count:(p.cards||[]).length,labels:p.labels||[],
