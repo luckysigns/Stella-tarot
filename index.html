@@ -2942,7 +2942,10 @@ function awRenderSpread(kind,chart){
     year:"Your solar-return spread: twelve cards, one for each month of your new year."
   }[kind];
   let html='<p class="aw-note">'+intro+'</p>';
-  html+='<div class="aw-actions"><button class="btn" type="button" data-awdraw="'+kind+'">'+(AW.draws[kind]?"Draw again":"Draw the cards")+'</button></div>';
+  /* the reversals switch is the tarot side's own setting (state.reversals), surfaced here so a
+     twelve-card spread can be drawn all-upright without leaving the wing */
+  html+='<div class="aw-actions"><button class="btn" type="button" data-awdraw="'+kind+'">'+(AW.draws[kind]?"Draw again":"Draw the cards")+'</button>'
+    +'<span class="hint" style="font-style:normal">Reversals</span><div class="seg" id="awRev"><button type="button" data-rev="1"'+(state.reversals?' class="on"':'')+'>On</button><button type="button" data-rev="0"'+(state.reversals?'':' class="on"')+'>Off</button></div></div>';
   if(!AW.draws[kind]) return html;
   let P={}; try{ P=S.placementsFor(chart)||{}; }catch(e){}
   const deck=awDeck();
@@ -2976,6 +2979,11 @@ function awRender(){
   lede.textContent=linked?"Read from the chart on your Stellar account.":"A sample chart, so you can see the wing before linking your own.";
   body.innerHTML=(AW.tab==="cards")?awRenderCards(chart):awRenderSpread(AW.tab,chart);
   body.querySelectorAll("[data-awdraw]").forEach(b=>b.addEventListener("click",()=>{ awDraw(b.dataset.awdraw); awRender(); }));
+  body.querySelectorAll("#awRev button").forEach(b=>b.addEventListener("click",()=>{
+    state.reversals=(b.dataset.rev==="1");
+    const cb=$("reversals"); if(cb) cb.checked=state.reversals;   // keep the tarot side's checkbox in step
+    awRender();
+  }));
 }
 function openAstro(){
   AW.open=true; document.body.classList.add("astro-open");
