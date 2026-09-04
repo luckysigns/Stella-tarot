@@ -533,6 +533,7 @@
   .aw-item .aw-how{font-size:12.5px;line-height:1.55;color:var(--mist);font-style:italic;border-left:2px solid var(--line);padding-left:10px;margin:0 0 10px}
   .aw-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
   .aw-actions .btn{width:auto;display:inline-flex;padding:10px 20px;margin:0}
+  .aw-ctl{display:inline-flex;align-items:center;gap:8px;white-space:nowrap}   /* a label and its control wrap as one */
   /* the Year Ahead start month: a stepper in the same pill language as the switches */
   .aw-mwrap{position:relative;display:inline-flex}   /* the list anchors here, outside the clipping pill */
   .aw-mstep button{min-width:34px;font-size:16px;line-height:1}
@@ -562,6 +563,9 @@
     .seg.aw-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;border:0;background:none;overflow:visible;border-radius:0}
     .seg.aw-tabs button{border:1px solid var(--line);border-radius:999px;text-align:center}
     .seg.aw-tabs button.on{border-color:var(--gold)}
+    .aw-actions{flex-direction:column;align-items:stretch}
+    .aw-actions .btn{justify-content:center}
+    .aw-ctl{justify-content:space-between}
     .aw-top{flex-wrap:wrap;gap:8px}
     .aw-top .aw-back{flex:1 1 auto;justify-content:center}
   }
@@ -3063,8 +3067,8 @@ function awRenderSpread(kind,chart){
   /* the reversals switch is the tarot side's own setting (state.reversals), surfaced here so a
      twelve-card spread can be drawn all-upright without leaving the wing */
   html+='<div class="aw-actions"><button class="btn" type="button" data-awdraw="'+kind+'">'+(AW.draws[kind]?"Draw again":"Draw the cards")+'</button>'
-    +(kind==="year"?'<span class="hint" style="font-style:normal">Starting</span><span class="aw-mwrap"><div class="seg aw-mstep" id="awYearStart"><button type="button" data-awstep="-1" aria-label="Earlier month">‹</button><button type="button" class="aw-mname" data-awmenu aria-haspopup="listbox" aria-expanded="false">'+AW_MONTHS[AW.yearStart]+'</button><button type="button" data-awstep="1" aria-label="Later month">›</button></div><div class="aw-mlist hidden" role="listbox">'+AW_MONTHS.map((m,i)=>'<button type="button" role="option" data-awmonth="'+i+'"'+(i===AW.yearStart?' class="on"':'')+'>'+m.slice(0,3)+'</button>').join("")+'</div></span>':'')
-    +'<span class="hint" style="font-style:normal">Reversals</span><div class="seg" id="awRev"><button type="button" data-rev="1"'+(state.reversals?' class="on"':'')+'>On</button><button type="button" data-rev="0"'+(state.reversals?'':' class="on"')+'>Off</button></div>'
+    +(kind==="year"?'<span class="aw-ctl"><span class="hint" style="font-style:normal">Starting</span><span class="aw-mwrap"><div class="seg aw-mstep" id="awYearStart"><button type="button" data-awstep="-1" aria-label="Earlier month">‹</button><button type="button" class="aw-mname" data-awmenu aria-haspopup="listbox" aria-expanded="false">'+AW_MONTHS[AW.yearStart]+'</button><button type="button" data-awstep="1" aria-label="Later month">›</button></div><div class="aw-mlist hidden" role="listbox">'+AW_MONTHS.map((m,i)=>'<button type="button" role="option" data-awmonth="'+i+'"'+(i===AW.yearStart?' class="on"':'')+'>'+m.slice(0,3)+'</button>').join("")+'</div></span></span>':'')
+    +'<span class="aw-ctl"><span class="hint" style="font-style:normal">Reversals</span><div class="seg" id="awRev"><button type="button" data-rev="1"'+(state.reversals?' class="on"':'')+'>On</button><button type="button" data-rev="0"'+(state.reversals?'':' class="on"')+'>Off</button></div></span>'
     +(AW.draws[kind]?'<button class="btn" type="button" data-awsavebtn>✦ Save to my readings</button>'+awExportButtons():'')+'</div>'
     +(AW.draws[kind]?'<p class="aw-save-st" id="awSaveState"></p>':'');
   if(!AW.draws[kind]) return html;
