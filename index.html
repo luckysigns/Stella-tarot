@@ -493,10 +493,10 @@
   .aw-chartlist{position:absolute;right:0;top:calc(100% + 6px);z-index:40;min-width:220px;background:var(--bg,#0a0a1f);border:1px solid var(--line);border-radius:12px;padding:6px;box-shadow:0 10px 30px rgba(0,0,0,.28)}
   :root[data-theme="light"] .aw-chartlist{background:var(--bg,#f2e8d5)}
   .aw-chartlist.hidden{display:none}
-  .aw-chartlist button{display:block;width:100%;text-align:left;background:none;border:1px solid transparent;border-radius:8px;color:var(--silver);font:inherit;font-size:13px;padding:9px 11px;cursor:pointer}
-  .aw-chartlist button:hover,.aw-chartlist button.on{border-color:var(--gold);color:var(--gold)}
-  .aw-chartlist a.aw-new:hover{color:var(--gold)}
-  .aw-chartlist button.aw-new{color:var(--gold-soft);border-top:1px solid var(--line);border-radius:0;margin-top:4px;padding-top:10px}
+  .aw-chartlist button,.aw-chartlist a{display:block;width:100%;box-sizing:border-box;text-align:left;background:none;border:1px solid transparent;border-radius:8px;color:var(--silver);font:inherit;font-size:13px;line-height:1.3;padding:9px 11px;cursor:pointer;text-decoration:none}
+  .aw-chartlist button:hover,.aw-chartlist a:hover,.aw-chartlist button.on{border-color:var(--gold);color:var(--gold)}
+  .aw-chartlist .aw-new{color:var(--gold-soft);border-top:1px solid var(--line);border-radius:0;margin-top:4px;padding-top:10px}
+  .aw-chartlist a.aw-new{border-top:0;margin-top:0;padding-top:6px}
   .aw-back{width:auto;padding:8px 14px;font-size:12px;margin:0}
   .aw-stellar{text-decoration:none;color:var(--gold)}
   .aw-chip{margin-left:auto;font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-soft);border:1px solid var(--line);border-radius:999px;padding:6px 11px;white-space:nowrap}
@@ -3205,7 +3205,7 @@ async function awToggleChartList(){
   const cur=window.STELLAR&&window.STELLAR.chart, profiles=await awLoadProfiles();
   list.innerHTML=profiles.map(p=>'<button type="button" role="option" data-awchart="'+awEsc(p.id)+'"'+(cur&&cur.id===p.id?' class="on"':'')+'>'+awEsc(p.name||"Unnamed")+(p.date?' <span class="dim" style="font-size:11px">· '+awEsc(p.date)+'</span>':'')+'</button>').join("")
     +'<button type="button" class="aw-new" data-awnewchart>+ New chart</button>'
-    +'<a class="aw-new" href="https://www.stellarastro.app/?view=natal" target="_blank" rel="noopener" style="display:block;text-decoration:none;border-top:0;margin-top:0;padding-top:9px">✷ Edit in Stellar ↗</a>';
+    +'<a class="aw-new" href="https://www.stellarastro.app/?view=natal" target="_blank" rel="noopener">✷ Edit in Stellar ↗</a>';
   list.classList.remove("hidden"); chip.setAttribute("aria-expanded","true");
   list.querySelectorAll("[data-awchart]").forEach(b=>b.addEventListener("click",e=>{ e.stopPropagation(); list.classList.add("hidden"); if(!(cur&&cur.id===b.dataset.awchart)) awSetActive(b.dataset.awchart); }));
   const nb=list.querySelector("[data-awnewchart]"); if(nb) nb.addEventListener("click",e=>{ e.stopPropagation(); list.classList.add("hidden"); AW.newChart=true; awRender(); });
