@@ -495,6 +495,22 @@
   .aw-empty h3{font-size:21px;color:var(--text-strong);margin:0 0 8px}
   .aw-empty p{font-size:14px;color:var(--silver);line-height:1.55;max-width:460px;margin:0 auto 14px}
   .aw-empty .btn{width:auto;display:inline-flex;padding:10px 22px}
+  .aw-or{font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-soft);margin:18px 0 12px}
+  .aw-form{max-width:420px;margin:0 auto;text-align:left;display:flex;flex-direction:column;gap:8px}
+  .aw-form input{width:100%;box-sizing:border-box;background:var(--field-bg);border:1px solid var(--line);border-radius:10px;color:var(--silver);font:inherit;font-size:14px;padding:10px 12px}
+  .aw-form input:focus{outline:none;border-color:var(--gold)}
+  .aw-form input::placeholder{color:var(--mist);font-style:italic}
+  .aw-form-row{display:flex;gap:8px}
+  .aw-form .btn{width:100%;margin-top:6px}
+  .aw-place{position:relative}
+  .aw-place-list{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:40;background:var(--bg,#0a0a1f);border:1px solid var(--line);border-radius:10px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.28)}
+  :root[data-theme="light"] .aw-place-list{background:var(--bg,#f2e8d5)}
+  .aw-place-list.hidden{display:none}
+  .aw-place-list button{display:block;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);color:var(--silver);font:inherit;font-size:13px;padding:9px 12px;cursor:pointer}
+  .aw-place-list button:last-child{border-bottom:0}
+  .aw-place-list button:hover{color:var(--gold);background:rgba(233,196,106,.06)}
+  .aw-natal{margin:0 0 14px;text-align:center}
+  .aw-natal a{color:var(--gold);text-decoration:none;font-size:14px}
   .aw-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
   .aw-item{border:1px solid var(--line);border-radius:14px;background:var(--surface);padding:16px}
   .aw-pos{font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-soft);margin-bottom:8px}
@@ -507,11 +523,12 @@
   .aw-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
   .aw-actions .btn{width:auto;display:inline-flex;padding:10px 20px;margin:0}
   /* the Year Ahead start month: a stepper in the same pill language as the switches */
-  .aw-mstep{position:relative}
+  .aw-mwrap{position:relative;display:inline-flex}   /* the list anchors here, outside the clipping pill */
   .aw-mstep button{min-width:34px;font-size:16px;line-height:1}
   .aw-mstep .aw-mname{min-width:108px;font-family:"Trebuchet MS",sans-serif;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
   /* tapping the month name opens the twelve, three to a row, under the stepper */
-  .aw-mlist{position:absolute;top:calc(100% + 6px);left:0;z-index:40;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:6px;display:grid;grid-template-columns:repeat(3,1fr);gap:4px;min-width:222px;box-shadow:0 10px 30px rgba(0,0,0,.28)}
+  .aw-mlist{position:absolute;top:calc(100% + 6px);left:0;z-index:40;background:var(--bg,#0a0a1f);border:1px solid var(--line);border-radius:12px;padding:6px;display:grid;grid-template-columns:repeat(3,1fr);gap:4px;min-width:222px;box-shadow:0 10px 30px rgba(0,0,0,.28);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+  :root[data-theme="light"] .aw-mlist{background:var(--bg,#f2e8d5)}
   .aw-mlist.hidden{display:none}
   .aw-mlist button{min-width:0;border:1px solid transparent;border-radius:8px;padding:8px 6px;font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--silver);background:none;cursor:pointer}
   .aw-mlist button:hover,.aw-mlist button.on{border-color:var(--gold);color:var(--gold)}
@@ -916,9 +933,24 @@
       <button type="button" data-aw="year">Year Ahead</button>
     </div>
     <div id="awLink" class="aw-empty hidden">
-      <h3>Link your chart</h3>
-      <p>Your birth chart lives in your Stellar account. Sign in here and the cards read from it - the Majors you were born holding, your houses, your year ahead.</p>
+      <h3 id="awLinkTitle">Link your chart</h3>
+      <p id="awLinkText">Your birth chart lives in your Stellar account. Sign in and the cards read from it - the Majors you were born holding, your houses, your year ahead.</p>
       <button class="btn" id="awSignIn" type="button">✷ &nbsp;Sign in with Stellar</button>
+      <div class="aw-or" id="awOr">or make your chart here</div>
+      <form id="awChartForm" class="aw-form" autocomplete="off">
+        <input id="awcName" placeholder="Your name" required maxlength="60">
+        <div class="aw-form-row">
+          <input id="awcDate" type="date" required aria-label="Birth date">
+          <input id="awcTime" type="time" aria-label="Birth time (optional)">
+        </div>
+        <div class="aw-place">
+          <input id="awcPlace" placeholder="Birthplace - town or city" required aria-label="Birthplace">
+          <div id="awcResults" class="aw-place-list hidden"></div>
+        </div>
+        <p class="hint" id="awcPicked" style="min-height:16px;margin:2px 0 0"></p>
+        <button class="btn" id="awcSave" type="submit">✷ &nbsp;Save my chart</button>
+        <p class="hint" id="awcMsg" style="min-height:16px;margin:8px 0 0">Saved to your Stellar account, so it's there in both apps. Birth time is optional; without it there's no Rising sign.</p>
+      </form>
     </div>
     <div id="awBody"></div>
   </section>
@@ -2928,6 +2960,7 @@ function awRenderCards(chart){
     ["sunDecan","Your decan card","the minor card of your Sun's exact degree"]
   ];
   let html=chips?'<div class="aw-placements">'+chips+'</div>':'';
+  if(window.STELLAR&&window.STELLAR.chart) html+='<p class="aw-natal"><a href="https://www.stellarastro.app/" target="_blank" rel="noopener">✷ &nbsp;See your full natal chart and astrology in Stellar ↗</a><br><span class="hint">Same account - it may ask you to sign in there.</span></p>';
   html+='<div class="aw-actions">'+awExportButtons()+'</div>';
   html+='<div class="aw-grid">';
   rows.forEach(([k,title,sub])=>{
@@ -2967,7 +3000,7 @@ function awRenderSpread(kind,chart){
   /* the reversals switch is the tarot side's own setting (state.reversals), surfaced here so a
      twelve-card spread can be drawn all-upright without leaving the wing */
   html+='<div class="aw-actions"><button class="btn" type="button" data-awdraw="'+kind+'">'+(AW.draws[kind]?"Draw again":"Draw the cards")+'</button>'
-    +(kind==="year"?'<span class="hint" style="font-style:normal">Starting</span><div class="seg aw-mstep" id="awYearStart"><button type="button" data-awstep="-1" aria-label="Earlier month">‹</button><button type="button" class="aw-mname" data-awmenu aria-haspopup="listbox" aria-expanded="false">'+AW_MONTHS[AW.yearStart]+'</button><button type="button" data-awstep="1" aria-label="Later month">›</button><div class="aw-mlist hidden" role="listbox">'+AW_MONTHS.map((m,i)=>'<button type="button" role="option" data-awmonth="'+i+'"'+(i===AW.yearStart?' class="on"':'')+'>'+m.slice(0,3)+'</button>').join("")+'</div></div>':'')
+    +(kind==="year"?'<span class="hint" style="font-style:normal">Starting</span><span class="aw-mwrap"><div class="seg aw-mstep" id="awYearStart"><button type="button" data-awstep="-1" aria-label="Earlier month">‹</button><button type="button" class="aw-mname" data-awmenu aria-haspopup="listbox" aria-expanded="false">'+AW_MONTHS[AW.yearStart]+'</button><button type="button" data-awstep="1" aria-label="Later month">›</button></div><div class="aw-mlist hidden" role="listbox">'+AW_MONTHS.map((m,i)=>'<button type="button" role="option" data-awmonth="'+i+'"'+(i===AW.yearStart?' class="on"':'')+'>'+m.slice(0,3)+'</button>').join("")+'</div></span>':'')
     +'<span class="hint" style="font-style:normal">Reversals</span><div class="seg" id="awRev"><button type="button" data-rev="1"'+(state.reversals?' class="on"':'')+'>On</button><button type="button" data-rev="0"'+(state.reversals?'':' class="on"')+'>Off</button></div>'
     +(AW.draws[kind]?awExportButtons():'')+'</div>';
   if(!AW.draws[kind]) return html;
@@ -2994,10 +3027,116 @@ function awRenderSpread(kind,chart){
   });
   return html+'</div>';
 }
+/* ---- making a chart here: geocode the birthplace, then write the profile into the same
+   stellar_state rows Stellar reads (stellar.profiles + stellar.activeId), so it's in both
+   apps. Stellar's own chart caps apply - reached, it points to a Stellar upgrade. Signed
+   out, the chart waits as a draft and saves itself once the sign-in lands. ---- */
+const AW_DRAFT_KEY="astra.chartDraft";
+const AW_CHART_CAP={free:2,plus:3,premium:10};   // Stellar's plan limits; Deep Sky (lifetime) is unlimited
+let awPlace=null, awGeoTimer=null;
+async function awGeocode(q){
+  const out=[];
+  try{
+    const r=await fetch("https://geocoding-api.open-meteo.com/v1/search?name="+encodeURIComponent(q)+"&count=6&language=en&format=json");
+    const d=await r.json();
+    (d.results||[]).forEach(x=>out.push({name:x.name,region:[x.admin1,x.country].filter(Boolean).join(", "),lat:x.latitude,lng:x.longitude,tz:x.timezone}));
+  }catch(e){}
+  if(!out.length){
+    try{
+      const r=await fetch("https://nominatim.openstreetmap.org/search?format=jsonv2&limit=6&q="+encodeURIComponent(q));
+      const d=await r.json();
+      (d||[]).forEach(x=>out.push({name:(x.display_name||"").split(",")[0],region:(x.display_name||"").split(",").slice(1,3).join(",").trim(),lat:+x.lat,lng:+x.lon,tz:""}));
+    }catch(e){}
+  }
+  return out;
+}
+function awShowPlaces(list){
+  const box=$("awcResults"); if(!box) return;
+  if(!list.length){ box.classList.add("hidden"); box.innerHTML=""; return; }
+  box.innerHTML=list.map((p,i)=>'<button type="button" data-awplace="'+i+'">'+awEsc(p.name)+(p.region?' <span class="dim" style="font-size:12px">· '+awEsc(p.region)+'</span>':'')+'</button>').join("");
+  box.classList.remove("hidden");
+  box.querySelectorAll("[data-awplace]").forEach(b=>b.addEventListener("click",()=>{
+    awPlace=list[+b.dataset.awplace];
+    $("awcPlace").value=awPlace.name+(awPlace.region?", "+awPlace.region:"");
+    $("awcPicked").textContent="✓ "+awPlace.name+(awPlace.tz?" · "+awPlace.tz:"");
+    box.classList.add("hidden");
+  }));
+}
+function awChartFromForm(){
+  const name=($("awcName").value||"").trim(), date=$("awcDate").value, time=$("awcTime").value||"";
+  if(!name||!date||!awPlace) return null;
+  return {id:"p"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),name:name,date:date,time:time,
+    placeName:awPlace.name+(awPlace.region?", "+awPlace.region:""),lat:awPlace.lat,lng:awPlace.lng,tz:awPlace.tz||"",dstMode:"auto",updatedAt:Date.now()};
+}
+async function awChartCap(sb,uid){
+  try{
+    const r=await sb.from("stellar_entitlements").select("tier,lifetime,status").eq("user_id",uid).maybeSingle();
+    const e=r&&r.data; if(!e) return {cap:AW_CHART_CAP.free,tier:"free"};
+    if(e.lifetime) return {cap:Infinity,tier:"lifetime"};
+    const t=(e.tier==="plus"||e.tier==="premium")?e.tier:"free";
+    return {cap:AW_CHART_CAP[t],tier:t};
+  }catch(e){ return {cap:AW_CHART_CAP.free,tier:"free"}; }
+}
+async function awWriteChart(chart){
+  const S=window.STELLAR, sb=S&&S._sb&&S._sb(), u=S&&S.user;
+  if(!sb||!u) throw new Error("not signed in");
+  let profiles=[];
+  try{
+    const res=await sb.from("stellar_state").select("value").eq("user_id",u.id).eq("key","stellar.profiles").maybeSingle();
+    const v=res&&res.data&&res.data.value; const parsed=(typeof v==="string")?JSON.parse(v):v;
+    if(Array.isArray(parsed)) profiles=parsed;
+  }catch(e){}
+  const lim=await awChartCap(sb,u.id);
+  if(profiles.length>=lim.cap){ const err=new Error("cap"); err.cap=lim.cap; err.tier=lim.tier; err.have=profiles.length; throw err; }
+  profiles.push(chart);
+  const now=new Date().toISOString();
+  const w1=await sb.from("stellar_state").upsert({user_id:u.id,key:"stellar.profiles",value:JSON.stringify(profiles),updated_at:now},{onConflict:"user_id,key"});
+  if(w1&&w1.error) throw w1.error;
+  const w2=await sb.from("stellar_state").upsert({user_id:u.id,key:"stellar.activeId",value:chart.id,updated_at:now},{onConflict:"user_id,key"});
+  if(w2&&w2.error) throw w2.error;
+  try{ localStorage.setItem("stellar.profiles",JSON.stringify(profiles)); localStorage.setItem("stellar.activeId",chart.id); }catch(e){}
+  await S.refresh();
+}
+async function awSaveChart(ev){
+  if(ev) ev.preventDefault();
+  const msg=$("awcMsg"), btn=$("awcSave");
+  const chart=awChartFromForm();
+  if(!chart){ if(msg) msg.textContent=awPlace?"Name and birth date, please.":"Pick your birthplace from the list, so it has a map point and a time zone."; return; }
+  if(!(window.STELLAR&&window.STELLAR.user)){
+    try{ localStorage.setItem(AW_DRAFT_KEY,JSON.stringify(chart)); }catch(e){}
+    if(msg) msg.textContent="Kept. Sign in with Stellar and your chart saves itself the moment you're back.";
+    const pm=$("pmenu"); if(pm) pm.classList.remove("hidden");
+    return;
+  }
+  if(btn){ btn.disabled=true; btn.textContent="Saving…"; }
+  try{ await awWriteChart(chart); try{ localStorage.removeItem(AW_DRAFT_KEY); }catch(e){} }
+  catch(e){
+    if(msg){
+      if(e&&e.message==="cap") msg.innerHTML="Your Stellar plan holds "+e.cap+" chart"+(e.cap===1?"":"s")+" and you have "+e.have+". <a href=\"https://www.stellarastro.app/\" target=\"_blank\" rel=\"noopener\" style=\"color:var(--gold)\">Upgrade in Stellar ↗</a> for more.";
+      else msg.textContent="That didn't save. Give it another try in a moment.";
+    }
+  }
+  finally{ if(btn){ btn.disabled=false; btn.textContent="✷ \u00a0Save my chart"; } }
+}
+/* a chart written while signed out saves itself once the sign-in lands */
+async function awFlushDraft(){
+  let d=null; try{ d=JSON.parse(localStorage.getItem(AW_DRAFT_KEY)||"null"); }catch(e){}
+  if(!d) return;
+  if(!(window.STELLAR&&window.STELLAR.user)) return;
+  if(window.STELLAR.chart){ try{ localStorage.removeItem(AW_DRAFT_KEY); }catch(e){} return; }
+  try{ await awWriteChart(d); try{ localStorage.removeItem(AW_DRAFT_KEY); }catch(e){} }catch(e){}
+}
 function awRender(){
   const chart=awChart(), link=$("awLink"), body=$("awBody"), chip=$("awChip"), lede=$("awLede");
   document.querySelectorAll("#awTabs button").forEach(b=>b.classList.toggle("on",b.dataset.aw===AW.tab));
-  if(!chart){ link.classList.remove("hidden"); body.innerHTML=""; chip.classList.add("hidden"); lede.textContent="Your chart, read through the cards."; return; }
+  if(!chart){
+    const signed=!!(window.STELLAR&&window.STELLAR.user);
+    link.classList.remove("hidden"); body.innerHTML=""; chip.classList.add("hidden"); lede.textContent="Your chart, read through the cards.";
+    $("awSignIn").classList.toggle("hidden",signed); $("awOr").classList.toggle("hidden",signed);
+    $("awLinkTitle").textContent=signed?"Make your chart":"Link your chart";
+    $("awLinkText").textContent=signed?"You're signed in, but there's no chart on your account yet. Enter your birth details and it's saved to Stellar - then the cards read from it.":"Your birth chart lives in your Stellar account. Sign in and the cards read from it - the Majors you were born holding, your houses, your year ahead.";
+    return;
+  }
   link.classList.add("hidden");
   const linked=!!(window.STELLAR&&window.STELLAR.chart);
   const P=awPlacements(), who=AW.opened?awChartLabel(AW.opened.name,P):(linked?awChartLabel(chart.name,P):"Sample chart");
@@ -3018,9 +3157,15 @@ function awRender(){
   body.querySelectorAll("[data-awstep]").forEach(b=>b.addEventListener("click",()=>setStart(AW.yearStart+(+b.dataset.awstep))));
   const menuBtn=body.querySelector("[data-awmenu]"), mlist=body.querySelector(".aw-mlist");
   if(menuBtn&&mlist){
-    menuBtn.addEventListener("click",e=>{ e.stopPropagation(); const open=mlist.classList.toggle("hidden")===false; menuBtn.setAttribute("aria-expanded",open?"true":"false"); });
+    const close=()=>{ mlist.classList.add("hidden"); menuBtn.setAttribute("aria-expanded","false"); };
+    menuBtn.addEventListener("click",e=>{
+      e.stopPropagation();
+      const opening=mlist.classList.contains("hidden");
+      if(opening){ mlist.classList.remove("hidden"); menuBtn.setAttribute("aria-expanded","true");
+        setTimeout(()=>document.addEventListener("click",close,{once:true}),0);   // armed only once it's open
+      } else close();
+    });
     mlist.querySelectorAll("[data-awmonth]").forEach(b=>b.addEventListener("click",e=>{ e.stopPropagation(); setStart(+b.dataset.awmonth); }));
-    document.addEventListener("click",()=>{ if(!mlist.classList.contains("hidden")){ mlist.classList.add("hidden"); menuBtn.setAttribute("aria-expanded","false"); } },{once:true});
   }
   body.querySelectorAll("#awRev button").forEach(b=>b.addEventListener("click",()=>{
     state.reversals=(b.dataset.rev==="1");
@@ -3121,7 +3266,14 @@ function closeAstro(){
   if($("awBack")) $("awBack").addEventListener("click",closeAstro);
   if($("awSignIn")) $("awSignIn").addEventListener("click",openPM);
   document.querySelectorAll("#awTabs button").forEach(b=>b.addEventListener("click",()=>{ AW.tab=b.dataset.aw; awRender(); }));
-  window.addEventListener("stellar:ready",()=>{ if(AW.open) awRender(); });   // the linked chart lands after boot
+  window.addEventListener("stellar:ready",()=>{ awFlushDraft(); if(AW.open) awRender(); });   // the linked chart lands after boot
+  const f=$("awChartForm"); if(f) f.addEventListener("submit",awSaveChart);
+  const pl=$("awcPlace"); if(pl){
+    pl.addEventListener("input",()=>{ awPlace=null; $("awcPicked").textContent=""; clearTimeout(awGeoTimer);
+      const q=pl.value.trim(); if(q.length<2){ awShowPlaces([]); return; }
+      awGeoTimer=setTimeout(async()=>{ awShowPlaces(await awGeocode(q)); },350); });
+    document.addEventListener("click",e=>{ if(!e.target.closest(".aw-place")) awShowPlaces([]); });
+  }
   if(location.hash==="#astro") openAstro();
 })();
 
