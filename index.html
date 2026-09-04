@@ -482,6 +482,34 @@
   .lib-card .lc-body h6{font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--rose);margin:12px 0 3px}
   .lib-card .lc-body p{margin-bottom:4px}
   .lib-empty{color:var(--mist);font-style:italic;text-align:center;padding:30px;grid-column:1/-1}
+  /* ═══ astrology wing: its own page, kept apart from the tarot and reached only from
+     the profile menu. Opening it hides everything else in the wrap; closing restores. ═══ */
+  #astroView{display:none}
+  body.astro-open .wrap > *:not(#astroView){display:none}
+  body.astro-open #astroView{display:block}
+  .aw-top{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+  .aw-back{width:auto;padding:8px 14px;font-size:12px;margin:0}
+  .aw-chip{margin-left:auto;font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-soft);border:1px solid var(--line);border-radius:999px;padding:6px 11px;white-space:nowrap}
+  .aw-tabs{margin:12px 0 18px;flex-wrap:wrap}
+  .aw-empty{border:1px dashed var(--line);border-radius:14px;padding:24px 18px;text-align:center}
+  .aw-empty h3{font-size:21px;color:var(--text-strong);margin:0 0 8px}
+  .aw-empty p{font-size:14px;color:var(--silver);line-height:1.55;max-width:460px;margin:0 auto 14px}
+  .aw-empty .btn{width:auto;display:inline-flex;padding:10px 22px}
+  .aw-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+  .aw-item{border:1px solid var(--line);border-radius:14px;background:var(--surface);padding:16px}
+  .aw-pos{font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-soft);margin-bottom:8px}
+  .aw-stage{display:flex;justify-content:center;margin:0 0 12px}
+  .aw-item .tcard{width:150px;height:240px;cursor:default}
+  .aw-item h4{font-size:18px;color:var(--text-strong);margin:0 0 3px;text-align:center}
+  .aw-sub{font-family:"Trebuchet MS",sans-serif;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-soft);text-align:center;margin-bottom:10px}
+  .aw-item p{font-size:13.5px;line-height:1.6;color:var(--silver);margin:0}
+  .aw-clause{color:var(--gold)}
+  .aw-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+  .aw-actions .btn{width:auto;display:inline-flex;padding:10px 20px;margin:0}
+  .aw-note{font-size:13px;color:var(--mist);font-style:italic;margin:0 0 14px}
+  .aw-placements{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}
+  .aw-placements span{font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);border:1px solid var(--line);border-radius:999px;padding:6px 11px}
+  @media(max-width:560px){ .aw-item .tcard{width:126px;height:202px} .aw-chip{display:none} }
   /* library opens on demand so 78 card images aren't fetched until they're wanted */
   #libToggle{display:flex;align-items:center;gap:10px;width:100%;background:none;border:0;padding:0;
     margin:0;cursor:pointer;text-align:left;color:inherit;font:inherit}
@@ -599,7 +627,7 @@
     <button class="pm-go pm-go-ghost" id="pmSignOut" type="button">Sign out</button>
   </div>
   <hr>
-  <p class="pm-soon" style="text-align:left;margin:0">✷ &nbsp;Want to see your astrology? <a id="pmAstroLink" href="https://www.stellarastro.app/" style="color:var(--gold);text-decoration:underline;text-decoration-color:var(--gold-soft);text-underline-offset:3px">Stellar has your full chart →</a></p>
+  <button class="pm-go" id="pmAstro" type="button">✷ &nbsp;Use my chart for an astro reading</button>
 </div>
 
 <div class="deckmodal hidden" id="readingsModal">
@@ -853,6 +881,29 @@
     </div>
     <div class="lib-grid" id="libGrid"></div>
     </div>
+  </section>
+
+  <!-- ═══ ASTROLOGY READINGS — a separate wing. Never on the home screen; opened only from
+       the profile menu ("Use my chart for an astro reading"), or by the #astro hash. ═══ -->
+  <section class="panel" id="astroView">
+    <div class="aw-top">
+      <button class="btn ghost aw-back" id="awBack" type="button">← Tarot readings</button>
+      <span class="aw-chip hidden" id="awChip"></span>
+    </div>
+    <div class="step-label">Astrology readings</div>
+    <p class="hint" id="awLede">Your chart, read through the cards.</p>
+    <div class="seg multi aw-tabs" id="awTabs">
+      <button type="button" data-aw="cards" class="on">Your Cards</button>
+      <button type="button" data-aw="big3">Big Three</button>
+      <button type="button" data-aw="houses">The Houses</button>
+      <button type="button" data-aw="year">Year Ahead</button>
+    </div>
+    <div id="awLink" class="aw-empty hidden">
+      <h3>Link your chart</h3>
+      <p>Your birth chart lives in your Stellar account. Sign in here and the cards read from it — the Majors you were born holding, your houses, your year ahead.</p>
+      <button class="btn" id="awSignIn" type="button">✷ &nbsp;Sign in with Stellar</button>
+    </div>
+    <div id="awBody"></div>
   </section>
 
   <p class="upload-note">Card meanings researched with reference to <a href="https://www.thetarotguide.com" target="_blank" rel="noopener" style="color:var(--gold-soft)">The Tarot Guide</a>, reworded in the deck's own voice. For reflection and play.</p>
@@ -2806,6 +2857,137 @@ function reskinTableArt(){
   });
 }
 if($("libToggle")) $("libToggle").onclick=()=>setLibraryOpen(!libIsOpen());
+
+/* ═══════════ ASTROLOGY WING ═══════════
+   A separate page, opened only from the profile menu. Everything it shows comes from
+   window.STELLAR (the chart bridge) and the inlined CHART_CONTENT / CHART_POSITIONS,
+   composed per astra-data/chart/CHART_ASSEMBLY.md: a drawn card's position text plus
+   ONE clause for the placement it's read against, clause last. Identity cards are
+   standalone. It reads the chosen deck and the reversals setting; it touches nothing
+   else on the tarot side. */
+const AW={tab:"cards",draws:{},open:false};
+const AW_LABELS={
+  big3:["Your light","Your tides","Your mask"],
+  houses:["Self","Money","Voice","Home","Play","Health","Partners","Depths","Horizons","Career","Community","Dreams"],
+  year:["Month 1","Month 2","Month 3","Month 4","Month 5","Month 6","Month 7","Month 8","Month 9","Month 10","Month 11","Month 12"]
+};
+/* a sample chart so the wing can be reviewed before an account is linked: ?demo=1 */
+const AW_DEMO={name:"Sample chart",date:"1990-08-12",time:"14:30",lat:-33.8688,lng:151.2093,tz:"Australia/Sydney"};
+function awIsDemo(){ try{ return /[?&]demo=1/.test(location.search); }catch(e){ return false; } }
+function awChart(){ const S=window.STELLAR; if(S&&S.chart) return S.chart; return awIsDemo()?AW_DEMO:null; }
+function awDeck(){ return state.deck==="astro"?"astro":"base"; }   // content voice; other decks read in the base voice
+function awCard(id){ return DECK.find(c=>c.id===id)||null; }
+function awCardHTML(card,reversed){
+  return '<div class="aw-stage">'+tcardHTML({card:card,reversed:!!reversed},0).replace('class="tcard materialize','class="tcard flipped materialize')+'</div>';
+}
+function awPosText(deck,id,label,orient){
+  try{ const p=CONTENT[deck][id].positions[label]; if(p&&p[orient]) return p[orient]; }catch(e){}
+  try{ const p=CONTENT.base[id].positions[label]; if(p&&p[orient]) return p[orient]; }catch(e){}
+  return "";
+}
+/* ---- Your Cards: fixed by the chart, read as identity, no clause ---- */
+function awRenderCards(chart){
+  const S=window.STELLAR; let idn=null;
+  try{ idn=S.identityFor(chart); }catch(e){}
+  if(!idn||!idn.cards) return '<p class="aw-note">This chart couldn\'t be read. Check its birth details in Stellar.</p>';
+  const P=idn.placements||{};
+  const glyph={sun:"☉",moon:"☽",rising:"↑"};
+  const chips=["sun","moon","rising"].filter(k=>P[k]&&P[k].sign).map(k=>'<span>'+glyph[k]+' '+escapeHtml(P[k].sign)+'</span>').join("");
+  const rows=[
+    ["sun","Your Sun card","the Major that rules your Sun"],
+    ["moon","Your Moon card","the Major that rules your Moon"],
+    ["rising","Your Rising card","the Major that rules your Ascendant"],
+    ["birth","Your birth card","the Major hidden in your birthdate"],
+    ["sunDecan","Your decan card","the minor card of your Sun's exact degree"]
+  ];
+  let html=chips?'<div class="aw-placements">'+chips+'</div>':'';
+  html+='<div class="aw-grid">';
+  rows.forEach(([k,title,sub])=>{
+    const it=idn.cards[k];
+    if(!it||!it.cardId){
+      if(k==="rising") html+='<div class="aw-item"><div class="aw-pos">'+title+'</div><p class="aw-note" style="margin:0">Needs a birth time. Add one to this chart in Stellar and your Rising card appears here.</p></div>';
+      return;
+    }
+    const c=awCard(it.cardId); if(!c) return;
+    html+='<div class="aw-item"><div class="aw-pos">'+title+(it.sign?' · '+escapeHtml(it.sign):'')+'</div>'
+      +awCardHTML(c,false)+'<h4>'+escapeHtml(c.name)+'</h4><div class="aw-sub">'+escapeHtml(sub)+'</div>'
+      +'<p>'+escapeHtml(it.reading||"")+'</p></div>';
+  });
+  return html+'</div>';
+}
+/* ---- Big Three / The Houses / Year Ahead: drawn, then woven against the chart ---- */
+function awDraw(kind){
+  const n=AW_LABELS[kind].length;
+  AW.draws[kind]=shuffled().slice(0,n).map(idx=>({deckIdx:idx,reversed:state.reversals&&Math.random()<0.2}));
+}
+function awClause(kind,i,P){
+  if(kind==="big3"){ const k=["sun","moon","rising"][i]; return (P[k]&&P[k].sign)?[k,P[k].sign]:null; }
+  if(kind==="houses") return ["house",i+1];
+  return null;
+}
+function awRenderSpread(kind,chart){
+  const S=window.STELLAR, labels=AW_LABELS[kind];
+  const intro={
+    big3:"Three cards, one for each pillar of your chart — your light, your tides and your mask — each read against your actual Sun, Moon and Rising rather than in general terms.",
+    houses:"Twelve cards laid around your own wheel, one per house, each read for what that house speaks about.",
+    year:"Your solar-return spread: twelve cards, one for each month of your new year."
+  }[kind];
+  let html='<p class="aw-note">'+intro+'</p>';
+  html+='<div class="aw-actions"><button class="btn" type="button" data-awdraw="'+kind+'">'+(AW.draws[kind]?"Draw again":"Draw the cards")+'</button></div>';
+  if(!AW.draws[kind]) return html;
+  let P={}; try{ P=S.placementsFor(chart)||{}; }catch(e){}
+  const deck=awDeck();
+  html+='<div class="aw-grid">';
+  AW.draws[kind].forEach((d,i)=>{
+    const c=DECK[d.deckIdx], orient=d.reversed?"reversed":"upright", label=labels[i];
+    let text="", clause="", missing="";
+    if(kind==="year"){ text=awPosText(deck,c.id,label,orient); }
+    else{
+      const cl=awClause(kind,i,P); let w=null;
+      try{ w=S.weave(deck,c.id,label,orient,cl?cl[0]:null,cl?cl[1]:null); }catch(e){}
+      text=(w&&w.text)||awPosText(deck,c.id,label,orient); clause=(w&&w.clause)||"";
+      if(kind==="big3"&&i===2&&!cl) missing="Add a birth time to this chart in Stellar and this card reads against your Rising too.";
+    }
+    let bottom=""; try{ bottom=cardBottomLabel(c)||""; }catch(e){}
+    html+='<div class="aw-item"><div class="aw-pos">'+escapeHtml(label)+(d.reversed?' · reversed':'')+'</div>'
+      +awCardHTML(c,d.reversed)+'<h4>'+escapeHtml(c.name)+'</h4><div class="aw-sub">'+escapeHtml(bottom)+'</div>'
+      +'<p>'+escapeHtml(text)+(clause?' <span class="aw-clause">'+escapeHtml(clause)+'</span>':'')+'</p>'
+      +(missing?'<p class="aw-note" style="margin-top:8px">'+missing+'</p>':'')+'</div>';
+  });
+  return html+'</div>';
+}
+function awRender(){
+  const chart=awChart(), link=$("awLink"), body=$("awBody"), chip=$("awChip"), lede=$("awLede");
+  document.querySelectorAll("#awTabs button").forEach(b=>b.classList.toggle("on",b.dataset.aw===AW.tab));
+  if(!chart){ link.classList.remove("hidden"); body.innerHTML=""; chip.classList.add("hidden"); lede.textContent="Your chart, read through the cards."; return; }
+  link.classList.add("hidden");
+  const linked=!!(window.STELLAR&&window.STELLAR.chart);
+  chip.textContent=linked?("Chart · "+(chart.name||"yours")):"Sample chart";
+  chip.classList.remove("hidden");
+  lede.textContent=linked?"Read from the chart on your Stellar account.":"A sample chart, so you can see the wing before linking your own.";
+  body.innerHTML=(AW.tab==="cards")?awRenderCards(chart):awRenderSpread(AW.tab,chart);
+  body.querySelectorAll("[data-awdraw]").forEach(b=>b.addEventListener("click",()=>{ awDraw(b.dataset.awdraw); awRender(); }));
+}
+function openAstro(){
+  AW.open=true; document.body.classList.add("astro-open");
+  try{ if(location.hash!=="#astro") history.replaceState(null,"",location.pathname+location.search+"#astro"); }catch(e){}
+  awRender(); window.scrollTo({top:0});
+}
+function closeAstro(){
+  AW.open=false; document.body.classList.remove("astro-open");
+  try{ history.replaceState(null,"",location.pathname+location.search); }catch(e){}
+}
+(function(){
+  const pm=$("pmenu");
+  const closePM=()=>{ if(pm) pm.classList.add("hidden"); };
+  const openPM=()=>{ if(pm) pm.classList.remove("hidden"); };
+  if($("pmAstro")) $("pmAstro").addEventListener("click",()=>{ closePM(); openAstro(); });
+  if($("awBack")) $("awBack").addEventListener("click",closeAstro);
+  if($("awSignIn")) $("awSignIn").addEventListener("click",openPM);
+  document.querySelectorAll("#awTabs button").forEach(b=>b.addEventListener("click",()=>{ AW.tab=b.dataset.aw; awRender(); }));
+  window.addEventListener("stellar:ready",()=>{ if(AW.open) awRender(); });   // the linked chart lands after boot
+  if(location.hash==="#astro") openAstro();
+})();
 
 /* ── light / dark theme toggle ── */
 function applyThemeBtn(){
