@@ -122,7 +122,8 @@ module.exports = async function handler(req, res) {
       res.status(404).json({ error: "Unknown deck." });
       return;
     }
-    if (deck.status !== "live") {
+    /* 'preorder' is on sale ahead of its art; the app keeps it unusable until the row goes live */
+    if (deck.status !== "live" && deck.status !== "preorder") {
       res.status(400).json({ error: "This deck is not on sale." });
       return;
     }
@@ -136,7 +137,7 @@ module.exports = async function handler(req, res) {
       res.status(500).json({ error: "Deck price is not configured correctly." });
       return;
     }
-    const preorder = !!body.preorder;   // a label on the receipt; price and eligibility come from the row
+    const preorder = deck.status === "preorder";   // the row decides; the receipt says so
     if (await alreadyOwns(user.id, slug)) {
       res.status(400).json({ error: "You already own this deck." });
       return;

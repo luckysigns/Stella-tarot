@@ -1649,7 +1649,7 @@ function deckRowHTML(dk){
   const on=state.deck===dk.id;
   const owned=OWNED.has(dk.id);
   const paid=deckIsPaid(dk);
-  const preorder=!dk.ready && dk.on_sale && paid;          // coming soon, but you can have it waiting
+  const preorder=!dk.ready && (dk.preorder||dk.on_sale) && paid;   // coming soon, but you can have it waiting
   const buyable=(dk.ready||preorder) && paid && !owned;
   let action="";
   if(dk.ready && !buyable){
@@ -1665,7 +1665,7 @@ function deckRowHTML(dk){
     +   '<div class="dk-name">'+dk.name
     +     (on?' <span class="dk-tag">in use</span>':'')
     +     (owned&&paid?' <span class="dk-tag">'+(dk.ready?'owned':'pre-ordered')+'</span>':'')
-    +     (dk.ready?'':' <span class="dk-tag soon">coming soon</span>')+'</div>'
+    +     (dk.ready?'':' <span class="dk-tag soon">'+(preorder||(owned&&dk.preorder)?'pre-order':'coming soon')+'</span>')+'</div>'
     +   '<div class="dk-sub">'+dk.sub+'</div>'
     +   '<div class="dk-meta">'+deckMetaHTML(dk)+'</div>'
     +   '<details class="dk-more"><summary>Learn more</summary><p>'+dk.blurb
@@ -1863,8 +1863,10 @@ async function refreshDecks(){
         ready:r.status==="live" && (l?l.ready:true),
         samples:(l&&l.samples)||[],
         price_cents:r.price_cents||0,
-        /* on sale before its art ships = a pre-order: buyable, owned, usable the day it's ready */
-        on_sale:r.status==="live",
+        /* a deck row can be 'preorder': on sale before its art ships. Buyable, owned, and
+           usable the day the row goes live. */
+        on_sale:r.status==="live"||r.status==="preorder",
+        preorder:r.status==="preorder",
         currency:r.currency||"usd",
         is_free:!!r.is_free,
         artist_code:r.artist_code||null,
