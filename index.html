@@ -552,6 +552,7 @@
   #astroView.exporting .aw-actions,#astroView.exporting #awTabs,#astroView.exporting .aw-top,#astroView.exporting .aw-note-st,#astroView.exporting #awLede{display:none}
   .aw-note-print{margin-top:10px;padding:8px 11px;border-left:2px solid var(--gold);color:var(--silver);font-size:13px;line-height:1.5;font-style:italic}
   .aw-note{font-size:13px;color:var(--mist);font-style:italic;margin:0 0 14px}
+  .aw-save-st{font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-soft);margin:-8px 0 14px;min-height:12px}
   .aw-intro{font-size:14.5px;line-height:1.65;color:var(--silver);max-width:720px;margin:0 0 12px}
   .aw-placements{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}
   .aw-placements span{font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);border:1px solid var(--line);border-radius:999px;padding:6px 11px}
@@ -3051,7 +3052,8 @@ function awRenderSpread(kind,chart){
   html+='<div class="aw-actions"><button class="btn" type="button" data-awdraw="'+kind+'">'+(AW.draws[kind]?"Draw again":"Draw the cards")+'</button>'
     +(kind==="year"?'<span class="hint" style="font-style:normal">Starting</span><span class="aw-mwrap"><div class="seg aw-mstep" id="awYearStart"><button type="button" data-awstep="-1" aria-label="Earlier month">‹</button><button type="button" class="aw-mname" data-awmenu aria-haspopup="listbox" aria-expanded="false">'+AW_MONTHS[AW.yearStart]+'</button><button type="button" data-awstep="1" aria-label="Later month">›</button></div><div class="aw-mlist hidden" role="listbox">'+AW_MONTHS.map((m,i)=>'<button type="button" role="option" data-awmonth="'+i+'"'+(i===AW.yearStart?' class="on"':'')+'>'+m.slice(0,3)+'</button>').join("")+'</div></span>':'')
     +'<span class="hint" style="font-style:normal">Reversals</span><div class="seg" id="awRev"><button type="button" data-rev="1"'+(state.reversals?' class="on"':'')+'>On</button><button type="button" data-rev="0"'+(state.reversals?'':' class="on"')+'>Off</button></div>'
-    +(AW.draws[kind]?awExportButtons():'')+'</div>';
+    +(AW.draws[kind]?'<button class="btn" type="button" data-awsavebtn>✦ Save to my readings</button>'+awExportButtons():'')+'</div>'
+    +(AW.draws[kind]?'<p class="aw-save-st" id="awSaveState"></p>':'');
   if(!AW.draws[kind]) return html;
   const P=awPlacements();
   const deck=awDeck();
@@ -3235,7 +3237,9 @@ function awRender(){
   chip.classList.remove("hidden");
   lede.textContent=(AW.opened?"A reading kept for "+who+(trio?" · "+trio:""):linked?"Read from "+who+" on your Stellar account"+(trio?" · "+trio:""):"A sample chart, so you can see the wing before linking your own"+(trio?" · "+trio:""))+".";
   body.innerHTML=(AW.tab==="cards")?awRenderCards(chart):awRenderSpread(AW.tab,chart);
-  body.querySelectorAll("[data-awdraw]").forEach(b=>b.addEventListener("click",()=>{ awDraw(b.dataset.awdraw); awRender(); awSave(b.dataset.awdraw); }));
+  body.querySelectorAll("[data-awdraw]").forEach(b=>b.addEventListener("click",async()=>{ awDraw(b.dataset.awdraw); awRender(); awSaveNote(await awSave(b.dataset.awdraw)); }));
+  body.querySelectorAll("[data-awsavebtn]").forEach(b=>b.addEventListener("click",async()=>{ b.disabled=true; awSaveNote(await awSave(AW.tab)); b.disabled=false; }));
+  if(AW.opened&&$("awSaveState")) $("awSaveState").textContent="Saved reading · for "+awChartLabel(AW.opened.name,AW.opened.placements);
   body.querySelectorAll("[data-awexp]").forEach(b=>b.addEventListener("click",()=>awExport(b.dataset.awexp,b)));
   body.querySelectorAll("[data-awnote]").forEach(t=>t.addEventListener("change",async()=>{
     const i=+t.dataset.awnote, kind=AW.tab; AW.notes[kind]=AW.notes[kind]||[]; AW.notes[kind][i]=t.value;
@@ -3293,6 +3297,12 @@ async function awSave(kind){
     try{ renderSaves(); }catch(e){}
     return "saved";
   }catch(e){ return "none"; }
+}
+/* the status line under the actions: what the last save did, and for whose chart */
+function awSaveNote(result){
+  const el=$("awSaveState"); if(!el) return;
+  const who=awChartLabel((awChart()||{}).name,awPlacements());
+  el.textContent=result==="saved"?"Saved to your readings ✦ · for "+who:result==="stashed"?"Kept for "+who+" · it saves to your readings when you sign in":result==="none"?"Sample chart · not saved":"";
 }
 function awOpenSaved(r){
   const p=r.payload||{}; const kind=AW_LABELS[p.view]?p.view:"big3";
