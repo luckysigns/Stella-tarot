@@ -559,7 +559,8 @@
   .aw-placements span{font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);border:1px solid var(--line);border-radius:999px;padding:6px 11px}
   @media(max-width:560px){
     .aw-item .tcard{width:126px;height:202px}
-    .aw-chip{display:none}
+    .aw-chip{margin-left:0;flex:1 1 100%;text-align:center;padding:9px 11px}   /* the chart picker gets its own row */
+    .aw-chartlist{left:0;right:0;min-width:0}
     .seg.aw-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;border:0;background:none;overflow:visible;border-radius:0}
     .seg.aw-tabs button{border:1px solid var(--line);border-radius:999px;text-align:center}
     .seg.aw-tabs button.on{border-color:var(--gold)}
