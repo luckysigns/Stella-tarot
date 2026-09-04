@@ -136,6 +136,7 @@ module.exports = async function handler(req, res) {
       res.status(500).json({ error: "Deck price is not configured correctly." });
       return;
     }
+    const preorder = !!body.preorder;   // a label on the receipt; price and eligibility come from the row
     if (await alreadyOwns(user.id, slug)) {
       res.status(400).json({ error: "You already own this deck." });
       return;
@@ -164,7 +165,8 @@ module.exports = async function handler(req, res) {
         price_data: {
           currency: deck.currency || "usd",
           unit_amount: deck.price_cents,
-          product_data: { name: deck.title + " deck · Stellar Tarot" }
+          product_data: { name: (preorder ? "Pre-order · " : "") + deck.title + " deck · Stellar Tarot",
+            description: preorder ? "The deck is still being drawn. It's yours the day it ships, in the app you bought it in." : undefined }
         },
         quantity: 1
       }],
@@ -177,7 +179,8 @@ module.exports = async function handler(req, res) {
         deck_id: deck.id,
         artist_code: deck.artist_code || "",
         referring_code: referring || "",
-        user_id: user.id
+        user_id: user.id,
+        preorder: preorder ? "1" : ""
       }
     });
 
