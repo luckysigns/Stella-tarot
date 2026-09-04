@@ -3382,7 +3382,11 @@ function closeAstro(){
       awGeoTimer=setTimeout(async()=>{ awShowPlaces(await awGeocode(q)); },350); });
     document.addEventListener("click",e=>{ if(!e.target.closest(".aw-place")) awShowPlaces([]); });
   }
-  if(location.hash==="#astro") openAstro();
+  /* #astro, or ?open=astro - the query form survives Stellar's SSO hand-off, which rewrites the
+     hash to carry its token and then strips it */
+  let wantAstro=location.hash==="#astro";
+  try{ const q=new URLSearchParams(location.search); if(q.get("open")==="astro"){ wantAstro=true; q.delete("open"); const qs=q.toString(); history.replaceState(null,"",location.pathname+(qs?"?"+qs:"")+location.hash); } }catch(e){}
+  if(wantAstro) openAstro();
 })();
 
 /* ── light / dark theme toggle ── */
