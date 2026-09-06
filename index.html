@@ -1463,9 +1463,9 @@ const SPREADS = {
 };
 
 /* ───────── STATE ───────── */
-/* deck starts unchosen: no deck is "in use" until the reader picks one in the deck shop,
-   and until then cards wear their sigil face rather than any deck's art */
-let state={spread:null,method:"fan",reversals:true,drawn:[],need:0,clarifiers:{},deck:null};
+/* the Traditional (Rider-Waite-Smith) deck is in use from the first load, so cards never
+   fall back to the bare sigil placeholder; the reader can swap decks in the deck shop */
+let state={spread:null,method:"fan",reversals:true,drawn:[],need:0,clarifiers:{},deck:"base"};
 const $=id=>document.getElementById(id);
 const backSVG=`<svg class="face" viewBox="0 0 100 160" preserveAspectRatio="none"><use href="#astrolabe"/></svg><img class="backimg" src="/cards/back-stellar.jpg" alt="" onerror="this.remove()">`;
 
@@ -1516,12 +1516,19 @@ $("changeSpreadBtn").onclick=()=>{
 };
 $("reversals").onchange=e=>state.reversals=e.target.checked;
 /* ===== deck picker (data-driven; extend DECKS to add more decks) ===== */
-/* the deck is a per-visit choice, not a remembered setting: every load starts with none in
-   use and a shut library, and picking one is always a deliberate act. Old saved values are
+/* the deck is a per-visit choice, not a remembered setting: every load starts on the
+   Traditional deck, and switching is always a deliberate act. Old saved values are
    cleared so a previous visit can't quietly select a deck. */
 function persistDeck(){}
 function restoreDeckPref(){ try{ localStorage.removeItem("astra.deck"); }catch(e){} }
 function deckById(id){ return DECKS.find(d=>d.id===id)||DECKS[0]; }
+/* no deck in use means the Traditional deck. The moment cards are pulled, guided or asked,
+   fall back to it so every card wears real art rather than a bare sigil. */
+function ensureDeck(){
+  if(state.deck && DECKS.some(d=>d.id===state.deck && d.ready)) return;
+  state.deck="base"; persistDeck(); renderDeckPicker();
+  try{ renderDeckSheet(); }catch(e){}
+}
 function deckThumbs(dk){
   if(!dk.ready||!dk.samples.length) return '<span class="dk-thumb back"></span><span class="dk-thumb back"></span><span class="dk-thumb back"></span>';
   return dk.samples.map(id=>'<img class="dk-thumb" src="/cards/rws/'+id+'.jpg" alt="" loading="lazy">').join("");
@@ -2303,6 +2310,7 @@ function shuffled(){
 /* ───────── build the deck (fan or pile) ───────── */
 let order=[];
 function buildDeck(){
+  ensureDeck();
   order=shuffled();
   state.drawn=[];
   state.clarifiers={};
@@ -2365,6 +2373,7 @@ function cutFromTop(pile){
 }
 
 function chooseCard(deckIdx,el){
+  ensureDeck();
   if(state.drawn.length>=state.need) return;
   el.classList.add("chosen");
   // remove from order so it can't be picked twice
@@ -3602,6 +3611,7 @@ function addToSpread(entryId,label){
 function askPull(){
   var q=$("askQ").value.trim();
   if(!q){ $("askQ").focus(); return; }
+  ensureDeck();
   var labels=[].map.call($("askLabelInputs").querySelectorAll("input"), function(inp){return inp.value.trim();});
   var pool=shuffled(), cards=[];
   for(var i=0;i<askCount;i++){ var idx=pool.shift(); var reversed=state.reversals && Math.random()<0.2; cards.push({deckIdx:idx,reversed:reversed,clar:[]}); }
