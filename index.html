@@ -676,6 +676,29 @@
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<!-- Vercel Web Analytics. The loader normally auto-tracks: it fires a page view on
+     load and patches history.pushState, which showArtistPage calls. Left on, every
+     artist page would be counted twice and the loader would then reuse our last
+     explicit path for its own events. disable-auto-track gives us every page view. -->
+<script>
+window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};
+/* Artist and deck URLs are rewritten to / by vercel.json and swapped in on the client,
+   so the loader cannot see them. route carries the pattern so the dashboard groups
+   artists together, path carries the real URL so a single artist can be read off too. */
+window.__lastTrackedPath=null;
+window.trackPath=function(route,path){
+  try{
+    if(window.__lastTrackedPath===path)return;
+    window.__lastTrackedPath=path;
+    window.va("pageview",{route:route,path:path});
+  }catch(e){}
+};
+try{  /* the arrival, which may already be a deep link to an artist or a deck */
+  var _m=location.pathname.match(/^\/([a-z0-9][a-z0-9-]{1,30})(?:\/([a-z0-9][a-z0-9_-]{1,60}))?\/?$/);
+  window.trackPath(_m?(_m[2]?"/[artist]/[deck]":"/[artist]"):location.pathname,location.pathname);
+}catch(e){}
+</script>
+<script defer data-disable-auto-track="1" src="/_vercel/insights/script.js"></script>
 </head>
 <body>
 <div class="stars"></div>
@@ -1607,6 +1630,7 @@ function showArtistPage(code,deckSlug,nav){
     if(nav==="replace") history.replaceState({ap:1},"",url);
     else if(nav!=="none") history.pushState({ap:1},"",url);
   }catch(e){}
+  window.trackPath(AP.deck?"/[artist]/[deck]":"/[artist]","/"+code+(AP.deck?"/"+AP.deck:""));
   renderArtistPage();
   $("artistPage").classList.remove("hidden");
   document.body.style.overflow="hidden";
@@ -1617,6 +1641,7 @@ function closeArtistPage(nav){
   document.body.style.overflow="";
   AP.code=null;AP.deck=null;
   if(nav!=="none"){ try{history.replaceState(null,"","/"+location.search);}catch(e){} }
+  window.trackPath("/","/");
 }
 window.addEventListener("popstate",function(){
   var m=location.pathname.match(/^\/([a-z0-9][a-z0-9-]{1,30})(?:\/([a-z0-9][a-z0-9_-]{1,60}))?\/?$/);
