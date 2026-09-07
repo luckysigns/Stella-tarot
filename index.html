@@ -265,6 +265,18 @@
     background:var(--panel-grad);padding:clamp(18px,4vw,26px);box-shadow:0 30px 80px -30px #000}
   .decksheet h3{font-weight:400;font-size:20px;color:var(--text-strong)}
   .decksheet .dk-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+  /* saved-readings cap sheet: the Stellar plans, read as rows like the deck shop */
+  .cap-plan{border:1px solid var(--line);border-radius:14px;padding:14px;margin-top:12px;background:var(--surface-2)}
+  .cap-plan.hi{border-color:var(--gold)}
+  .cap-plan .cp-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .cap-plan .cp-name{color:var(--text-strong);font-size:16px}
+  .cap-plan .cp-price{font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-soft)}
+  .cap-plan ul{margin:8px 0 0;padding-left:18px;font-size:13px;line-height:1.6;color:var(--silver)}
+  .cap-plan .dk-use{display:inline-block;margin-top:12px;text-decoration:none}
+  .cap-usage{font-size:12px;color:var(--mist);font-style:italic;margin:0 0 4px;display:flex;justify-content:space-between;gap:8px}
+  .cap-usage a{color:var(--gold)}
+  .cap-foot{margin-top:16px;font-size:12.5px;font-style:italic;color:var(--mist);text-align:center;line-height:1.6}
+  .cap-foot a{color:var(--gold);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
   .deckrow{display:flex;gap:14px;align-items:flex-start;border:1px solid var(--line);border-radius:14px;
     padding:14px;margin-top:14px;background:var(--surface-2)}
   .deckrow.on{border-color:var(--gold)}
@@ -705,6 +717,18 @@
   </div>
 </div>
 
+<div class="deckmodal hidden" id="capModal">
+  <div class="decksheet">
+    <div class="dk-head">
+      <h3>Keep every reading</h3>
+      <button class="pmenu-close" id="capClose" type="button" aria-label="Close">✕</button>
+    </div>
+    <p class="hint" id="capMsg"></p>
+    <div id="capPlans"></div>
+    <p class="cap-foot" id="capFoot"></p>
+  </div>
+</div>
+
 <div class="deckmodal hidden" id="deckModal">
   <div class="decksheet">
     <div class="dk-head">
@@ -856,6 +880,9 @@
 
     <div class="signin-row hidden" id="saveSigninRow">
       <button class="btn" id="saveSignin" type="button">✦ Sign in to keep this reading</button>
+    </div>
+    <div class="signin-row hidden" id="saveCapRow">
+      <button class="btn" id="saveUpgrade" type="button">✦ Upgrade to keep this reading</button>
     </div>
     <div class="export-bar">
       <button class="btn" id="exportImg">⤓ Save as image</button>
@@ -3153,13 +3180,9 @@ function awChartFromForm(){
     placeName:awPlace.name+(awPlace.region?", "+awPlace.region:""),lat:awPlace.lat,lng:awPlace.lng,tz:awPlace.tz||"",dstMode:"auto",updatedAt:Date.now()};
 }
 async function awChartCap(sb,uid){
-  try{
-    const r=await sb.from("stellar_entitlements").select("tier,lifetime,status").eq("user_id",uid).maybeSingle();
-    const e=r&&r.data; if(!e) return {cap:AW_CHART_CAP.free,tier:"free"};
-    if(e.lifetime) return {cap:Infinity,tier:"lifetime"};
-    const t=(e.tier==="plus"||e.tier==="premium")?e.tier:"free";
-    return {cap:AW_CHART_CAP[t],tier:t};
-  }catch(e){ return {cap:AW_CHART_CAP.free,tier:"free"}; }
+  const t=await stellarTier(sb,uid);
+  if(t==="lifetime") return {cap:Infinity,tier:"lifetime"};
+  return {cap:AW_CHART_CAP[t],tier:t};
 }
 async function awWriteChart(chart){
   const S=window.STELLAR, sb=S&&S._sb&&S._sb(), u=S&&S.user;
@@ -3324,8 +3347,9 @@ async function awSave(kind){
   try{
     if(AW.saveIds&&AW.saveIds[kind]){ await c.from("tarot_readings").update({payload:row.payload}).eq("id",AW.saveIds[kind]); }
     else{
+      if(!(await savesRoom())){ capNudge(); return "capped"; }   // the plan is full: nothing written
       const res=await c.from("tarot_readings").insert(Object.assign({user_id:u.id},row)).select("id").single();
-      AW.saveIds=AW.saveIds||{}; if(res&&res.data&&res.data.id) AW.saveIds[kind]=res.data.id;
+      AW.saveIds=AW.saveIds||{}; if(res&&res.data&&res.data.id){ AW.saveIds[kind]=res.data.id; savesCounted(1); }
     }
     try{ renderSaves(); }catch(e){}
     return "saved";
@@ -3335,6 +3359,11 @@ async function awSave(kind){
 function awSaveNote(result){
   const el=$("awSaveState"); if(!el) return;
   const who=awChartLabel((awChart()||{}).name,awPlacements());
+  if(result==="capped"){
+    el.innerHTML="Not saved · your "+PLAN_NAMES[PLAN.tier]+" plan keeps "+planCap()+" readings and they are all full. <a href=\"#\" id=\"awCapLink\" style=\"color:var(--gold)\">Upgrade to keep it →</a>";
+    const a=$("awCapLink"); if(a) a.onclick=function(ev){ ev.preventDefault(); openCapSheet(); };
+    return;
+  }
   el.textContent=result==="saved"?"Saved to your readings ✦ · for "+who:result==="stashed"?"Kept for "+who+" · it saves to your readings when you sign in":result==="none"?"Sample chart · not saved":"";
 }
 function awOpenSaved(r){
@@ -3528,13 +3557,15 @@ function askEntryHTML(entry){
     +   '<div class="step-label" style="font-size:11px;margin:0 0 2px">✎ Your notes</div>'
     +   '<textarea class="ask-journal" data-journal="'+entry.id+'" placeholder="What does this stir up? Impressions, what rings true, what you want to remember…">'+escapeHTML(entry.journal||"")+'</textarea>'
     +   '<div class="hint ask-journalhint">'+(savesUser()
-          ?(entry.cloudId?"Notes save to your account.":"Saving to your account…")
+          ?(entry.cloudId?"Notes save to your account.":entry.capped?"Not saved: your "+PLAN_NAMES[PLAN.tier]+" plan keeps "+planCap()+" readings and they are all full.":"Saving to your account…")
           :"Notes stay with this question. Sign in to keep them.")+'</div>'
     + '</div>'
     + '<div class="ask-actionbtns">'
     +   '<button class="btn ghost" type="button" data-askimg="'+entry.id+'">⤓ Save as image</button>'
     +   '<button class="btn ghost" type="button" data-askpdf="'+entry.id+'">⤓ Save as PDF</button>'
-    +   (savesUser()?'':'<button class="btn" type="button" data-asksignin="'+entry.id+'">✦ Sign in to keep this reading</button>')
+    +   (savesUser()
+          ?(entry.capped&&!entry.cloudId?'<button class="btn" type="button" data-askcap="'+entry.id+'">✦ Upgrade to keep this reading</button>':'')
+          :'<button class="btn" type="button" data-asksignin="'+entry.id+'">✦ Sign in to keep this reading</button>')
     + '</div>'
     + '</div>';
   return '<div class="ask-entry" data-entry="'+entry.id+'">'
@@ -3746,6 +3777,7 @@ $("askThread").addEventListener("click",function(e){
   var xi=e.target.closest("[data-askimg]"); if(xi){ exportAskEntry(+xi.dataset.askimg,"png",xi); return; }
   var xp=e.target.closest("[data-askpdf]"); if(xp){ exportAskEntry(+xp.dataset.askpdf,"pdf",xp); return; }
   var si=e.target.closest("[data-asksignin]"); if(si){ askSigninSave(+si.dataset.asksignin); return; }
+  var uc=e.target.closest("[data-askcap]"); if(uc){ openCapSheet(); return; }
   var tc=e.target.closest(".tcard"); if(tc){ tc.classList.toggle("flipped"); return; }
 });
 $("askThread").addEventListener("input",function(e){
@@ -3776,6 +3808,100 @@ const SAVES={id:null,timer:null,rows:[],restoring:false};
 const DECK_BY_ID={}; DECK.forEach(function(c,i){ DECK_BY_ID[c.id]=i; });
 function savesClient(){ try{ return (window.STELLAR&&window.STELLAR._sb&&window.STELLAR._sb())||null; }catch(e){ return null; } }
 function savesUser(){ return (window.STELLAR&&window.STELLAR.user)||null; }
+/* ---- saved-readings cap. Every Stellar plan keeps a number of readings: ten on the free
+   plan, more on the paid ones, no limit on Deep Sky. The tier comes from the same
+   stellar_entitlements row the astrology wing reads, the count from tarot_readings, and
+   both are cached per sign-in. A full plan never loses a reading silently: the reading
+   stays on the page with an Upgrade button, and saves itself once room appears. ---- */
+const SAVE_CAP={free:10,plus:100,premium:1000,lifetime:Infinity};
+const TIER_RANK={free:0,plus:1,premium:2,lifetime:3};
+const PLAN_NAMES={free:"Star Seeker",plus:"Star Gazer",premium:"Star Reader",lifetime:"Deep Sky"};
+const PLAN_PRICE={plus:"$4.99 a month · $49 a year",premium:"$14.99 a month · $99 a year",lifetime:"$150 once · forever"};
+const PLAN_INCL={
+  plus:["100 saved tarot readings","3 saved birth charts in Stellar","Expanded natal readings","Compare charts: synastry and compatibility","Lucky days: last, this and next month"],
+  premium:["1,000 saved tarot readings","10 saved birth charts","The full progressed reading","Astrocartography, your lines on a world map","Fixed-star readings","Everything in Star Gazer"],
+  lifetime:["Unlimited saved tarot readings","Unlimited saved birth charts","Everything in Star Reader, kept forever","One payment, no renewals · $150 only until 11/11 this year"]
+};
+const STELLAR_UPGRADE_URL="https://www.stellarastro.app/?upgrade=readings";
+const PLAN={uid:null,tier:"free",count:null,nagged:false};
+async function stellarTier(sb,uid){
+  try{
+    const r=await sb.from("stellar_entitlements").select("tier,lifetime,status").eq("user_id",uid).maybeSingle();
+    const e=r&&r.data; if(!e) return "free";
+    if(e.lifetime) return "lifetime";
+    return (e.tier==="plus"||e.tier==="premium")?e.tier:"free";
+  }catch(e){ return "free"; }
+}
+/* the plan and how many readings it already holds; `force` re-reads both */
+async function savesPlan(force){
+  const c=savesClient(), u=savesUser();
+  if(!c||!u){ PLAN.uid=null; PLAN.tier="free"; PLAN.count=null; return PLAN; }
+  if(force||PLAN.uid!==u.id||PLAN.count==null){
+    PLAN.uid=u.id;
+    PLAN.tier=await stellarTier(c,u.id);
+    try{
+      const r=await c.from("tarot_readings").select("id",{count:"exact",head:true}).eq("user_id",u.id);
+      PLAN.count=(r&&typeof r.count==="number")?r.count:0;
+    }catch(e){ PLAN.count=0; }
+  }
+  return PLAN;
+}
+function planCap(){ return SAVE_CAP[PLAN.tier]||SAVE_CAP.free; }
+function savesCounted(n){ if(PLAN.count!=null) PLAN.count=Math.max(0,PLAN.count+n); }
+/* true when one more reading fits on the plan */
+async function savesRoom(){
+  const p=await savesPlan(false);
+  if(!savesUser()) return true;
+  return (p.count||0) < planCap();
+}
+/* the sheet opens itself once per visit; after that the Upgrade buttons open it */
+function capNudge(){ if(PLAN.nagged) return; PLAN.nagged=true; openCapSheet(); }
+function capUsageHTML(){
+  if(!savesUser()||PLAN.count==null) return "";
+  const cap=planCap();
+  return '<div class="cap-usage"><span>'+(cap===Infinity?"Unlimited saved readings · "+PLAN_NAMES[PLAN.tier]:PLAN.count+" of "+cap+" saved · "+PLAN_NAMES[PLAN.tier])+'</span>'
+    +(cap===Infinity?'':'<a href="#" id="capMore">More room →</a>')+'</div>';
+}
+function wireCapMore(box){ const a=box&&box.querySelector("#capMore"); if(a) a.onclick=function(e){ e.preventDefault(); e.stopPropagation(); openCapSheet(); }; }
+function openCapSheet(){
+  const m=$("capModal"); if(!m) return;
+  const cap=planCap(), have=PLAN.count||0, tier=PLAN.tier;
+  const msg=$("capMsg");
+  if(msg) msg.textContent=(have>=cap)
+    ? "Your "+PLAN_NAMES[tier]+" plan keeps "+cap+" readings and all "+cap+" are full. Move up a plan and this reading, and every one after it, saves itself."
+    : "Your "+PLAN_NAMES[tier]+" plan keeps "+cap+" readings and you have "+have+". Here is what the bigger plans hold.";
+  const order=["plus","premium","lifetime"].filter(function(t){ return TIER_RANK[t]>TIER_RANK[tier]; });
+  $("capPlans").innerHTML=order.map(function(t,i){
+    return '<div class="cap-plan'+(i===0?' hi':'')+'"><div class="cp-top"><span class="cp-name">'+PLAN_NAMES[t]+'</span><span class="cp-price">'+PLAN_PRICE[t]+'</span></div>'
+      +'<ul>'+PLAN_INCL[t].map(function(x){ return '<li>'+x+'</li>'; }).join("")+'</ul>'
+      +'<a class="dk-use'+(i===0?' fill':'')+'" href="'+STELLAR_UPGRADE_URL+'" target="_blank" rel="noopener">Get '+PLAN_NAMES[t]+' in Stellar ↗</a></div>';
+  }).join("");
+  const f=$("capFoot");
+  if(f) f.innerHTML='Plans live in Stellar, the astrology app this account shares; a plan bought there unlocks here the moment you come back. Or <a id="capTidy">delete a few older readings</a> to make room.';
+  const tidy=$("capTidy"); if(tidy) tidy.onclick=function(){ closeCapSheet(); openReadingsModal(); };
+  m.classList.remove("hidden");
+}
+function closeCapSheet(){ const m=$("capModal"); if(m) m.classList.add("hidden"); }
+document.addEventListener("click",function(e){
+  if(e.target && (e.target.id==="capModal"||e.target.id==="capClose")) closeCapSheet();
+});
+document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeCapSheet(); });
+/* a reading held back by a full plan saves itself once room appears: a delete here, or an
+   upgrade bought in Stellar and noticed when this tab is next looked at */
+async function savesRetryCapped(){
+  if(!savesUser()) return;
+  if(!(await savesRoom())) return;
+  if(SAVES.capped && state.drawn.length && !SAVES.id){ await savesCreateGuided(); }
+  for(const entry of askThread){ if(entry.capped && !entry.cloudId){ await savesCreateAsk(entry); } }
+  if(typeof renderAskThread==="function"&&askThread.some(function(x){ return x.capped===false; })) renderAskThread();
+  renderSaves();
+}
+document.addEventListener("visibilitychange",function(){
+  if(document.visibilityState!=="visible") return;
+  const held=(SAVES.capped&&!SAVES.id&&state.drawn.length)||askThread.some(function(x){ return x.capped&&!x.cloudId; });
+  if(!held) return;
+  savesPlan(true).then(savesRetryCapped).catch(function(){});
+});
 function cardRef(d){ return {id:d.card.id,reversed:!!d.reversed}; }
 function guidedPayload(){
   const s=SPREADS[state.spread]||{};
@@ -3792,20 +3918,25 @@ function askPayload(entry){
 function updateJournalHint(){
   const el=$("journalSaved"); if(!el) return;
   el.textContent = SAVES.id ? "This reading and your notes save to your account."
+    : SAVES.capped && savesUser() ? "Not saved: your "+PLAN_NAMES[PLAN.tier]+" plan keeps "+planCap()+" readings and they are all full."
     : (savesUser() ? "Saving to your account…"
                    : "Notes stay with this reading until you draw again. Sign in to keep readings.");
   const b=$("saveSigninRow");
   if(b) b.classList.toggle("hidden", !!savesUser() || !state.drawn.length);
+  const cr=$("saveCapRow");
+  if(cr) cr.classList.toggle("hidden", !(SAVES.capped && savesUser() && state.drawn.length && !SAVES.id));
 }
+$("saveUpgrade").onclick=function(){ openCapSheet(); };
 async function savesCreateGuided(){
-  SAVES.id=null; updateJournalHint();
+  SAVES.id=null; SAVES.capped=false; updateJournalHint();
   const c=savesClient(), u=savesUser(); if(!c||!u||!state.drawn.length) return;
+  if(!(await savesRoom())){ SAVES.capped=true; updateJournalHint(); capNudge(); return; }
   const s=SPREADS[state.spread];
   try{
     const res=await c.from("tarot_readings")
       .insert({user_id:u.id,kind:"spread",title:(s&&s.name)||"Reading",deck_slug:state.deck||"base",payload:guidedPayload()})
       .select("id").single();
-    if(res&&res.data&&res.data.id){ SAVES.id=res.data.id; }
+    if(res&&res.data&&res.data.id){ SAVES.id=res.data.id; savesCounted(1); }
   }catch(e){}
   updateJournalHint();
 }
@@ -3826,11 +3957,13 @@ function savesJournalInput(){
 }
 async function savesCreateAsk(entry){
   const c=savesClient(), u=savesUser(); if(!c||!u) return;
+  if(!(await savesRoom())){ entry.capped=true; renderAskThread(); capNudge(); return; }
+  entry.capped=false;
   try{
     const res=await c.from("tarot_readings")
       .insert({user_id:u.id,kind:"ask",title:(entry.q||"Question").slice(0,300),deck_slug:state.deck||"base",payload:askPayload(entry)})
       .select("id").single();
-    if(res&&res.data&&res.data.id) entry.cloudId=res.data.id;
+    if(res&&res.data&&res.data.id){ entry.cloudId=res.data.id; savesCounted(1); }
   }catch(e){}
 }
 async function savesUpdateAsk(entry){
@@ -3919,14 +4052,18 @@ window.addEventListener("stellar:ready",async function(){
   if(p){
     try{
       const items=p.items||(p.kind?[p]:[]);
+      const left=[];
       if(Date.now()-(p.at||0) < 1000*60*60*72){
         for(const it of items){
+          if(!(await savesRoom())){ left.push(it); continue; }   // the plan is full: keep it stashed
           await c.from("tarot_readings").insert({user_id:u.id,kind:it.kind,title:it.title,
             deck_slug:it.deck_slug||"base",payload:it.payload,journal:it.journal||null});
+          savesCounted(1);
           changed=true;
         }
       }
       localStorage.removeItem("astra.pending");
+      if(left.length){ stashReadings(left); capNudge(); }
     }catch(e){}
   }
   /* 2. a session arriving over a live page (the magic link opened in another
@@ -3971,13 +4108,17 @@ async function renderSaves(){
   if(!savesUser()){ box.innerHTML=""; return; }
   if(!box.childElementCount) box.innerHTML='<p class="pm-soon" style="margin:0">Loading…</p>';
   const rows=await fetchSaves();
+  try{ await savesPlan(false); if(rows.length<100) PLAN.count=rows.length; }catch(e){}
+  const usage=capUsageHTML();
   if(!rows.length){
-    box.innerHTML='<p class="pm-soon" style="margin:0">Nothing saved yet. Finish a reading while signed in and it will appear here.</p>';
+    box.innerHTML=usage+'<p class="pm-soon" style="margin:0">Nothing saved yet. Finish a reading while signed in and it will appear here.</p>';
+    wireCapMore(box);
     return;
   }
   /* the sheet stays small: the three most recent, the rest behind View all */
-  box.innerHTML=rows.slice(0,3).map(saveRowHTML).join("")
+  box.innerHTML=usage+rows.slice(0,3).map(saveRowHTML).join("")
     +(rows.length>3?'<button class="pm-go pm-go-ghost pm-viewall" id="pmViewAll" type="button">View all '+rows.length+' readings</button>':"");
+  wireCapMore(box);
   const va=$("pmViewAll");
   if(va) va.onclick=function(){ openReadingsModal(); };
   if(!$("readingsModal").classList.contains("hidden")) renderAllSaves(false);
@@ -4032,7 +4173,7 @@ function openSaved(r){
     const usedIds={}; state.drawn.forEach(function(d){ usedIds[d.card.id]=1; });
     Object.keys(state.clarifiers).forEach(function(k){ state.clarifiers[k].forEach(function(d){ usedIds[d.card.id]=1; }); });
     order=shuffled().filter(function(i){ return !usedIds[DECK[i].id]; });
-    SAVES.id=r.id;
+    SAVES.id=r.id; SAVES.capped=false;
     SAVES.restoring=true;
     reveal();
     SAVES.restoring=false;
@@ -4081,7 +4222,9 @@ document.addEventListener("click",async function(e){
     try{ await c.from("tarot_readings").delete().eq("id",del.dataset.del); }catch(err){}
     SAVES.rows=(SAVES.rows||[]).filter(function(x){ return x.id!==del.dataset.del; });
     if(SAVES.id===del.dataset.del){ SAVES.id=null; updateJournalHint(); }
+    savesCounted(-1);
     repaintSaveLists();
+    try{ savesRetryCapped(); }catch(err){}
     return;
   }
   const row=e.target.closest(".pm-saves .pm-save");
