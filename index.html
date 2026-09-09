@@ -1,4 +1,25 @@
 <!DOCTYPE html>
+<!-- ============================================================================
+     STELLAR TAROT
+     Live at https://tarot.stellarastro.app
+
+     THE NAME: this app is called STELLAR TAROT. "Astra" is the OLD name.
+     It must never appear in anything a reader can see: headings, plan copy,
+     Stripe product names, the checkout page, receipts. If you find "Astra" in
+     visible text, that is a bug, fix it. ONE EXCEPTION: the celestial DECK is
+     genuinely named "Astra" (DECKS[].id "astro"). That is a deck title in the
+     deck shop, not the app name, and it stays.
+
+     "astra" DOES still appear in internal plumbing, deliberately. Do not
+     rename these, they will break:
+       · localStorage keys (astra.deck, astra.theme, astra.ref, astra.pending,
+         astra.archive, astra.revname, astra.revanon) - renaming silently wipes
+         every existing reader's deck choice, theme, held-back readings and
+         referral attribution
+       · the folder CreatorApps/Astra/, astra-data/, astra_run.sh and the
+         com.lucky.astra-*.plist files - launchd registers those BY PATH
+     See CONTEXT.md for the full picture.
+     ============================================================================ -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -277,6 +298,133 @@
   .cap-usage a{color:var(--gold)}
   .cap-foot{margin-top:16px;font-size:12.5px;font-style:italic;color:var(--mist);text-align:center;line-height:1.6}
   .cap-foot a{color:var(--gold);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+  /* ── reading archive · the paid tiers, built from the same tokens as .cap-plan ── */
+  .arch-meter{height:4px;border-radius:3px;background:var(--surface);border:1px solid var(--line);overflow:hidden;margin:8px 0 4px}
+  .arch-meter i{display:block;height:100%;background:linear-gradient(90deg,var(--gold-soft),var(--gold));transition:width .5s ease}
+  .arch-meter.full i{background:var(--rose)}
+  .arch-status{font-family:"Trebuchet MS",sans-serif;font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--gold-soft);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  .arch-status b{color:var(--text-strong);font-weight:normal}
+  .arch-grid{display:grid;grid-template-columns:1fr;gap:14px;margin-top:16px}
+  .arch-tier{border:1px solid var(--line);border-radius:14px;padding:16px;background:var(--surface-2);display:flex;flex-direction:column}
+  .arch-tier.hi{border-color:var(--gold)}
+  .arch-tier.life{grid-column:1/-1;border-color:var(--rose)}
+  .arch-tier .at-top,.arch-current .at-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .arch-tier .at-name,.arch-current .at-name{color:var(--text-strong);font-size:17px}
+  .arch-tier .at-price,.arch-current .at-price{font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-soft)}
+  .arch-tier.life .at-price{color:var(--rose)}
+  .arch-tier p,.arch-current>p{font-size:13.5px;line-height:1.65;color:var(--silver);margin:10px 0 0}
+  .arch-current>p.arch-note{font-size:12.5px;color:var(--mist)}
+  .arch-tier .dk-use{align-self:flex-start;margin-top:14px;text-decoration:none}
+  .at-count{font-family:"Trebuchet MS",sans-serif;font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;
+    color:var(--gold);margin-left:12px;white-space:nowrap;vertical-align:middle;position:relative;top:-1px}
+  .arch-tier.life .at-count{color:var(--rose)}
+  .arch-badge{align-self:flex-start;font-family:"Trebuchet MS",sans-serif;font-size:9px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--rose);border:1px solid var(--rose);border-radius:999px;padding:3px 9px;margin-bottom:8px}
+  .arch-current{border:1px solid var(--gold);border-radius:14px;padding:16px;background:var(--surface-2);margin-top:16px}
+  .arch-upgrade{border:1px dashed var(--line);border-radius:14px;padding:16px;background:transparent;margin-top:16px}
+  .arch-upgrade .at-name{color:var(--text-strong);font-size:16px}
+  .arch-upgrade .at-price{font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--mist)}
+  .arch-upgrade>p{font-size:13.5px;line-height:1.65;color:var(--silver);margin:10px 0 0}
+  .arch-upgrade .at-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .arch-upgrade .dk-use{display:inline-block;margin-top:14px;text-decoration:none}
+  /* ── the readings page: a wing of its own, like the astrology one ── */
+  #readsView{display:none}
+  body.reads-open .wrap > *:not(#readsView){display:none}
+  body.reads-open #readsView{display:block}
+  .rv-top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+  .rv-controls{display:flex;flex-wrap:wrap;gap:9px;align-items:center;margin:18px 0 4px}
+  .rv-search{position:relative;flex:1 1 250px;min-width:0}
+  .rv-search::before{content:"";position:absolute;left:17px;top:50%;width:12px;height:12px;
+    margin-top:-7px;border:1.5px solid var(--gold-soft);border-radius:50%;opacity:.85;pointer-events:none}
+  .rv-search::after{content:"";position:absolute;left:26px;top:50%;width:6px;height:1.5px;margin-top:3px;
+    background:var(--gold-soft);transform:rotate(45deg);transform-origin:left center;opacity:.85;pointer-events:none}
+  .rv-controls input[type=text]{width:100%;background:var(--field-bg);border:1px solid var(--line);
+    border-radius:999px;color:var(--silver);font:inherit;font-size:14px;padding:11px 18px 11px 40px;
+    transition:border-color .2s,box-shadow .2s}
+  .rv-controls input[type=text]:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(233,196,106,.10)}
+  .rv-controls input[type=text]::placeholder{color:var(--mist);font-style:italic}
+  .rv-controls select{flex:0 0 auto;appearance:none;-webkit-appearance:none;
+    background-color:var(--field-bg);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23c9a24b' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 15px center;background-size:9px 6px;
+    border:1px solid var(--line);border-radius:999px;color:var(--gold-soft);
+    font-family:"Trebuchet MS",sans-serif;font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;
+    padding:12px 36px 12px 17px;cursor:pointer;transition:border-color .2s,color .2s}
+  .rv-controls select:hover{border-color:var(--gold-soft);color:var(--gold)}
+  .rv-controls select:focus{outline:none;border-color:var(--gold);color:var(--gold)}
+  .rv-controls select option{background:var(--void-2);color:var(--silver);
+    text-transform:none;letter-spacing:0;font-size:13px;font-family:inherit}
+  :root[data-theme="light"] .rv-controls select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%238a6420' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")}
+  :root[data-theme="light"] .rv-controls select option{background:#fffaf0;color:#332f47}
+  .rv-clear{flex:0 0 auto;font-size:10.5px;letter-spacing:.13em;padding:12px 18px;opacity:.75;transition:opacity .2s}
+  .rv-clear:hover{opacity:1}
+  .rv-count{font-size:12px;color:var(--mist);font-style:italic;margin:8px 0 12px}
+  .pm-saves-page{max-height:none;overflow:visible;gap:12px;margin-top:0}
+  .pm-saves-page .pm-save{padding:14px 16px;border-radius:12px}
+  .pm-saves-page .pm-save-t{font-size:15px;align-items:flex-start}
+  .pm-saves-page .pm-save-t span{white-space:normal;overflow:visible;text-overflow:clip;line-height:1.4}
+  .rv-badge{font-family:"Trebuchet MS",sans-serif;font-size:9px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--gold-soft);border:1px solid var(--line);border-radius:999px;padding:2px 8px;margin-right:8px;white-space:nowrap}
+  .rv-meta{font-size:11.5px;color:var(--mist);font-family:"Trebuchet MS",sans-serif;letter-spacing:.06em;margin:6px 0 0}
+  .rv-cards{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+  .rv-card{font-size:12px;color:var(--silver);border:1px solid var(--line);border-radius:8px;padding:3px 9px;background:var(--surface-2);white-space:nowrap}
+  .rv-card .rv-sig{color:var(--rose);margin-right:5px}
+  .rv-card.rev{border-style:dashed}
+  .rv-card.rev .rv-rev{color:var(--rose);font-size:10px;margin-left:5px}
+  .rv-more{font-size:12px;color:var(--mist);align-self:center;font-style:italic}
+  .rv-journal{font-size:13px;line-height:1.6;color:var(--silver);margin-top:10px;padding-left:12px;
+    border-left:2px solid var(--gold-soft);font-style:italic}
+  .rv-pager{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:20px;
+    position:relative;flex-wrap:wrap}
+  .rv-pages{display:inline-flex;align-items:center;gap:6px;position:relative}
+  .rv-pages button{min-width:36px;padding:9px 8px;text-align:center}
+  .rv-pages button.on{background:var(--gold);border-color:var(--gold);color:var(--ink)}
+  .rv-pages button.on:hover{color:var(--ink)}
+  /* no chevron: it should read as the "…" button it replaced, and open on click */
+  .rv-goto{background-image:none !important;padding:9px 8px !important;min-width:36px;
+    text-align:center;text-align-last:center;font-size:13px !important;letter-spacing:0 !important}
+  .rv-pager button{background:none;border:1px solid var(--line);border-radius:999px;color:var(--gold-soft);
+    font-family:"Trebuchet MS",sans-serif;font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;
+    padding:9px 18px;cursor:pointer;transition:.2s}
+  .rv-pager button:hover:not(:disabled){border-color:var(--gold);color:var(--gold)}
+  .rv-pager button:disabled{opacity:.32;cursor:default}
+  .rv-pager span{font-family:"Trebuchet MS",sans-serif;font-size:11px;letter-spacing:.1em;color:var(--mist)}
+  .rv-per{display:inline-flex;align-items:center;gap:8px}
+  .rv-per em{font-family:"Trebuchet MS",sans-serif;font-size:10.5px;letter-spacing:.08em;
+    color:var(--mist);font-style:normal;opacity:.8}
+  .rv-pager select{appearance:none;-webkit-appearance:none;background-color:var(--field-bg);
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23c9a24b' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 14px center;background-size:9px 6px;
+    border:1px solid var(--line);border-radius:999px;color:var(--gold-soft);
+    font-family:"Trebuchet MS",sans-serif;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;
+    padding:9px 30px 9px 15px;cursor:pointer;transition:border-color .2s,color .2s}
+  .rv-pager select:hover{border-color:var(--gold-soft);color:var(--gold)}
+  .rv-pager select:focus{outline:none;border-color:var(--gold);color:var(--gold)}
+  .rv-pager select option{background:var(--void-2);color:var(--silver);text-transform:none;letter-spacing:0;font-size:13px}
+  :root[data-theme="light"] .rv-pager select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%238a6420' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")}
+  :root[data-theme="light"] .rv-pager select option{background:#fffaf0;color:#332f47}
+  .rv-empty{text-align:center;color:var(--mist);font-style:italic;padding:34px 10px}
+  .rv-empty b{display:block;color:var(--text-strong);font-style:normal;font-size:16px;margin-bottom:6px}
+  .arch-plans{border-top:1px solid var(--line);margin-top:20px}
+  .cap-usage+.arch-meter{margin-top:2px}
+  .arch-restore{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-top:18px}
+  .arch-restore input{flex:1 1 240px;min-width:0;background:var(--field-bg);border:1px solid var(--line);
+    border-radius:999px;color:var(--silver);font:inherit;font-size:14px;padding:12px 20px;
+    transition:border-color .2s,box-shadow .2s}
+  .arch-restore input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(233,196,106,.10)}
+  .arch-restore input::placeholder{color:var(--mist);font-style:italic}
+  .arch-restore .dk-use{flex:0 0 auto;align-self:auto;padding:12px 20px}
+  .arch-note{font-size:12.5px;font-style:italic;color:var(--mist);margin-top:10px;line-height:1.6}
+  .arch-note.bad{color:var(--rose);font-style:normal}
+  .arch-note.good{color:var(--gold);font-style:normal}
+  .arch-full{font-size:12.5px;color:var(--rose);margin-top:6px}
+  .arch-full a{color:var(--gold);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+  .toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(12px);z-index:9999;
+    background:var(--surface);border:1px solid var(--gold);color:var(--text-strong);border-radius:999px;
+    padding:11px 22px;font-family:"Trebuchet MS",sans-serif;font-size:12px;letter-spacing:.1em;
+    text-transform:uppercase;box-shadow:0 10px 40px rgba(0,0,0,.35);opacity:0;pointer-events:none;
+    transition:opacity .3s ease,transform .3s ease;backdrop-filter:blur(8px)}
+  .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
   .deckrow{display:flex;gap:14px;align-items:flex-start;border:1px solid var(--line);border-radius:14px;
     padding:14px;margin-top:14px;background:var(--surface-2)}
   .deckrow.on{border-color:var(--gold)}
@@ -729,17 +877,6 @@ try{  /* the arrival, which may already be a deep link to an artist or a deck */
   <button class="pm-go" id="pmAstro" type="button">✷ &nbsp;Use my chart for an astro reading</button>
 </div>
 
-<div class="deckmodal hidden" id="readingsModal">
-  <div class="decksheet">
-    <div class="dk-head">
-      <h3>Your readings</h3>
-      <button class="pmenu-close" id="readingsClose" type="button" aria-label="Close">✕</button>
-    </div>
-    <p class="hint">Every reading you finish while signed in, newest first. Tap one to reopen it.</p>
-    <div class="pm-saves pm-saves-all" id="allSaves"></div>
-  </div>
-</div>
-
 <div class="deckmodal hidden" id="capModal">
   <div class="decksheet">
     <div class="dk-head">
@@ -960,6 +1097,47 @@ try{  /* the arrival, which may already be a deep link to an artist or a deck */
       </select>
     </div>
     <div id="deckShopList"></div>
+  </section>
+
+  <!-- YOUR READINGS - a wing of its own, opened from the profile menu -->
+  <section class="panel" id="readsView">
+    <div class="rv-top">
+      <button type="button" class="dk-use" id="rvBack">← Back to Stellar Tarot</button>
+      <div class="step-label" style="margin:0">Your readings</div>
+    </div>
+    <p class="hint" style="margin-bottom:10px">Everything you have saved, newest first. Tap one to open it again.</p>
+    <div id="archStatusBox"></div>
+    <div class="rv-controls">
+      <span class="rv-search"><input type="text" id="rvSearch" placeholder="Search a question, a card, your notes…" /></span>
+      <select id="rvType" aria-label="Filter by reading type">
+        <option value="all">every kind</option>
+        <option value="spread">guided spreads</option>
+        <option value="ask">questions</option>
+        <option value="astro">astrology</option>
+      </select>
+      <select id="rvDate" aria-label="Filter by date">
+        <option value="any">any time</option>
+        <option value="7">the last week</option>
+        <option value="30">the last month</option>
+        <option value="90">the last three months</option>
+        <option value="365">the last year</option>
+      </select>
+      <select id="rvDeck" aria-label="Filter by deck"><option value="all">every deck</option></select>
+      <button class="btn ghost rv-clear" type="button" id="rvClear">Clear</button>
+    </div>
+    <p class="rv-count" id="rvCount"></p>
+    <div class="pm-saves pm-saves-page" id="rvList"></div>
+    <div class="rv-pager" id="rvPager"></div>
+    <div class="arch-plans">
+      <div class="step-label" style="margin:22px 0 4px">Your reading archive</div>
+      <p class="hint" style="margin-bottom:12px">How many readings you keep is up to your plan.</p>
+      <div id="archBody"></div>
+      <div class="arch-restore">
+        <input type="email" id="archEmail" placeholder="The email you paid with…" autocomplete="email" />
+        <button class="dk-use" type="button" id="archRestore">Restore purchase</button>
+      </div>
+      <p class="arch-note" id="archMsg">Bought on another device? Put the email in and your archive comes back.</p>
+    </div>
   </section>
 
   <!-- CARD LIBRARY -->
@@ -2659,8 +2837,45 @@ function legacyDeepRead(d, position, posRead){
   return out;
 }
 
+/* ───────── open panels + scroll, held across a rebuild ─────────
+   Redrawing a reading rebuilds its HTML, which would slam every open <details>
+   shut and drop the page somewhere else. Every panel carries a stable data-dk
+   key so it can be put back exactly as the reader left it, and a redraw pins an
+   element that is already on screen instead of restoring a raw scroll offset. */
+function dkSnap(){
+  var o={};
+  document.querySelectorAll("details[data-dk]").forEach(function(d){ if(d.open) o[d.getAttribute("data-dk")]=1; });
+  return o;
+}
+function dkRestore(o){
+  if(!o) return;
+  document.querySelectorAll("details[data-dk]").forEach(function(d){ if(o[d.getAttribute("data-dk")]) d.open=true; });
+}
+/* measure now, call the result after the rebuild: sel stays at the same height on screen */
+function holdAnchor(sel){
+  var el=sel?document.querySelector(sel):null;
+  var top=el?el.getBoundingClientRect().top:null;
+  return function(){
+    if(top===null) return false;
+    var el2=document.querySelector(sel); if(!el2) return false;
+    var dy=el2.getBoundingClientRect().top-top;
+    if(dy) window.scrollBy(0,dy);
+    return true;
+  };
+}
+/* nudge something into view only if its opening lines are off screen - otherwise leave the page alone */
+function revealIfOffscreen(sel){
+  var el=document.querySelector(sel); if(!el) return;
+  var r=el.getBoundingClientRect(), h=window.innerHeight||document.documentElement.clientHeight;
+  if(r.top>=0 && r.top<=h-60) return;
+  try{ window.scrollBy({top:r.top-120,behavior:"smooth"}); }
+  catch(e){ window.scrollBy(0,r.top-120); }
+}
+
 function renderDetail(){
-  const s=SPREADS[state.spread];const wrap=$("readingDetail");wrap.innerHTML="";
+  const s=SPREADS[state.spread];const wrap=$("readingDetail");
+  const _dkOpen=dkSnap();
+  wrap.innerHTML="";
   state.drawn.forEach((d,i)=>{
     const m=document.createElement("div");m.className="meaning";
     const astroLine = d.card.arcana==="major"
@@ -2669,9 +2884,9 @@ function renderDetail(){
     const keys = (d.card.key||[]).map(k=>`<span class="kw">${k}</span>`).join("");
     const dr = deepRead(d, s.positions[i], s.reads[i]);
     const tradParas = dr.trad.map(p=>`<p>${p}</p>`).join("");
-    const deckLayer = dr.deck ? `<details class="deeper deck-layer" style="margin-top:14px"><summary><span class="deeper-open">${dr.deck.label}</span><span class="deeper-close">Hide deck reading</span></summary><div class="deeper-body">${dr.deck.paras.map(p=>`<p>${p}</p>`).join("")}</div></details>` : "";
+    const deckLayer = dr.deck ? `<details class="deeper deck-layer" data-dk="g:${i}:deck" style="margin-top:14px"><summary><span class="deeper-open">${dr.deck.label}</span><span class="deeper-close">Hide deck reading</span></summary><div class="deeper-body">${dr.deck.paras.map(p=>`<p>${p}</p>`).join("")}</div></details>` : "";
     const deeper = `
-      <details class="deeper">
+      <details class="deeper" data-dk="g:${i}:deeper">
         <summary><span class="deeper-open">Go deeper</span><span class="deeper-close">Show less</span></summary>
         <div class="deeper-body">${tradParas}${deckLayer}</div>
       </details>`;
@@ -2680,7 +2895,7 @@ function renderDetail(){
     const _pick=function(a){ return (a&&typeof a==="object")?(a[_co]||a.upright):(typeof a==="string"?a:""); };
     const _A=[["love","♡ Love"],["career","✦ Career"],["money","◈ Money"],["health","✚ Health"],["spirituality","✷ Spirituality"]];
     const _ci=_cd?_A.map(function(x){var t=_pick(_cd[x[0]]);return t?'<div class="ctx"><span class="ctx-label">'+x[1]+'</span><p>'+t+'</p></div>':"";}).join(""):"";
-    const ctx = _ci ? '<details class="contexts"><summary>In love, career, money, health &amp; spirituality</summary><div class="ctx-grid">'+_ci+'</div></details>' : (d.card.love?'<details class="contexts"><summary>In love, career &amp; health</summary><div class="ctx-grid"><div class="ctx"><span class="ctx-label">♡ Love</span><p>'+d.card.love+'</p></div><div class="ctx"><span class="ctx-label">✦ Career</span><p>'+(d.card.career||'')+'</p></div><div class="ctx"><span class="ctx-label">✚ Health</span><p>'+(d.card.health||'')+'</p></div></div></details>':"");
+    const ctx = _ci ? '<details class="contexts" data-dk="g:'+i+':ctx"><summary>In love, career, money, health &amp; spirituality</summary><div class="ctx-grid">'+_ci+'</div></details>' : (d.card.love?'<details class="contexts" data-dk="g:'+i+':ctx"><summary>In love, career &amp; health</summary><div class="ctx-grid"><div class="ctx"><span class="ctx-label">♡ Love</span><p>'+d.card.love+'</p></div><div class="ctx"><span class="ctx-label">✦ Career</span><p>'+(d.card.career||'')+'</p></div><div class="ctx"><span class="ctx-label">✚ Health</span><p>'+(d.card.health||'')+'</p></div></div></details>':"");
     m.innerHTML=`
       <h4>${d.card.name} <span class="pos-tag">${s.positions[i]}</span></h4>
       <div class="glyphline">${astroLine}</div>
@@ -2703,6 +2918,7 @@ function renderDetail(){
       <div class="step-label" style="margin-bottom:10px">Need more?</div>
       ${clarifierHTML("general", null)}
     </div>`;
+  dkRestore(_dkOpen);   // every "Go deeper" / contexts panel reopens where it was
 }
 
 /* ───────── clarifier cards ───────── */
@@ -2716,25 +2932,28 @@ function drawClarifier(key){
   if(!state.clarifiers[key]) state.clarifiers[key]=[];
   state.clarifiers[key].push({card:DECK[deckIdx],reversed});
   try{ savesUpdateGuided(); }catch(e){}
+  // pin the clarifier block where it sits so the redraw does not throw the page around
+  const restore=holdAnchor(`[data-clarifier-anchor="${key}"]`);
   renderDetail();
-  // scroll the new clarifier into view
-  setTimeout(()=>{
-    const el=document.querySelector(`[data-clarifier-anchor="${key}"]`);
-    if(el) el.scrollIntoView({behavior:"smooth",block:"center"});
-  },80);
+  restore();
+  requestAnimationFrame(restore);
+  // the new card lands above the button - only chase it if it fell off screen
+  const last=(state.clarifiers[key]||[]).length-1;
+  setTimeout(()=>{ revealIfOffscreen(`[data-clarcard="g:${key}:${last}"]`); },80);
 }
 
-function richReadHTML(d, position){
+function richReadHTML(d, position, dk){
+  var _k=function(sfx){ return dk?(' data-dk="'+dk+':'+sfx+'"'):""; };
   var dr = deepRead(d, position, "");
   var tradParas = dr.trad.map(function(p){return "<p>"+p+"</p>";}).join("");
-  var deckLayer = dr.deck ? ('<details class="deeper deck-layer" style="margin-top:14px"><summary><span class="deeper-open">'+dr.deck.label+'</span><span class="deeper-close">Hide deck reading</span></summary><div class="deeper-body">'+dr.deck.paras.map(function(p){return "<p>"+p+"</p>";}).join("")+'</div></details>') : "";
-  var deeper = '<details class="deeper"><summary><span class="deeper-open">Go deeper</span><span class="deeper-close">Show less</span></summary><div class="deeper-body">'+tradParas+deckLayer+'</div></details>';
+  var deckLayer = dr.deck ? ('<details class="deeper deck-layer"'+_k("deck")+' style="margin-top:14px"><summary><span class="deeper-open">'+dr.deck.label+'</span><span class="deeper-close">Hide deck reading</span></summary><div class="deeper-body">'+dr.deck.paras.map(function(p){return "<p>"+p+"</p>";}).join("")+'</div></details>') : "";
+  var deeper = '<details class="deeper"'+_k("deeper")+'><summary><span class="deeper-open">Go deeper</span><span class="deeper-close">Show less</span></summary><div class="deeper-body">'+tradParas+deckLayer+'</div></details>';
   var cid=d.card.id, co=d.reversed?"reversed":"upright";
   var cd=(CONTENT.base&&CONTENT.base[cid])?CONTENT.base[cid].detail:null;
   var pick=function(a){return (a&&typeof a==="object")?(a[co]||a.upright):(typeof a==="string"?a:"");};
   var A=[["love","♡ Love"],["career","✦ Career"],["money","◈ Money"],["health","✚ Health"],["spirituality","✷ Spirituality"]];
   var ci=cd?A.map(function(x){var t=pick(cd[x[0]]);return t?('<div class="ctx"><span class="ctx-label">'+x[1]+'</span><p>'+t+'</p></div>'):"";}).join(""):"";
-  var ctx = ci ? ('<details class="contexts"><summary>In love, career, money, health &amp; spirituality</summary><div class="ctx-grid">'+ci+'</div></details>') : "";
+  var ctx = ci ? ('<details class="contexts"'+_k("ctx")+'><summary>In love, career, money, health &amp; spirituality</summary><div class="ctx-grid">'+ci+'</div></details>') : "";
   var posHTML="";
   if(position){
     var pe=(CONTENT.base&&CONTENT.base[cid])?CONTENT.base[cid]:null;
@@ -2752,7 +2971,7 @@ function clarifierHTML(key, forPosition){
       ? `${c.sigil} ${c.astro} ${c.glyph}`
       : `${c.suitSigil} ${c.suit} · ${c.element} · ${c.astro}`;
     return `
-      <div class="clar-card">
+      <div class="clar-card" data-clarcard="g:${key}:${ci}">
         <div class="clar-head">
           <span class="clar-sigil">${c.sigil}</span>
           <span class="clar-name">${c.name}</span>
@@ -2760,7 +2979,7 @@ function clarifierHTML(key, forPosition){
         </div>
         <div class="glyphline">${astroLine}</div>
         <p>${d.reversed?c.rev:c.up}</p>
-        ${richReadHTML(d, forPosition)}
+        ${richReadHTML(d, forPosition, "g:"+key+":c"+ci)}
         <p class="clar-note">${forPosition
           ? `Drawn to clarify <b style="color:var(--gold)">${forPosition.toLowerCase()}</b> - read it as a lens over that card, sharpening or qualifying what it said.`
           : `An extra card for the reading as a whole - added context beyond the original spread.`}</p>
@@ -3385,7 +3604,7 @@ function awSaveNote(result){
   const el=$("awSaveState"); if(!el) return;
   const who=awChartLabel((awChart()||{}).name,awPlacements());
   if(result==="capped"){
-    el.innerHTML="Not saved · your "+PLAN_NAMES[PLAN.tier]+" plan keeps "+planCap()+" readings and they are all full. <a href=\"#\" id=\"awCapLink\" style=\"color:var(--gold)\">Upgrade to keep it →</a>";
+    el.innerHTML="Archive full · upgrade to keep more. This reading stays on the page, and nothing already saved is removed. <a href=\"#\" data-archlink style=\"color:var(--gold)\">See the plans →</a>";
     const a=$("awCapLink"); if(a) a.onclick=function(ev){ ev.preventDefault(); openCapSheet(); };
     return;
   }
@@ -3521,6 +3740,7 @@ function tcardHTML(d,i){
 /* one card's full reading in an ask entry - label as its position, deep read + contexts + clarifier */
 function askCardHTML(d,label,clarKey,clarList){
   var c=d.card, rev=d.reversed, orient=rev?"reversed":"upright";
+  var dkb="a:"+clarKey;   // panel key prefix - stable across rebuilds of the thread
   var astroLine = c.arcana==="major" ? (c.sigil+" "+c.astro+" "+c.glyph) : (c.suitSigil+" "+c.suit+" · "+c.element+" · "+c.astro);
   var keys=(c.key||[]).map(function(k){return '<span class="kw">'+k+'</span>';}).join("");
   var base = (CONTENT.base && CONTENT.base[c.id]) ? CONTENT.base[c.id] : null;
@@ -3533,22 +3753,22 @@ function askCardHTML(d,label,clarKey,clarList){
   // deep read (traditional paragraphs + the active deck's layer) - identical to the guided reading
   var dr=deepRead(d, label, "");
   var tradParas=dr.trad.map(function(p){return "<p>"+p+"</p>";}).join("");
-  var deckLayer=dr.deck ? ('<details class="deeper deck-layer" style="margin-top:14px"><summary><span class="deeper-open">'+dr.deck.label+'</span><span class="deeper-close">Hide deck reading</span></summary><div class="deeper-body">'+dr.deck.paras.map(function(p){return "<p>"+p+"</p>";}).join("")+'</div></details>') : "";
-  var deeper='<details class="deeper"><summary><span class="deeper-open">Go deeper</span><span class="deeper-close">Show less</span></summary><div class="deeper-body">'+tradParas+deckLayer+'</div></details>';
+  var deckLayer=dr.deck ? ('<details class="deeper deck-layer" data-dk="'+dkb+':deck" style="margin-top:14px"><summary><span class="deeper-open">'+dr.deck.label+'</span><span class="deeper-close">Hide deck reading</span></summary><div class="deeper-body">'+dr.deck.paras.map(function(p){return "<p>"+p+"</p>";}).join("")+'</div></details>') : "";
+  var deeper='<details class="deeper" data-dk="'+dkb+':deeper"><summary><span class="deeper-open">Go deeper</span><span class="deeper-close">Show less</span></summary><div class="deeper-body">'+tradParas+deckLayer+'</div></details>';
   // life-area contexts, exactly as the guided read builds them
   var cd = base ? base.detail : null;
   var pick=function(a){ return (a&&typeof a==="object")?(a[orient]||a.upright):(typeof a==="string"?a:""); };
   var AREAS=[["love","♡ Love"],["career","✦ Career"],["money","◈ Money"],["health","✚ Health"],["spirituality","✷ Spirituality"]];
   var ci=cd?AREAS.map(function(x){var t=pick(cd[x[0]]);return t?('<div class="ctx"><span class="ctx-label">'+x[1]+'</span><p>'+t+'</p></div>'):"";}).join(""):"";
-  var ctx = ci ? ('<details class="contexts"><summary>In love, career, money, health &amp; spirituality</summary><div class="ctx-grid">'+ci+'</div></details>') : "";
+  var ctx = ci ? ('<details class="contexts" data-dk="'+dkb+':ctx"><summary>In love, career, money, health &amp; spirituality</summary><div class="ctx-grid">'+ci+'</div></details>') : "";
   // clarifiers already drawn for this card (from the entry's own pool)
-  var clarCards=(clarList||[]).map(function(cl){
+  var clarCards=(clarList||[]).map(function(cl,cli){
     var cc=DECK[cl.deckIdx];
     var ca = cc.arcana==="major" ? (cc.sigil+" "+cc.astro+" "+cc.glyph) : (cc.suitSigil+" "+cc.suit+" · "+cc.element+" · "+cc.astro);
-    return '<div class="clar-card"><div class="clar-head"><span class="clar-sigil">'+cc.sigil+'</span><span class="clar-name">'+cc.name+'</span><span class="orient">'+(cl.reversed?"Reversed":"Upright")+'</span></div><div class="glyphline">'+ca+'</div><p>'+(cl.reversed?cc.rev:cc.up)+'</p>'+richReadHTML({card:cc,reversed:cl.reversed}, null)+'<p class="clar-note">An extra card clarifying <b style="color:var(--gold)">'+escapeHTML(label)+'</b> - read it as a lens sharpening what that card said.</p></div>';
+    return '<div class="clar-card" data-clarcard="'+dkb+':'+cli+'"><div class="clar-head"><span class="clar-sigil">'+cc.sigil+'</span><span class="clar-name">'+cc.name+'</span><span class="orient">'+(cl.reversed?"Reversed":"Upright")+'</span></div><div class="glyphline">'+ca+'</div><p>'+(cl.reversed?cc.rev:cc.up)+'</p>'+richReadHTML({card:cc,reversed:cl.reversed}, null, dkb+":c"+cli)+'<p class="clar-note">An extra card clarifying <b style="color:var(--gold)">'+escapeHTML(label)+'</b> - read it as a lens sharpening what that card said.</p></div>';
   }).join("");
   var clarBtn='<div class="clarifiers"><button class="btn ghost clar-btn" data-askclar="'+clarKey+'">'+((clarList&&clarList.length)?"+ Draw one more":"✦ Draw a clarifier")+'</button></div>';
-  return '<div class="meaning">'
+  return '<div class="meaning" data-askcard="'+escapeHTML(clarKey)+'">'
     + '<h4>'+c.name+' <span class="pos-tag">'+escapeHTML(label)+'</span></h4>'
     + '<div class="glyphline">'+astroLine+'</div>'
     + '<div class="kwrow">'+keys+'</div>'
@@ -3582,7 +3802,7 @@ function askEntryHTML(entry){
     +   '<div class="step-label" style="font-size:11px;margin:0 0 2px">✎ Your notes</div>'
     +   '<textarea class="ask-journal" data-journal="'+entry.id+'" placeholder="What does this stir up? Impressions, what rings true, what you want to remember…">'+escapeHTML(entry.journal||"")+'</textarea>'
     +   '<div class="hint ask-journalhint">'+(savesUser()
-          ?(entry.cloudId?"Notes save to your account.":entry.capped?"Not saved: your "+PLAN_NAMES[PLAN.tier]+" plan keeps "+planCap()+" readings and they are all full.":"Saving to your account…")
+          ?(entry.cloudId?"Notes save to your account.":entry.capped?"Archive full · upgrade to keep more. This question stays on the page and nothing saved is removed.":"Saving to your account…")
           :"Notes stay with this question. Sign in to keep them.")+'</div>'
     + '</div>'
     + '<div class="ask-actionbtns">'
@@ -3607,9 +3827,11 @@ function askEntryHTML(entry){
     + '</div>';
 }
 
-function renderAskThread(animateId){
+function renderAskThread(animateId,anchorSel){
   var wrap=$("askThread"); if(!wrap) return;
   var sy=window.pageYOffset||document.documentElement.scrollTop||0;   // hold scroll across the rebuild
+  var dkOpen=dkSnap();                       // which "Go deeper" / contexts panels are open
+  var restore=holdAnchor(anchorSel);         // and where the caller wants the page pinned
   wrap.innerHTML=askThread.map(askEntryHTML).join("")
     + (askThread.length ? '<div class="ask-threadfoot">'
         + '<button class="btn ghost" type="button" id="askAnother">✦ Ask another question in this thread</button>'
@@ -3626,8 +3848,10 @@ function renderAskThread(animateId){
     });
     entry._flipped=cards.length;
   });
+  dkRestore(dkOpen);                         // reopen the panels the reader had expanded
   $("askClear").classList.toggle("hidden", askThread.length===0);
   if(animateId){ var el=wrap.querySelector('.ask-entry[data-entry="'+animateId+'"]'); if(el) setTimeout(function(){el.scrollIntoView({behavior:"smooth",block:"start"});},70); }
+  else if(restore()){ requestAnimationFrame(function(){ restore(); }); }   // pinned to the anchor - nothing above it moved
   else { window.scrollTo(0,sy); requestAnimationFrame(function(){ window.scrollTo(0,sy); }); }   // clarifier / add-a-card / delete: stay put
 }
 
@@ -3638,7 +3862,10 @@ function askDrawClarifier(entryId,cardIdx){
   var reversed=state.reversals && Math.random()<0.2;
   entry.cards[cardIdx].clar.push({deckIdx:idx,reversed});
   try{ savesUpdateAsk(entry); }catch(e){}
-  renderAskThread();
+  var key=entryId+":"+cardIdx;
+  renderAskThread(null,'[data-askcard="'+key+'"]');   // this card stays put; the new one opens under it
+  var last=entry.cards[cardIdx].clar.length-1;
+  setTimeout(function(){ revealIfOffscreen('[data-clarcard="a:'+key+':'+last+'"]'); },80);
 }
 /* suggest the next position label when extending a spread (Month 3 -> Month 4, Option C -> D, …) */
 function smartNextLabel(entry){
@@ -3661,7 +3888,7 @@ function addToSpread(entryId,label){
   entry.labels[entry.cards.length-1]=(label&&label.trim())?label.trim():"";
   entry.count=entry.cards.length;
   try{ savesUpdateAsk(entry); }catch(e){}
-  renderAskThread();   // scroll is preserved; the new card flips in where you are
+  renderAskThread(null,'.ask-entry[data-entry="'+entryId+'"]');   // scroll is preserved; the new card flips in where you are
 }
 
 function askPull(){
@@ -3838,6 +4065,203 @@ function savesUser(){ return (window.STELLAR&&window.STELLAR.user)||null; }
    stellar_entitlements row the astrology wing reads, the count from tarot_readings, and
    both are cached per sign-in. A full plan never loses a reading silently: the reading
    stays on the page with an Upgrade button, and saves itself once room appears. ---- */
+/* ═══════════ READING ARCHIVE · paid tiers and entitlement ═══════════
+   The archive is sold from inside Stellar Tarot through Stripe payment links. A
+   purchase comes back as ?session_id=..., which /api/verify turns into a signed
+   token bound to the paying email; /api/restore rebuilds that token on any other
+   device from the email alone, with Stripe as the only source of truth. There is
+   no database on our side and nothing to keep in sync.
+
+   The tier only ever RAISES the cap. Someone who already has room through a
+   Stellar plan keeps it, and an expired archive tier drops back to whatever the
+   account already held. Readings are never deleted or truncated by any of this.
+
+   ARCH_TIERS is the single place tiers live, the way DECKS holds the decks. */
+const ARCH_TIERS=[
+  {id:"minor",name:"Minor Arcana",cap:100,price:"$2.99 a month",
+   blurb:"Save up to 100 readings with your notes, always there to look back on.",
+   link:"https://buy.stripe.com/28E00cbwn6FEdtT7Dl7kc0a"},
+  {id:"major",name:"Major Arcana",cap:1000,price:"$9.99 a month",
+   blurb:"Save up to 1,000 readings. How your destiny has spoken to you over time, spread by spread, note by note.",
+   link:"https://buy.stripe.com/6oU3co8kbe8675v9Lt7kc0b"},
+  {id:"lifetime",name:"Lifetime",cap:Infinity,price:"$111.11 once",life:true,badge:"Founding offer · ends 11/11",
+   blurb:"Unlimited saved readings, forever. One payment, no subscription, yours to keep.",
+   link:"https://buy.stripe.com/5kQbIUfMD8NM89ze1J7kc0c"}
+];
+const ARCH_RANK={free:0,minor:1,major:2,lifetime:3};
+const ARCH_KEY="astra.archive";
+const ARCH_REVALIDATE_MS=7*24*60*60*1000;   // subscription tokens get a quiet look after a week
+const ENT={token:null,email:null,tier:"free",at:0};
+/* the session id is grabbed the moment this script runs, before any other boot
+   step can tidy the query string away */
+const ARCH_RETURN=(function(){
+  try{
+    const q=new URLSearchParams(location.search), id=q.get("session_id");
+    if(!id) return null;
+    q.delete("session_id");
+    const qs=q.toString();
+    history.replaceState(null,"",location.pathname+(qs?"?"+qs:"")+location.hash);
+    return id;
+  }catch(e){ return null; }
+})();
+/* the headline number for a tier, said in words a reader can scan */
+function archCount(t){ return t.cap===Infinity?"Unlimited":t.cap.toLocaleString()+" readings"; }
+function archTierDef(id){ for(let i=0;i<ARCH_TIERS.length;i++){ if(ARCH_TIERS[i].id===id) return ARCH_TIERS[i]; } return null; }
+function archTier(){ return ENT.tier||"free"; }
+function archCap(){ const t=archTierDef(archTier()); return t?t.cap:0; }
+function archName(){ const t=archTierDef(archTier()); return t?t.name:""; }
+function archLoad(){
+  try{
+    const r=JSON.parse(localStorage.getItem(ARCH_KEY)||"null");
+    if(r&&r.tier&&ARCH_RANK[r.tier]!=null){ ENT.token=r.token||null; ENT.email=r.email||null; ENT.tier=r.tier; ENT.at=r.at||0; }
+  }catch(e){}
+}
+function archStore(tier,email,token){
+  ENT.tier=(ARCH_RANK[tier]!=null)?tier:"free"; ENT.email=email||ENT.email||null; ENT.token=token||null; ENT.at=Date.now();
+  try{ localStorage.setItem(ARCH_KEY,JSON.stringify({token:ENT.token,email:ENT.email,tier:ENT.tier,at:ENT.at})); }catch(e){}
+}
+function archDrop(){
+  ENT.token=null; ENT.tier="free"; ENT.at=0;    // the email stays, so Restore can be tried again
+  try{ localStorage.setItem(ARCH_KEY,JSON.stringify({token:null,email:ENT.email,tier:"free",at:0})); }catch(e){}
+}
+/* every /api call is optional: with the functions undeployed the app is simply free */
+async function archGet(path){
+  try{
+    const r=await fetch(path,{headers:{Accept:"application/json"}});
+    if(!r.ok) return null;
+    const j=await r.json();
+    return (j&&typeof j==="object")?j:null;
+  }catch(e){ return null; }
+}
+function toast(msg){
+  let el=$("archToast");
+  if(!el){ el=document.createElement("div"); el.id="archToast"; el.className="toast"; document.body.appendChild(el); }
+  el.textContent=msg;
+  el.classList.remove("on");
+  void el.offsetHeight;                       // paint it hidden first so the fade actually runs
+  el.classList.add("on");
+  clearTimeout(el._t); el._t=setTimeout(function(){ el.classList.remove("on"); },3600);
+}
+/* back from Stripe */
+async function archHandleReturn(){
+  if(!ARCH_RETURN) return;
+  const j=await archGet("/api/verify?session_id="+encodeURIComponent(ARCH_RETURN));
+  if(j&&j.ok&&j.tier){
+    archStore(j.tier,j.email,j.token);
+    renderArchive(); toast("Archive unlocked ✷");
+    try{ openReadingsModal(); }catch(e){}
+    try{ await savesRetryCapped(); }catch(e){}
+  }else{
+    archMsg("That purchase is still settling. Give it a moment, then use Restore purchase below.","bad");
+  }
+}
+async function archRestore(email){
+  const e=(email||"").trim().toLowerCase();
+  if(!e||e.indexOf("@")<1){ archMsg("That does not look like an email address.","bad"); return; }
+  archMsg("Looking for your purchase…","");
+  const j=await archGet("/api/restore?email="+encodeURIComponent(e));
+  if(j&&j.ok&&j.tier){
+    archStore(j.tier,j.email||e,j.token);
+    renderArchive(); toast("Archive unlocked ✷");
+    archMsg("Found it. Your "+archName()+" archive is back.","good");
+    try{ await savesRetryCapped(); }catch(e2){}
+  }else{
+    archMsg("No purchase found for that email. Check the address on your Stripe receipt, or buy a plan above.","bad");
+  }
+}
+/* a subscription token older than a week is checked quietly; lifetime never expires */
+async function archRevalidate(){
+  if(archTier()==="free"||archTier()==="lifetime"||!ENT.token) return;
+  if(Date.now()-(ENT.at||0)<ARCH_REVALIDATE_MS) return;
+  const c=await archGet("/api/check?token="+encodeURIComponent(ENT.token));
+  if(c&&c.ok&&c.tier){ archStore(c.tier,ENT.email,ENT.token); renderArchive(); return; }
+  if(c===null) return;                                  // functions unreachable: change nothing
+  const r=ENT.email?await archGet("/api/restore?email="+encodeURIComponent(ENT.email)):null;
+  if(r&&r.ok&&r.tier){ archStore(r.tier,r.email||ENT.email,r.token); }
+  else{ archDrop(); }                                   // back to free gating, readings untouched
+  renderArchive();
+}
+function archMsg(text,kind){
+  const el=$("archMsg"); if(!el) return;
+  el.textContent=text;
+  el.className="arch-note"+(kind?" "+kind:"");
+}
+function archMeterHTML(){
+  const cap=planCap(), have=PLAN.count||0;
+  if(!savesUser()) return '<div class="arch-status"><span>Sign in to keep readings</span><span><b>'+(cap===Infinity?"Unlimited":cap)+'</b> on your plan</span></div>';
+  if(PLAN.count==null) return '<div class="arch-status"><span>Counting your readings…</span><span></span></div>';
+  if(cap===Infinity) return '<div class="arch-status"><span>Unlimited saved readings'+(planLabelShown()?" · "+planLabelShown():"")+'</span><span><b>'+have+'</b> kept</span></div>';
+  const pct=Math.max(0,Math.min(100,Math.round(have/cap*100)));
+  return '<div class="arch-status"><span><b>'+have+'</b> of '+cap+' readings kept</span><span>'+planLabelShown()+'</span></div>'
+    +'<div class="arch-meter'+(have>=cap?" full":"")+'"><i style="width:'+pct+'%"></i></div>'
+    +(have>=cap?'<p class="arch-full">Archive full · upgrade to keep more. Nothing you have saved is ever removed.</p>':"");
+}
+/* One payment, never two. There are two ways to hold readings here and a reader
+   is only ever offered one of them:
+     · a Stellar astrology plan already includes this archive, so nobody holding
+       one is shown a tarot plan to buy,
+     · a tarot-only reader is offered the tarot tiers, and Stellar is presented
+       as the upgrade that adds astrology rather than as a second purchase. */
+function renderArchive(){
+  const box=$("archStatusBox"), body=$("archBody");
+  if(!box||!body) return;
+  box.innerHTML=archMeterHTML();
+  const cur=archTier();
+  const stellarCap=SAVE_CAP[PLAN.tier]||SAVE_CAP.free;
+  const onStellar=savesUser()&&PLAN.tier&&PLAN.tier!=="free";
+
+  /* a Stellar plan covers this already: show what it holds, sell nothing */
+  if(onStellar){
+    body.innerHTML='<div class="arch-current"><div class="at-top"><span class="at-name">'+PLAN_NAMES[PLAN.tier]+'</span>'
+      +'<span class="at-price">Your Stellar plan</span></div>'
+      +'<p>Your astrology plan already keeps '+(stellarCap===Infinity?"unlimited":stellarCap)+' readings here. There is no tarot plan to buy on top of it.</p>'
+      +'<p class="arch-note">Astrology and tarot share one account and one payment. Manage the plan in Stellar.</p></div>';
+    return;
+  }
+
+  let html="";
+  /* an archive tier bought here */
+  if(cur!=="free"){
+    const t=archTierDef(cur);
+    html+='<div class="arch-current"><div class="at-top"><span class="at-name">'+t.name+'<span class="at-count">'+archCount(t)+'</span></span>'
+      +'<span class="at-price">Your plan · '+t.price+'</span></div><p>'+t.blurb+'</p>'
+      +'<p class="arch-note">Billing lives with Stripe. Your receipt email has the link to change or cancel it'
+      +(ENT.email?', and this archive is tied to '+escapeHTML(ENT.email):'')+'.</p></div>';
+  }
+
+  const show=ARCH_TIERS.filter(function(t){ return ARCH_RANK[t.id]>ARCH_RANK[cur]; });
+  if(show.length){
+    const cards=show.map(function(t,i){
+      return '<div class="arch-tier'+(t.life?" life":"")+(i===0&&!t.life?" hi":"")+'">'
+        +(t.badge?'<span class="arch-badge">'+t.badge+'</span>':"")
+        +'<div class="at-top"><span class="at-name">'+t.name+'<span class="at-count">'+archCount(t)+'</span></span>'
+      +'<span class="at-price">'+t.price+'</span></div>'
+        +'<p>'+t.blurb+'</p>'
+        +'<a class="dk-use'+(t.life?" fill":"")+'" href="'+t.link+'" target="_blank" rel="noopener">'
+        +(t.life?"Keep them forever ↗":"Choose "+t.name+" ↗")+'</a></div>';
+    }).join("");
+    html+='<div class="arch-grid">'+cards+'</div>';
+  }
+
+  /* Stellar as the upgrade, not as a second bill */
+  html+='<div class="arch-upgrade"><div class="at-top"><span class="at-name">Want the astrology too?</span>'
+    +'<span class="at-price">One plan, both apps</span></div>'
+    +'<p>Stellar plans cover birth charts, transits and lucky days, and they include this reading archive. '
+    +(cur!=="free"?'Moving up replaces the tarot plan above rather than adding to it, so you are never paying twice.':'It is one plan and one payment, not two.')+'</p>'
+    +'<a class="dk-use" href="'+STELLAR_UPGRADE_URL+'" target="_blank" rel="noopener">See the Stellar plans ↗</a></div>';
+
+  body.innerHTML=html;
+}
+/* the archive lives inside the saved-readings sheet now */
+function archOpen(){
+  try{ if(document.body.classList.contains("astro-open")) closeAstro(); }catch(e){}
+  try{ closeCapSheet(); }catch(e){}
+  openReadingsModal();
+}
+document.addEventListener("click",function(e){
+  const a=e.target&&e.target.closest&&e.target.closest("[data-archlink]");
+  if(a){ e.preventDefault(); closeCapSheet(); archOpen(); }
+});
 const SAVE_CAP={free:10,plus:100,premium:1000,lifetime:Infinity};
 const TIER_RANK={free:0,plus:1,premium:2,lifetime:3};
 const PLAN_NAMES={free:"Star Seeker",plus:"Star Gazer",premium:"Star Reader",lifetime:"Deep Sky"};
@@ -3871,8 +4295,12 @@ async function savesPlan(force){
   }
   return PLAN;
 }
-function planCap(){ return SAVE_CAP[PLAN.tier]||SAVE_CAP.free; }
-function savesCounted(n){ if(PLAN.count!=null) PLAN.count=Math.max(0,PLAN.count+n); }
+function planCap(){ return Math.max(SAVE_CAP[PLAN.tier]||SAVE_CAP.free, archCap()); }
+/* the name of whichever plan is actually holding the readings */
+function planLabel(){ return (archCap()>(SAVE_CAP[PLAN.tier]||SAVE_CAP.free)) ? archName() : PLAN_NAMES[PLAN.tier]; }
+/* ...but a reader on nothing is just a reader. No plan name until one is bought. */
+function planLabelShown(){ return (archTier()==="free" && PLAN.tier==="free") ? "" : planLabel(); }
+function savesCounted(n){ if(PLAN.count!=null) PLAN.count=Math.max(0,PLAN.count+n); try{ renderArchive(); }catch(e){} }
 /* true when one more reading fits on the plan */
 async function savesRoom(){
   const p=await savesPlan(false);
@@ -3883,11 +4311,14 @@ async function savesRoom(){
 function capNudge(){ if(PLAN.nagged) return; PLAN.nagged=true; openCapSheet(); }
 function capUsageHTML(){
   if(!savesUser()||PLAN.count==null) return "";
-  const cap=planCap();
-  return '<div class="cap-usage"><span>'+(cap===Infinity?"Unlimited saved readings · "+PLAN_NAMES[PLAN.tier]:PLAN.count+" of "+cap+" saved · "+PLAN_NAMES[PLAN.tier])+'</span>'
-    +(cap===Infinity?'':'<a href="#" id="capMore">More room →</a>')+'</div>';
+  const cap=planCap(), have=PLAN.count, name=planLabelShown();
+  if(cap===Infinity) return '<div class="cap-usage"><span>Unlimited saved readings'+(name?" · "+name:"")+'</span></div>';
+  const pct=Math.max(0,Math.min(100,Math.round(have/cap*100)));
+  return '<div class="cap-usage"><span>'+have+' of '+cap+' saved'+(name?" · "+name:"")+'</span>'
+    +'<a href="#" id="capMore">'+(have>=cap?"Archive full →":"Save more readings →")+'</a></div>'
+    +'<div class="arch-meter'+(have>=cap?" full":"")+'"><i style="width:'+pct+'%"></i></div>';
 }
-function wireCapMore(box){ const a=box&&box.querySelector("#capMore"); if(a) a.onclick=function(e){ e.preventDefault(); e.stopPropagation(); openCapSheet(); }; }
+function wireCapMore(box){ const a=box&&box.querySelector("#capMore"); if(a) a.onclick=function(e){ e.preventDefault(); e.stopPropagation(); openReadingsModal(); }; }
 function openCapSheet(){
   const m=$("capModal"); if(!m) return;
   const cap=planCap(), have=PLAN.count||0, tier=PLAN.tier;
@@ -3902,7 +4333,7 @@ function openCapSheet(){
       +'<a class="dk-use'+(i===0?' fill':'')+'" href="'+STELLAR_UPGRADE_URL+'" target="_blank" rel="noopener">Get '+PLAN_NAMES[t]+' in Stellar ↗</a></div>';
   }).join("");
   const f=$("capFoot");
-  if(f) f.innerHTML='Plans live in Stellar, the astrology app this account shares; a plan bought there unlocks here the moment you come back. Or <a id="capTidy">delete a few older readings</a> to make room.';
+  if(f) f.innerHTML='Or keep more readings right here with <a data-archlink>a reading archive plan</a>. Plans also live in Stellar, the astrology app this account shares; one bought there unlocks here the moment you come back. Or <a id="capTidy">delete a few older readings</a> to make room.';
   const tidy=$("capTidy"); if(tidy) tidy.onclick=function(){ closeCapSheet(); openReadingsModal(); };
   m.classList.remove("hidden");
 }
@@ -3943,7 +4374,7 @@ function askPayload(entry){
 function updateJournalHint(){
   const el=$("journalSaved"); if(!el) return;
   el.textContent = SAVES.id ? "This reading and your notes save to your account."
-    : SAVES.capped && savesUser() ? "Not saved: your "+PLAN_NAMES[PLAN.tier]+" plan keeps "+planCap()+" readings and they are all full."
+    : SAVES.capped && savesUser() ? "Archive full · upgrade to keep more. This reading stays on the page and nothing saved is removed."
     : (savesUser() ? "Saving to your account…"
                    : "Notes stay with this reading until you draw again. Sign in to keep readings.");
   const b=$("saveSigninRow");
@@ -4145,29 +4576,13 @@ async function renderSaves(){
     +(rows.length>3?'<button class="pm-go pm-go-ghost pm-viewall" id="pmViewAll" type="button">View all '+rows.length+' readings</button>':"");
   wireCapMore(box);
   const va=$("pmViewAll");
-  if(va) va.onclick=function(){ openReadingsModal(); };
-  if(!$("readingsModal").classList.contains("hidden")) renderAllSaves(false);
+  if(va) va.onclick=function(){ openReads(); };
+  if(readsOpen()) rvRender();
 }
-function renderAllSaves(refetch){
-  const box=$("allSaves"); if(!box) return;
-  const paint=function(){
-    box.innerHTML=SAVES.rows.length?SAVES.rows.map(saveRowHTML).join("")
-      :'<p class="pm-soon" style="margin:0">Nothing saved yet.</p>';
-  };
-  if(refetch===false){ paint(); return; }
-  box.innerHTML='<p class="pm-soon" style="margin:0">Loading…</p>';
-  fetchSaves().then(paint);
-}
-function openReadingsModal(){
-  try{ $("pmenu").classList.add("hidden"); $("profileBtn").setAttribute("aria-expanded","false"); }catch(e){}
-  $("readingsModal").classList.remove("hidden");
-  renderAllSaves(false);
-}
-document.addEventListener("click",function(e){
-  if(e.target && e.target.id==="readingsModal") $("readingsModal").classList.add("hidden");
-  if(e.target && (e.target.id==="readingsClose"||e.target.closest&&e.target.closest("#readingsClose"))) $("readingsModal").classList.add("hidden");
-});
-document.addEventListener("keydown",function(e){ if(e.key==="Escape") $("readingsModal").classList.add("hidden"); });
+function renderAllSaves(){ if(readsOpen()) rvRender(); }
+/* kept as the name every caller already uses; it opens the page now */
+function openReadingsModal(){ openReads(); }
+
 function openSaved(r){
   try{ $("pmenu").classList.add("hidden"); $("profileBtn").setAttribute("aria-expanded","false"); }catch(e){}
   if(r.deck_slug && DECKS.some(function(x){ return x.id===r.deck_slug&&x.ready; })) state.deck=r.deck_slug;
@@ -4206,9 +4621,213 @@ function openSaved(r){
     updateJournalHint();
   }
 }
+/* ═══════════ YOUR READINGS · the full archive, as its own page ═══════════
+   The profile menu keeps the three most recent; everything else lives here.
+   Rows reuse the .pm-save markup so the existing rename, delete and open
+   handlers work on this page untouched. Filtering is done in the browser over
+   rows already fetched, so typing in the search box costs nothing. */
+const READS={rows:[],loaded:false,q:"",type:"all",days:"any",deck:"all",per:10,page:1};
+function rvScrollToList(){
+  const top=$("rvList"); if(!top) return;
+  window.scrollTo({top:Math.max(0,top.getBoundingClientRect().top+window.scrollY-120),behavior:"smooth"});
+}
+const RV_KIND={spread:"Spread",ask:"Question",astro:"Astrology"};
+
+async function fetchReads(){
+  const c=savesClient(), u=savesUser();
+  if(!c||!u){ READS.rows=[]; READS.loaded=true; return READS.rows; }
+  try{
+    const res=await c.from("tarot_readings")
+      .select("id,kind,title,journal,created_at,deck_slug,payload")
+      .eq("user_id",u.id).order("created_at",{ascending:false}).limit(1000);
+    READS.rows=(res&&res.data)||[];
+  }catch(e){ READS.rows=[]; }
+  READS.loaded=true;
+  return READS.rows;
+}
+/* every card in a reading, clarifiers included, as {id,name,sigil,reversed} */
+function rvCards(r){
+  const p=r.payload||{}, out=[];
+  const push=function(ref){
+    if(!ref||!ref.id) return;
+    const c=DECK[DECK_BY_ID[ref.id]];
+    if(c) out.push({id:c.id,name:c.name,sigil:c.sigil,reversed:!!ref.reversed});
+  };
+  (p.cards||[]).forEach(function(cc){ push(cc); (cc.clar||[]).forEach(push); });
+  Object.keys(p.clarifiers||{}).forEach(function(k){ (p.clarifiers[k]||[]).forEach(push); });
+  return out;
+}
+/* everything a search should be able to reach inside one reading */
+function rvHaystack(r){
+  if(r._hay) return r._hay;
+  const p=r.payload||{};
+  const bits=[r.title||"",r.journal||"",p.q||"",(p.spread||""),
+    (p.positions||[]).join(" "),(p.labels||[]).join(" "),
+    (deckById(r.deck_slug||"base")||{}).name||"",
+    rvCards(r).map(function(c){ return c.name; }).join(" ")];
+  r._hay=bits.join(" ").toLowerCase();
+  return r._hay;
+}
+function rvKind(r){ return r.kind==="ask"?"ask":r.kind==="astro"?"astro":"spread"; }
+function rvFiltered(){
+  const q=READS.q.trim().toLowerCase();
+  const cutoff=READS.days==="any"?null:Date.now()-(+READS.days)*864e5;
+  return READS.rows.filter(function(r){
+    if(READS.type!=="all" && rvKind(r)!==READS.type) return false;
+    if(READS.deck!=="all" && (r.deck_slug||"base")!==READS.deck) return false;
+    if(cutoff && new Date(r.created_at).getTime()<cutoff) return false;
+    if(q && rvHaystack(r).indexOf(q)<0) return false;
+    return true;
+  });
+}
+function rvRowHTML(r){
+  const d=new Date(r.created_at);
+  const when=d.toLocaleDateString(undefined,{weekday:"short",day:"numeric",month:"long",year:"numeric"})
+    +" · "+d.toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"});
+  const cards=rvCards(r);
+  const shown=cards.slice(0,8);
+  const chips=shown.map(function(c){
+    return '<span class="rv-card'+(c.reversed?" rev":"")+'"><span class="rv-sig">'+c.sigil+'</span>'
+      +escapeHTML(c.name)+(c.reversed?'<span class="rv-rev">rev</span>':"")+'</span>';
+  }).join("")+(cards.length>shown.length?'<span class="rv-more">and '+(cards.length-shown.length)+' more</span>':"");
+  const deck=(deckById(r.deck_slug||"base")||{}).name||"";
+  const j=(r.journal||"").trim();
+  const q=(r.payload&&r.payload.q)||"";
+  return '<div class="pm-save" data-save="'+r.id+'">'
+    + '<div class="pm-save-t"><span><span class="rv-badge">'+(RV_KIND[rvKind(r)]||"Reading")+'</span>'+escapeHTML(r.title)+'</span>'
+    +   '<button class="ren" data-ren="'+r.id+'" aria-label="Rename this reading">Rename</button>'
+    +   '<button class="del" data-del="'+r.id+'" aria-label="Delete this reading" title="Delete">✕</button></div>'
+    + (q&&q!==r.title?'<div class="rv-meta" style="font-style:italic;color:var(--silver);font-size:13px;letter-spacing:0;margin-top:4px">❝ '+escapeHTML(q)+'</div>':"")
+    + '<div class="rv-meta">'+when+' · '+cards.length+(cards.length===1?" card":" cards")+(deck?' · '+escapeHTML(deck):"")+'</div>'
+    + (chips?'<div class="rv-cards">'+chips+'</div>':"")
+    + (j?'<div class="rv-journal">'+escapeHTML(j)+'</div>':"")
+    + '</div>';
+}
+function rvRenderDecks(){
+  const sel=$("rvDeck"); if(!sel) return;
+  const seen={}, opts=[];
+  READS.rows.forEach(function(r){
+    const id=r.deck_slug||"base";
+    if(seen[id]) return; seen[id]=1;
+    opts.push('<option value="'+id+'">'+escapeHTML((deckById(id)||{}).name||id)+'</option>');
+  });
+  const keep=READS.deck;
+  sel.innerHTML='<option value="all">every deck</option>'+opts.join("");
+  sel.value=(keep&&sel.querySelector('option[value="'+keep+'"]'))?keep:"all";
+  sel.style.display=opts.length>1?"":"none";
+}
+function rvRender(){
+  const box=$("rvList"); if(!box) return;
+  if(!savesUser()){
+    box.innerHTML='<div class="rv-empty"><b>Sign in to keep readings</b>Readings save to your account. Sign in from the profile menu and every reading you finish is kept here.</div>';
+    const c=$("rvCount"); if(c) c.textContent="";
+    return;
+  }
+  if(!READS.loaded){ box.innerHTML='<p class="pm-soon" style="margin:0">Loading…</p>'; return; }
+  const rows=rvFiltered(), total=READS.rows.length;
+  const cnt=$("rvCount");
+  const filtering=READS.q||READS.type!=="all"||READS.days!=="any"||READS.deck!=="all";
+  if(cnt) cnt.textContent=!total?"":(filtering?rows.length+" of "+total+" readings":total+(total===1?" reading":" readings"));
+  if(!total){
+    box.innerHTML='<div class="rv-empty"><b>Nothing saved yet</b>Finish a reading while signed in and it will be waiting here.</div>';
+    return;
+  }
+  if(!rows.length){
+    box.innerHTML='<div class="rv-empty"><b>Nothing matches</b>Try a different word, or widen the filters.</div>';
+    rvPager(0,0); return;
+  }
+  const per=READS.per, pages=Math.max(1,Math.ceil(rows.length/per));
+  if(READS.page>pages) READS.page=pages;
+  const from=(READS.page-1)*per;
+  box.innerHTML=rows.slice(from,from+per).map(rvRowHTML).join("");
+  rvPager(READS.page,pages);
+}
+/* The page buttons only matter past one page, but the per-page chooser lives here
+   too and must always be reachable: at 100 a page everything fits, and without it
+   there would be no way back to 10. */
+function rvPager(page,pages){
+  const el=$("rvPager"); if(!el) return;
+  if(!pages){ el.innerHTML=""; return; }
+  let nav="";
+  if(pages>1){
+    /* a window of five around wherever you are, so the numbers stay a fixed width */
+    const span=Math.min(5,pages);
+    let from=Math.max(1,page-Math.floor(span/2));
+    const to=Math.min(pages,from+span-1);
+    from=Math.max(1,to-span+1);
+    let nums="";
+    for(let i=from;i<=to;i++){
+      nums+='<button type="button" data-page="'+i+'"'+(i===page?' class="on" aria-current="page"':'')+'>'+i+'</button>';
+    }
+    /* every other page sits in a plain dropdown rather than a popup panel */
+    let goto="";
+    if(pages>span){
+      let all='<option value="" selected>…</option>';
+      for(let i=1;i<=pages;i++){ all+='<option value="'+i+'">'+i+'</option>'; }
+      goto='<select class="rv-goto" id="rvGoto" aria-label="Go to page">'+all+'</select>';
+    }
+    nav='<button type="button" data-pg="prev"'+(page<=1?" disabled":"")+'>← Newer</button>'
+      +'<span class="rv-pages">'+nums+goto+'</span>'
+      +'<button type="button" data-pg="next"'+(page>=pages?" disabled":"")+'>Older →</button>';
+  }
+  const per='<span class="rv-per"><select id="rvPer" aria-label="Readings per page">'
+    +[10,20,30,40,50,100].map(function(n){
+      return '<option value="'+n+'"'+(READS.per===n?' selected':'')+'>'+n+'</option>'; }).join("")
+    +'</select><em>per page</em></span>';
+  el.innerHTML=nav+per;
+}
+function openReads(){
+  try{ $("pmenu").classList.add("hidden"); $("profileBtn").setAttribute("aria-expanded","false"); }catch(e){}
+  try{ closeCapSheet(); }catch(e){}
+  try{ if(document.body.classList.contains("astro-open")) closeAstro(); }catch(e){}
+  document.body.classList.add("reads-open");
+  try{ if(location.hash!=="#readings") history.replaceState(null,"",location.pathname+location.search+"#readings"); }catch(e){}
+  window.scrollTo({top:0});
+  rvRender();
+  try{ renderArchive(); }catch(e){}
+  fetchReads().then(function(){ rvRenderDecks(); rvRender(); });
+  try{ savesPlan(false).then(renderArchive).catch(function(){}); }catch(e){}
+}
+function closeReads(){
+  document.body.classList.remove("reads-open");
+  try{ history.replaceState(null,"",location.pathname+location.search); }catch(e){}
+}
+function readsOpen(){ return document.body.classList.contains("reads-open"); }
+(function wireReads(){
+  const back=$("rvBack"); if(back) back.onclick=closeReads;
+  const q=$("rvSearch");
+  if(q) q.addEventListener("input",function(){ READS.q=q.value; READS.page=1; rvRender(); });
+  const t=$("rvType");
+  if(t) t.addEventListener("change",function(){ READS.type=t.value; READS.page=1; rvRender(); });
+  const dt=$("rvDate");
+  if(dt) dt.addEventListener("change",function(){ READS.days=dt.value; READS.page=1; rvRender(); });
+  const dk=$("rvDeck");
+  if(dk) dk.addEventListener("change",function(){ READS.deck=dk.value; READS.page=1; rvRender(); });
+  const cl=$("rvClear");
+  if(cl) cl.onclick=function(){
+    READS.q=""; READS.type="all"; READS.days="any"; READS.deck="all"; READS.page=1; READS.per=10;
+    if(q) q.value=""; if(t) t.value="all"; if(dt) dt.value="any"; if(dk) dk.value="all";
+    rvRender();
+  };
+  const pg=$("rvPager");
+  if(pg) pg.addEventListener("change",function(e){
+    if(!e.target) return;
+    if(e.target.id==="rvPer"){ READS.per=+e.target.value||10; READS.page=1; rvRender(); return; }
+    if(e.target.id==="rvGoto"&&e.target.value){ READS.page=+e.target.value; rvRender(); rvScrollToList(); }
+  });
+  if(pg) pg.addEventListener("click",function(e){
+    const num=e.target.closest("[data-page]");
+    if(num){ READS.page=+num.dataset.page; rvRender(); rvScrollToList(); return; }
+    const b=e.target.closest("[data-pg]"); if(!b||b.disabled) return;
+    READS.page+=(b.dataset.pg==="next"?1:-1);
+    if(READS.page<1) READS.page=1;
+    rvRender(); rvScrollToList();
+  });
+})();
+document.addEventListener("keydown",function(e){ if(e.key==="Escape"&&readsOpen()) closeReads(); });
 function repaintSaveLists(){
   renderSaves();
-  if(!$("readingsModal").classList.contains("hidden")) renderAllSaves(false);
+  if(readsOpen()) rvRender();
 }
 function startRename(row,id){
   if(!row) return;
@@ -4246,6 +4865,7 @@ document.addEventListener("click",async function(e){
     const c=savesClient(); if(!c) return;
     try{ await c.from("tarot_readings").delete().eq("id",del.dataset.del); }catch(err){}
     SAVES.rows=(SAVES.rows||[]).filter(function(x){ return x.id!==del.dataset.del; });
+    READS.rows=(READS.rows||[]).filter(function(x){ return x.id!==del.dataset.del; });
     if(SAVES.id===del.dataset.del){ SAVES.id=null; updateJournalHint(); }
     savesCounted(-1);
     repaintSaveLists();
@@ -4254,13 +4874,27 @@ document.addEventListener("click",async function(e){
   }
   const row=e.target.closest(".pm-saves .pm-save");
   if(row){
-    const r=(SAVES.rows||[]).find(function(x){ return x.id===row.dataset.save; });
-    if(r){ $("readingsModal").classList.add("hidden"); openSaved(r); }
+    const r=(SAVES.rows||[]).find(function(x){ return x.id===row.dataset.save; })
+          ||(READS.rows||[]).find(function(x){ return x.id===row.dataset.save; });
+    if(r){ closeReads(); openSaved(r); }
   }
 });
 $("journalBox").addEventListener("input",savesJournalInput);
 $("profileBtn").addEventListener("click",function(){ setTimeout(function(){ if(!$("pmenu").classList.contains("hidden")) renderSaves(); },0); });
 window.addEventListener("stellar:ready",function(){ renderSaves(); updateJournalHint(); });
+/* ── reading archive boot ── */
+archLoad();
+renderArchive();
+window.addEventListener("stellar:ready",function(){ savesPlan(true).then(renderArchive).catch(function(){}); });
+(function wireArchive(){
+  const b=$("archRestore"), i=$("archEmail");
+  if(b) b.onclick=function(){ archRestore(i?i.value:""); };
+  if(i) i.addEventListener("keydown",function(e){ if(e.key==="Enter"){ e.preventDefault(); archRestore(i.value); } });
+  if(i&&ENT.email) i.value=ENT.email;
+})();
+try{ if(location.hash==="#readings") setTimeout(openReads,0); }catch(e){}
+archHandleReturn();
+archRevalidate();
 
 /* -  -  - account menu -  -  - */
 (function(){
