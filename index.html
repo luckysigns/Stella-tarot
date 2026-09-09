@@ -4635,7 +4635,10 @@ const RV_KIND={spread:"Spread",ask:"Question",astro:"Astrology"};
 
 async function fetchReads(){
   const c=savesClient(), u=savesUser();
-  if(!c||!u){ READS.rows=[]; READS.loaded=true; return READS.rows; }
+  /* Not signed in YET is not the same as signed in with nothing. Opening the page
+     from the #readings hash beats the auth bridge to it, so leave this unloaded and
+     let stellar:ready fetch again once there is a user. */
+  if(!c||!u){ READS.rows=[]; READS.loaded=false; return READS.rows; }
   try{
     const res=await c.from("tarot_readings")
       .select("id,kind,title,journal,created_at,deck_slug,payload")
@@ -4885,7 +4888,10 @@ window.addEventListener("stellar:ready",function(){ renderSaves(); updateJournal
 /* ── reading archive boot ── */
 archLoad();
 renderArchive();
-window.addEventListener("stellar:ready",function(){ savesPlan(true).then(renderArchive).catch(function(){}); });
+window.addEventListener("stellar:ready",function(){
+  savesPlan(true).then(renderArchive).catch(function(){});
+  if(readsOpen()) fetchReads().then(function(){ rvRenderDecks(); rvRender(); }).catch(function(){});
+});
 (function wireArchive(){
   const b=$("archRestore"), i=$("archEmail");
   if(b) b.onclick=function(){ archRestore(i?i.value:""); };
