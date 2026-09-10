@@ -81,7 +81,11 @@
   .pmenu{position:fixed;top:112px;right:14px;z-index:61;width:min(88vw,300px);
     border:1px solid var(--line);border-radius:16px;background:var(--panel-grad);
     -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
-    box-shadow:0 24px 60px -24px rgba(0,0,0,.9);padding:20px}
+    box-shadow:0 24px 60px -24px rgba(0,0,0,.9);padding:20px;
+    max-height:calc(100vh - 132px);overflow-y:auto;overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch}
+  /* dvh accounts for the browser chrome that comes and goes on a phone */
+  @supports (height:100dvh){ .pmenu{max-height:calc(100dvh - 132px)} }
   .pmenu.hidden{display:none}
   .pmenu-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
   .pmenu-head span{color:var(--text-strong);font-size:16px}
@@ -110,7 +114,7 @@
     color:var(--silver);font-family:inherit;font-size:14px;padding:10px 16px}
   .pm-email:focus{outline:none;border-color:var(--gold)}
   .pm-email::placeholder{color:var(--mist);font-style:italic}
-  .pm-saves{max-height:250px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;margin-bottom:2px}
+  .pm-saves{display:flex;flex-direction:column;gap:8px;margin-bottom:2px}
   .pm-save{border:1px solid var(--line);border-radius:10px;padding:9px 11px;cursor:pointer;background:var(--field-bg);transition:border-color .2s}
   .pm-save:hover{border-color:var(--gold)}
   .pm-save-t{font-size:13px;color:var(--text-strong);display:flex;gap:8px;align-items:baseline}
@@ -120,7 +124,6 @@
   .pm-save-t .del:hover{color:#e07a7a}
   .pm-save-t .ren{font-size:10px;letter-spacing:.12em;text-transform:uppercase}
   .pm-save-t .ren:hover{color:var(--gold)}
-  .pm-saves-all{max-height:64vh;margin-top:12px}
   .pm-viewall{margin-top:8px;font-size:10px;padding:8px 14px;width:100%}
   /* iOS Safari zooms the page in whenever a focused field is under 16px, and does not
      zoom back out. That is what crops the sides. 16px on touch widths prevents it. */
