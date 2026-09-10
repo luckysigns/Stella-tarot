@@ -2678,6 +2678,7 @@ function spawnBurst(stage){
 }
 function gatherAndReveal(){
   try{ savesCreateGuided(); }catch(e){}   /* signed in: this reading saves to the account */
+  try{ logReading("spread"); }catch(e){}  /* signed in or not: this reading is counted */
   var stage=$("stage");
   if(!stage){ reveal(); return; }
   var backs=stage.querySelectorAll(".cardback");
@@ -3928,6 +3929,7 @@ function askPull(){
   var newEntry={id:++askId, q:q, count:askCount, labels:labels.slice(0,askCount), pool:pool, cards:cards, time:time, _flipped:0};
   askThread.push(newEntry);
   try{ savesCreateAsk(newEntry); }catch(e){}   /* signed in: this pull saves to the account */
+  try{ logReading("ask"); }catch(e){}          /* signed in or not: this reading is counted */
   $("askQ").value="";
   renderAskThread(askId);
 }
@@ -4917,17 +4919,31 @@ window.addEventListener("stellar:ready",function(){ renderSaves(); updateJournal
    The number is every reading a signed-in reader saved, all the way back. A
    reading drawn signed out was never stored, so it cannot be counted. Failing
    quietly is the point: no number is better than a wrong or zero one. */
+const COUNT_SHOW_FROM=1000;   // logged from the start, shown once it means something
 (async function readingsCount(){
   const el=$("readCount"); if(!el) return;
   try{
     const r=await fetch("/api/readings-count",{headers:{Accept:"application/json"}});
     if(!r.ok) return;
     const j=await r.json();
-    if(!j||!j.ok||!(j.total>0)) return;
-    el.innerHTML='<span><b>'+j.total.toLocaleString()+'</b> readings kept so far</span>';
+    if(!j||!j.ok||!(j.total>=COUNT_SHOW_FROM)) return;
+    el.innerHTML='<span><b>'+j.total.toLocaleString()+'</b> readings pulled so far</span>';
     el.classList.remove("hidden");
   }catch(e){}
 })();
+
+/* One row per reading actually pulled, signed in or not. Called from the two
+   places a reading begins and nowhere else, so clarifiers, extra cards and
+   reopening a saved reading never inflate it. Fire and forget: a reading must
+   never wait on this, or fail because of it. */
+function logReading(kind){
+  try{
+    fetch("/api/readings-count",{method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({deck:state.deck||"base",kind:kind}),
+      keepalive:true}).catch(function(){});
+  }catch(e){}
+}
 
 /* ── reading archive boot ── */
 archLoad();

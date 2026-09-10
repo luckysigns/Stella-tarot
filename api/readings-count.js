@@ -1,16 +1,17 @@
 /* Stellar Tarot · Copyright (c) 2026 Lucky Media LLC. All rights reserved. Proprietary. */
 /* ============================================================
-   GET /api/readings-count
+   GET  /api/readings-count   how many readings have been pulled
+   POST /api/readings-count   log one reading, body { deck, kind }
 
-   How many readings this app is holding, for everyone to see. Runs with the
-   service role so a signed-out visitor gets a real number, and returns only
-   counts, never a row.
+   Counts rows in reading_events: one row per reading pulled, by anyone,
+   signed in or not. Seeded from tarot_readings so the history carries over.
 
-   WHAT IT COUNTS: rows in tarot_readings, which is every reading a signed-in
-   reader saved, all the way back to the first one. A reading drawn while
-   signed out was never stored and cannot be counted here.
+   The client never touches the table. Both directions go through the service
+   role here, so reading_events can have RLS on with no policies at all and
+   stay unreachable from a browser. Nothing personal is stored: a deck slug,
+   a kind, a timestamp.
 
-   Returns { ok, total, spreads, questions, decks:{...}, at }.
+   GET returns { ok, total, spreads, questions, decks:{...}, at }.
 
    Env vars required (Vercel): SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
    ============================================================ */
@@ -27,7 +28,7 @@ let CACHE = null;
    an exact count, so no rows need to travel to get a number. */
 async function countWhere(query) {
   const res = await fetch(
-    SB_URL + "/rest/v1/tarot_readings?select=id" + (query ? "&" + query : ""),
+    SB_URL + "/rest/v1/reading_events?select=id" + (query ? "&" + query : ""),
     {
       method: "HEAD",
       headers: {
@@ -44,8 +45,41 @@ async function countWhere(query) {
   return Number.isFinite(total) ? total : 0;
 }
 
+/* one row per reading pulled */
+async function logReading(deck, kind) {
+  const res = await fetch(SB_URL + "/rest/v1/reading_events", {
+    method: "POST",
+    headers: {
+      apikey: SB_SERVICE,
+      Authorization: "Bearer " + SB_SERVICE,
+      "Content-Type": "application/json",
+      Prefer: "return=minimal"
+    },
+    body: JSON.stringify({ deck_slug: deck, kind: kind })
+  });
+  if (!res.ok) throw new Error("log " + res.status);
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader("Content-Type", "application/json; charset=utf-8");
+
+  if (req.method === "POST") {
+    res.setHeader("Cache-Control", "no-store");
+    if (!SB_URL || !SB_SERVICE) { res.status(200).send(JSON.stringify({ ok: false, reason: "not configured" })); return; }
+    try {
+      const body = typeof req.body === "string" ? JSON.parse(req.body) : (req.body || {});
+      /* whatever the browser sent, only these shapes reach the table */
+      const deck = String(body.deck || "base").toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 40) || "base";
+      const kind = (body.kind === "ask") ? "ask" : "spread";
+      await logReading(deck, kind);
+      CACHE = null;                                   /* next GET counts afresh */
+      res.status(200).send(JSON.stringify({ ok: true }));
+    } catch (err) {
+      console.error("readings-count log:", (err && err.message) || err);
+      res.status(200).send(JSON.stringify({ ok: false, reason: "not logged" }));
+    }
+    return;
+  }
 
   if (req.method !== "GET" && req.method !== "HEAD") {
     res.status(405).send(JSON.stringify({ ok: false, reason: "method not allowed" }));
