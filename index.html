@@ -452,6 +452,12 @@
     padding:14px;margin-top:14px;background:var(--surface-2)}
   .deckrow.on{border-color:var(--gold)}
   .deckrow.soon{opacity:.72}
+  .deckrow[data-oracle]{cursor:pointer;transition:border-color .2s,opacity .2s}
+  .deckrow[data-oracle]:hover{border-color:var(--gold-soft);opacity:1}
+  .artist-hero .ah-fan.oracle img{width:104px;height:auto;aspect-ratio:659/900;object-fit:cover}
+  .artist-hero .ah-fan.oracle img:nth-child(2){width:112px}
+  .artist-hero .ah-meta{font-family:"Trebuchet MS",sans-serif;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-soft);margin-top:14px}
+  .artist-hero .ah-actions .dk-tag.soon{align-self:center}
   .dk-thumbs{display:flex;gap:4px;flex:none}
   .dk-thumb{width:36px;height:60px;border-radius:5px;object-fit:cover;border:1px solid var(--gold-soft);display:block}
   .dk-thumb.back{background:url("/cards/back-stellar.jpg") center/100% 100% no-repeat,#0c0b28}
@@ -1739,9 +1745,9 @@ const ORACLE_ARTISTS={
     bio:"Hand-drawn mandalas and affirmations to sit with. The Barley Moon makes oracle decks for a daily practice: one card, one line to carry through the day."}
 };
 const ORACLE_DECKS=[
-  {id:"barley-inner-wisdom", name:"Inner Wisdom Oracle", sub:"Affirmations · 35 cards", artist:"The Barley Moon", artist_code:"barleymoon", ready:false,
+  {id:"barley-inner-wisdom", name:"Inner Wisdom Oracle", sub:"Affirmations · 35 cards", artist:"The Barley Moon", artist_code:"barleymoon", ready:false, samples:["21","12"],
    blurb:"Thirty-five affirmations, each on a hand-drawn card: a line to sit with, and a figure or a mandala to hold it. For a daily pull, or to finish a reading with."},
-  {id:"barley-mandala",      name:"Mandala Oracle",      sub:"Affirmations · 36 cards", artist:"The Barley Moon", artist_code:"barleymoon", ready:false,
+  {id:"barley-mandala",      name:"Mandala Oracle",      sub:"Affirmations · 36 cards", artist:"The Barley Moon", artist_code:"barleymoon", ready:false, samples:["10","14"],
    blurb:"Thirty-six affirmations over hand-drawn mandalas, each in its own colour. Made to be pulled one at a time, whenever you feel called to."}
 ];
 function oracleArt(id){ return "/cards/"+id+"/"; }
@@ -1752,14 +1758,15 @@ function oracleMatchesSearch(dk){
 /* the same row the tarot decks use, with the artist's own art and no buy button */
 function oracleRowHTML(dk){
   const thumbs=[1,2,3].map(function(n){ return '<img class="dk-thumb" src="'+oracleArt(dk.id)+'thumb/'+n+'.jpg" alt="" loading="lazy" onerror="this.remove()">'; }).join("");
-  return '<div class="deckrow soon" data-oracle="'+dk.id+'">'
+  return '<div class="deckrow soon" data-oracle="'+dk.id+'" role="link" tabindex="0">'
     + '<div class="dk-thumbs">'+thumbs+'</div>'
     + '<div class="dk-body">'
     +   '<div class="dk-name">'+escapeHTML(dk.name)+' <span class="dk-tag soon">coming soon</span></div>'
     +   '<div class="dk-sub">'+escapeHTML(dk.sub)+' · by <a href="/'+dk.artist_code+'" data-artistpage="'+dk.artist_code+'">'+escapeHTML(dk.artist)+'</a></div>'
-    +   '<details class="dk-more"><summary>Learn more</summary><p>'+escapeHTML(dk.blurb)+'</p></details>'
+    +   '<details class="dk-more"><summary>Learn more</summary><p>'+escapeHTML(dk.blurb)+' <a href="/'+dk.artist_code+'/'+dk.id+'" data-oraclepage="'+dk.id+'">See the deck →</a></p></details>'
     + '</div></div>';
 }
+function openOraclePage(id){ const o=ORACLE_DECKS.find(function(d){ return d.id===id; }); if(o) showArtistPage(o.artist_code,o.id); }
 function oracleSectionHTML(rows){
   if(!rows.length) return "";
   return '<div class="oracle-shop"><div class="step-label" style="margin:22px 0 4px">Oracle and affirmation decks</div>'
@@ -1768,8 +1775,14 @@ function oracleSectionHTML(rows){
 }
 document.addEventListener("click",function(e){
   const ap=e.target.closest&&e.target.closest("[data-artistpage]");
-  if(ap){ e.preventDefault(); showArtistPage(ap.dataset.artistpage,null); }
+  if(ap){ e.preventDefault(); showArtistPage(ap.dataset.artistpage,null); return; }
+  const op=e.target.closest&&e.target.closest("[data-oraclepage]");
+  if(op){ e.preventDefault(); openOraclePage(op.dataset.oraclepage); return; }
+  /* the whole row is the link; its own controls keep their jobs */
+  const row=e.target.closest&&e.target.closest(".deckrow[data-oracle]");
+  if(row&&!e.target.closest("a,button,summary,details")) openOraclePage(row.dataset.oracle);
 });
+document.addEventListener("keydown",function(e){ if(e.key==="Enter"&&e.target&&e.target.matches&&e.target.matches(".deckrow[data-oracle]")) openOraclePage(e.target.dataset.oracle); });
 function cardArtIMG(card){
   const dir=card&&card.id?DECK_ART[state.deck]:null;
   if(!dir) return "";
@@ -1907,6 +1920,25 @@ function renderArtistPage(){
   const note=ARTIST_VIEW.viaLink
     ?'<div class="ah-note">You arrived through '+escA(nm)+"'s link. Every deck you buy here supports them directly.</div>":"";
   const mine=DECKS.filter(d=>d.artist_code===AP.code);
+  const singleOr=AP.deck?ORACLE_DECKS.find(function(d){ return d.id===AP.deck&&d.artist_code===AP.code; }):null;
+  if(singleOr){
+    /* an oracle deck: two of its cards either side of the back, the blurb, and when it lands */
+    const art=oracleArt(singleOr.id), sm=singleOr.samples||["1","2"];
+    const fan='<div class="ah-fan oracle"><img src="'+art+'full/'+sm[0]+'.jpg" alt=""><img src="'+art+'back.jpg" alt="Card back"><img src="'+art+'full/'+sm[1]+'.jpg" alt=""></div>';
+    box.innerHTML='<div class="ah-eyebrow">An oracle deck by '+escA(nm)+'</div>'
+      +'<h2>'+goldNameHTML(singleOr.name)+'</h2>'+fan
+      +'<div class="ah-blurb">'+escA(singleOr.blurb||singleOr.sub||"")+'</div>'
+      +'<div class="ah-meta">'+escA(singleOr.sub)+' · no reversals · not a tarot deck</div>'
+      +'<div class="ah-actions">'
+      +  (singleOr.ready?'':'<span class="dk-tag soon">coming soon</span>')
+      +  (ARTIST_VIEW.shop?'<button type="button" class="dk-use" id="ahShop">Buy the printed deck ↗</button>':"")
+      +'</div>'+note
+      +'<a href="#" class="ah-browse" id="ahAllDecks">See all decks by '+escA(nm)+' →</a>';
+    decksEl.innerHTML="";
+    const sh=$("ahShop"); if(sh) sh.onclick=()=>shopClick(AP.code,singleOr.id,ARTIST_VIEW.shop);
+    const ad=$("ahAllDecks"); if(ad) ad.onclick=e=>{e.preventDefault();showArtistPage(AP.code,null);};
+    return;
+  }
   const singleDk=AP.deck?mine.find(d=>d.id===AP.deck):null;
   if(singleDk){
     const r=RATINGS[singleDk.id];
