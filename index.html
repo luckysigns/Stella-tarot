@@ -25,6 +25,22 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Stellar Tarot</title>
+<meta name="description" content="Tarot for reflection and play, not prophecy. All 78 cards read with real depth, saved with your notes.">
+<meta name="theme-color" content="#0b0a20">
+<link rel="canonical" href="https://tarot.stellarastro.app/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Stellar Tarot">
+<meta property="og:title" content="Stellar Tarot">
+<meta property="og:description" content="Tarot for reflection and play, not prophecy. All 78 cards read with real depth, saved with your notes.">
+<meta property="og:url" content="https://tarot.stellarastro.app/">
+<meta property="og:image" content="https://tarot.stellarastro.app/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Stellar Tarot: three card backs under a night sky">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Stellar Tarot">
+<meta name="twitter:description" content="Tarot for reflection and play, not prophecy. All 78 cards read with real depth, saved with your notes.">
+<meta name="twitter:image" content="https://tarot.stellarastro.app/og.jpg">
 <style>
   :root{
     --void:#0a0a1f;
@@ -339,6 +355,7 @@
   .arch-badge{align-self:flex-start;font-family:"Trebuchet MS",sans-serif;font-size:9px;letter-spacing:.14em;text-transform:uppercase;
     color:var(--rose);border:1px solid var(--rose);border-radius:999px;padding:3px 9px;margin-bottom:8px}
   .arch-current{border:1px solid var(--gold);border-radius:14px;padding:16px;background:var(--surface-2);margin-top:16px}
+  .arch-current .dk-use{display:inline-block;margin-top:14px}
   .arch-upgrade{border:1px dashed var(--line);border-radius:14px;padding:16px;background:transparent;margin-top:16px}
   .arch-upgrade .at-name{color:var(--text-strong);font-size:16px}
   .arch-upgrade .at-price{font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--mist)}
@@ -349,6 +366,12 @@
   #readsView{display:none}
   body.reads-open .wrap > *:not(#readsView){display:none}
   body.reads-open #readsView{display:block}
+  #plansView{display:none}
+  body.plans-open .wrap > *:not(#plansView){display:none}
+  body.plans-open #plansView{display:block}
+  .rv-plans-line{margin:22px 0 0;text-align:center}
+  .pl-current{font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);border:1px solid var(--gold);border-radius:999px;padding:3px 9px;margin-left:8px;vertical-align:middle}
+  .arch-tier ul{margin:10px 0 0;padding-left:18px;font-size:13.5px;line-height:1.7;color:var(--silver)}
   .rv-top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
   .rv-controls{display:flex;flex-wrap:wrap;gap:9px;align-items:center;margin:18px 0 4px}
   .rv-search{position:relative;flex:1 1 250px;min-width:0}
@@ -1173,10 +1196,29 @@ try{  /* the arrival, which may already be a deep link to an artist or a deck */
     <p class="rv-count" id="rvCount"></p>
     <div class="pm-saves pm-saves-page" id="rvList"></div>
     <div class="rv-pager" id="rvPager"></div>
-    <div class="arch-plans">
-      <div class="step-label" style="margin:22px 0 4px">Your reading archive</div>
-      <p class="hint" style="margin-bottom:12px">How many readings you keep is up to your plan.</p>
+    <p class="hint rv-plans-line">Need more room? <a href="#plans" id="rvPlans">See the plans →</a></p>
+  </section>
+
+  <!-- PLANS: what keeps the readings, tarot and astrology -->
+  <section class="panel" id="plansView">
+    <div class="rv-top">
+      <button type="button" class="dk-use" id="plBack">← Back to Stellar Tarot</button>
+      <div class="step-label" style="margin:0">Plans</div>
+    </div>
+    <p class="hint" style="margin-bottom:10px">How many readings you keep is up to your plan. One account, one payment: a tarot plan on its own, or a Stellar plan that covers both apps.</p>
+    <div id="plansStatusBox"></div>
+    <div class="pl-section">
+      <div class="step-label" style="margin:26px 0 4px">Keep your tarot readings</div>
+      <p class="hint" style="margin-bottom:12px">Just the archive. Every reading you save, with your notes, for as long as you want it.</p>
       <div id="archBody"></div>
+    </div>
+    <div class="pl-section">
+      <div class="step-label" style="margin:30px 0 4px">The astrology plans</div>
+      <p class="hint" style="margin-bottom:12px">Stellar is the astrology app this one belongs to: birth charts, transits, lucky days, your lines on a map. Its plans include the tarot archive, so a Stellar plan replaces a tarot plan rather than adding to it. You are never paying twice.</p>
+      <div id="stellarPlans" class="arch-grid"></div>
+    </div>
+    <div class="arch-plans">
+      <div class="step-label" style="margin:26px 0 4px">Already paid?</div>
       <div class="arch-restore">
         <input type="email" id="archEmail" placeholder="The email you paid with…" autocomplete="email" />
         <button class="dk-use" type="button" id="archRestore">Restore purchase</button>
@@ -4284,7 +4326,7 @@ async function archHandleReturn(){
   if(j&&j.ok&&j.tier){
     archStore(j.tier,j.email,j.token);
     renderArchive(); toast("Archive unlocked ✷");
-    try{ openReadingsModal(); }catch(e){}
+    try{ openPlans(); }catch(e){}
     try{ await savesRetryCapped(); }catch(e){}
   }else{
     archMsg("That purchase is still settling. Give it a moment, then use Restore purchase below.","bad");
@@ -4338,9 +4380,11 @@ function archMeterHTML(){
      · a tarot-only reader is offered the tarot tiers, and Stellar is presented
        as the upgrade that adds astrology rather than as a second purchase. */
 function renderArchive(){
-  const box=$("archStatusBox"), body=$("archBody");
+  const box=$("archStatusBox"), body=$("archBody"), pbox=$("plansStatusBox");
   if(!box||!body) return;
   box.innerHTML=archMeterHTML();
+  if(pbox) pbox.innerHTML=archMeterHTML();
+  try{ renderStellarPlans(); }catch(e){}
   const cur=archTier();
   const stellarCap=SAVE_CAP[PLAN.tier]||SAVE_CAP.free;
   const onStellar=savesUser()&&PLAN.tier&&PLAN.tier!=="free";
@@ -4360,7 +4404,8 @@ function renderArchive(){
     const t=archTierDef(cur);
     html+='<div class="arch-current"><div class="at-top"><span class="at-name">'+t.name+'<span class="at-count">'+archCount(t)+'</span></span>'
       +'<span class="at-price">Your plan · '+t.price+'</span></div><p>'+t.blurb+'</p>'
-      +'<p class="arch-note">Billing lives with Stripe. Your receipt email has the link to change or cancel it'
+      +'<button type="button" class="dk-use" id="archManage">Manage my subscription</button>'
+      +'<p class="arch-note">Change the card, cancel, or download receipts. Billing lives with Stripe'
       +(ENT.email?', and this archive is tied to '+escapeHTML(ENT.email):'')+'.</p></div>';
   }
 
@@ -4378,21 +4423,28 @@ function renderArchive(){
     html+='<div class="arch-grid">'+cards+'</div>';
   }
 
-  /* Stellar as the upgrade, not as a second bill */
-  html+='<div class="arch-upgrade"><div class="at-top"><span class="at-name">Want the astrology too?</span>'
-    +'<span class="at-price">One plan, both apps</span></div>'
-    +'<p>Stellar plans cover birth charts, transits and lucky days, and they include this reading archive. '
-    +(cur!=="free"?'Moving up replaces the tarot plan above rather than adding to it, so you are never paying twice.':'It is one plan and one payment, not two.')+'</p>'
-    +'<a class="dk-use" href="'+STELLAR_UPGRADE_URL+'" target="_blank" rel="noopener">See the Stellar plans ↗︎</a></div>';
-
+  if(cur!=="free") html+='<p class="arch-note">Moving to a Stellar plan below replaces this one rather than adding to it.</p>';
   body.innerHTML=html;
+  const mb=$("archManage"); if(mb) mb.onclick=archPortal;
+}
+/* the Stellar plans, briefly: what each holds and what it costs. The reader's own plan is marked, not sold. */
+function renderStellarPlans(){
+  const el=$("stellarPlans"); if(!el) return;
+  const mine=(savesUser()&&PLAN.tier)||"free";
+  el.innerHTML=["plus","premium","lifetime"].map(function(t,i){
+    const own=mine===t, life=t==="lifetime";
+    return '<div class="arch-tier'+(life?" life":"")+(own?" hi":"")+'">'
+      +(life?'<span class="arch-badge">Founding offer · ends 11/11</span>':"")
+      +'<div class="at-top"><span class="at-name">'+PLAN_NAMES[t]+(own?'<span class="pl-current">Your plan</span>':"")+'</span>'
+      +'<span class="at-price">'+PLAN_PRICE[t]+'</span></div>'
+      +'<ul>'+PLAN_INCL[t].map(function(x){ return '<li>'+x+'</li>'; }).join("")+'</ul>'
+      +(own?'<p class="arch-note">Manage it in Stellar.</p>'
+           :'<a class="dk-use'+(life?" fill":"")+'" href="'+STELLAR_UPGRADE_URL+'" target="_blank" rel="noopener">Get '+PLAN_NAMES[t]+' in Stellar ↗︎</a>')
+      +'</div>';
+  }).join("");
 }
 /* the archive lives inside the saved-readings sheet now */
-function archOpen(){
-  try{ if(document.body.classList.contains("astro-open")) closeAstro(); }catch(e){}
-  try{ closeCapSheet(); }catch(e){}
-  openReadingsModal();
-}
+function archOpen(){ openPlans(); }
 document.addEventListener("click",function(e){
   const a=e.target&&e.target.closest&&e.target.closest("[data-archlink]");
   if(a){ e.preventDefault(); closeCapSheet(); archOpen(); }
@@ -4453,7 +4505,21 @@ function capUsageHTML(){
     +'<a href="#" id="capMore">'+(have>=cap?"Archive full →":"Save more readings →")+'</a></div>'
     +'<div class="arch-meter'+(have>=cap?" full":"")+'"><i style="width:'+pct+'%"></i></div>';
 }
-function wireCapMore(box){ const a=box&&box.querySelector("#capMore"); if(a) a.onclick=function(e){ e.preventDefault(); e.stopPropagation(); openReadingsModal(); }; }
+/* "Manage my subscription": Stripe's portal for a tarot plan bought here, Stellar for a Stellar plan */
+function manageHTML(){
+  if(archTier()!=="free"&&ENT.token) return '<button class="pm-go pm-go-ghost" id="pmManage" type="button">Manage my subscription</button>';
+  if(savesUser()&&PLAN.tier&&PLAN.tier!=="free") return '<a class="pm-go pm-go-ghost" id="pmManage" href="'+STELLAR_UPGRADE_URL+'" target="_blank" rel="noopener">Manage my plan in Stellar ↗︎</a>';
+  return "";
+}
+function wireManage(box){ const b=box&&box.querySelector("button#pmManage"); if(b) b.onclick=archPortal; }
+async function archPortal(){
+  const btns=document.querySelectorAll("#pmManage,#archManage"); btns.forEach(function(b){ b.disabled=true; });
+  const j=await archGet("/api/portal?token="+encodeURIComponent(ENT.token||""));
+  btns.forEach(function(b){ b.disabled=false; });
+  if(j&&j.ok&&j.url){ location.href=j.url; return; }
+  toast((j&&j.reason)?("Could not open billing: "+j.reason):"Could not open billing right now");
+}
+function wireCapMore(box){ const a=box&&box.querySelector("#capMore"); if(a) a.onclick=function(e){ e.preventDefault(); e.stopPropagation(); openPlans(); }; }
 function openCapSheet(){
   const m=$("capModal"); if(!m) return;
   const cap=planCap(), have=PLAN.count||0, tier=PLAN.tier;
@@ -4704,15 +4770,15 @@ async function renderSaves(){
   const foot=$("pmSavesFoot");
   if(!rows.length){
     box.innerHTML=usage+'<p class="pm-soon" style="margin:0">Nothing saved yet. Finish a reading while signed in and it will appear here.</p>';
-    if(foot) foot.innerHTML="";
+    if(foot){ foot.innerHTML=manageHTML(); wireManage(foot); }
     wireCapMore(box);
     return;
   }
   /* the sheet stays small: the three most recent, the rest behind View all. The button
      lives OUTSIDE the scrolling list, or it gets clipped by its max-height on a phone. */
   box.innerHTML=usage+rows.slice(0,3).map(saveRowHTML).join("");
-  if(foot) foot.innerHTML=(rows.length>3?'<button class="pm-go pm-go-ghost pm-viewall" id="pmViewAll" type="button">View all '+rows.length+' readings</button>':"");
-  wireCapMore(box);
+  if(foot) foot.innerHTML=(rows.length>3?'<button class="pm-go pm-go-ghost pm-viewall" id="pmViewAll" type="button">View all '+rows.length+' readings</button>':"")+manageHTML();
+  wireCapMore(box); wireManage(foot);
   const va=$("pmViewAll");
   if(va) va.onclick=function(){ openReads(); };
   if(readsOpen()) rvRender();
@@ -4921,6 +4987,7 @@ function openReads(){
   try{ $("pmenu").classList.add("hidden"); $("profileBtn").setAttribute("aria-expanded","false"); }catch(e){}
   try{ closeCapSheet(); }catch(e){}
   try{ if(document.body.classList.contains("astro-open")) closeAstro(); }catch(e){}
+  document.body.classList.remove("plans-open");
   document.body.classList.add("reads-open");
   try{ if(location.hash!=="#readings") history.replaceState(null,"",location.pathname+location.search+"#readings"); }catch(e){}
   window.scrollTo({top:0});
@@ -4934,6 +5001,26 @@ function closeReads(){
   try{ history.replaceState(null,"",location.pathname+location.search); }catch(e){}
 }
 function readsOpen(){ return document.body.classList.contains("reads-open"); }
+/* the plans page: same wing pattern as the readings page */
+function openPlans(){
+  try{ $("pmenu").classList.add("hidden"); $("profileBtn").setAttribute("aria-expanded","false"); }catch(e){}
+  try{ closeCapSheet(); }catch(e){}
+  try{ if(document.body.classList.contains("astro-open")) closeAstro(); }catch(e){}
+  document.body.classList.remove("reads-open");
+  document.body.classList.add("plans-open");
+  try{ if(location.hash!=="#plans") history.replaceState(null,"",location.pathname+location.search+"#plans"); }catch(e){}
+  window.scrollTo({top:0});
+  try{ renderArchive(); }catch(e){}
+  try{ savesPlan(false).then(renderArchive).catch(function(){}); }catch(e){}
+}
+function closePlans(){
+  document.body.classList.remove("plans-open");
+  try{ history.replaceState(null,"",location.pathname+location.search); }catch(e){}
+}
+(function wirePlans(){
+  const b=$("plBack"); if(b) b.onclick=closePlans;
+  const l=$("rvPlans"); if(l) l.onclick=function(e){ e.preventDefault(); openPlans(); };
+})();
 (function wireReads(){
   const back=$("rvBack"); if(back) back.onclick=closeReads;
   const q=$("rvSearch");
@@ -5066,7 +5153,7 @@ window.addEventListener("stellar:ready",function(){
   if(i) i.addEventListener("keydown",function(e){ if(e.key==="Enter"){ e.preventDefault(); archRestore(i.value); } });
   if(i&&ENT.email) i.value=ENT.email;
 })();
-try{ if(location.hash==="#readings") setTimeout(openReads,0); }catch(e){}
+try{ if(location.hash==="#readings") setTimeout(openReads,0); else if(location.hash==="#plans") setTimeout(openPlans,0); }catch(e){}
 archHandleReturn();
 archRevalidate();
 
