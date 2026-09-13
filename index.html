@@ -484,6 +484,8 @@
   .artist-hero h2 .ah-star{color:var(--gold-soft);font-size:.38em;font-style:normal;vertical-align:middle;opacity:.9}
   .artist-hero .ah-bio{font-size:14.5px;font-style:italic;color:var(--mist);max-width:520px;margin:12px auto 0;line-height:1.6}
   .artist-hero .ah-by{font-family:"Trebuchet MS",sans-serif;font-size:10.5px;letter-spacing:.3em;text-transform:uppercase;color:var(--mist);margin-top:8px}
+  #artistPage a.ah-social,#artistPage a.ah-social:hover{text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+  .ah-handle{text-transform:none;letter-spacing:.04em;opacity:.8}
   .artist-hero .ah-actions{margin-top:18px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
   .artist-hero .ah-fan{display:flex;justify-content:center;gap:12px;margin-top:26px}
   .artist-hero .ah-fan img{width:96px;height:160px;border-radius:9px;object-fit:cover;border:1px solid var(--gold-soft);box-shadow:0 12px 30px rgba(0,0,0,.5)}
@@ -1743,6 +1745,7 @@ const DECK_ART={base:"/cards/rws/"};
    has a row for the code. */
 const ORACLE_ARTISTS={
   barleymoon:{name:"The Barley Moon", by:"Laura Phillips", shop:"https://www.makeplayingcards.com/sell/thebarleymoon",
+    social:[{label:"Instagram",handle:"@thebarleymoon",url:"https://www.instagram.com/thebarleymoon/"},{label:"All her links",url:"https://linktr.ee/thebarleymoon"}],
     bio:"I'm Laura, the mystical moon girl behind The Barley Moon. I'm a spiritual artist and tarot reader and I've always had a deep fascination with the mystical and the unseen. My journey into the realms of spirituality, astrology, and esoteric practices has been nothing short of transformative. Over the past few years, I've delved into ancient wisdom, studied celestial cycles, and immersed myself in the energies of the universe. Each deck I create is designed to help you tap into your inner wisdom, unlock your intuition, and navigate life's twists and turns with clarity. Whether you're a seasoned mystic or a curious newcomer, there's something here to illuminate your path. My mission is to make the esoteric accessible. I believe that everyone has the power to connect with the divine and harness the energy of the cosmos for personal growth and guidance."}
 };
 const ORACLE_DECKS=[
@@ -1913,6 +1916,14 @@ window.addEventListener("popstate",function(){
   if(m&&m[1]!=="index") showArtistPage(m[1],m[2]||null,"none");
   else closeArtistPage("none");
 });
+/* the artist's social links, as pills beside the shop button */
+function artistSocialHTML(code){
+  const a=(typeof ORACLE_ARTISTS!=="undefined"&&ORACLE_ARTISTS[code])||null;
+  if(!a||!a.social||!a.social.length) return "";
+  return a.social.map(function(l){
+    return '<a class="dk-use ah-social" href="'+escA(l.url)+'" target="_blank" rel="noopener">'+escA(l.label)+(l.handle?' <span class="ah-handle">'+escA(l.handle)+'</span>':'')+' ↗</a>';
+  }).join("");
+}
 function renderArtistPage(){
   const box=$("apContent"),decksEl=$("apDecks");
   if(!box||!AP.code) return;
@@ -1976,6 +1987,7 @@ function renderArtistPage(){
       +(ARTIST_VIEW.bio?'<div class="ah-bio">'+escA(ARTIST_VIEW.bio)+"</div>":"")
       +'<div class="ah-actions">'
       +(ARTIST_VIEW.shop?'<button type="button" class="dk-use" id="ahShop">Visit their shop ↗</button>':"")
+      +artistSocialHTML(AP.code)
       +"</div>"+note;
     const oracles=ORACLE_DECKS.filter(function(d){ return d.artist_code===AP.code; });
     decksEl.innerHTML=mine.map(deckRowHTML).join("")+oracles.map(oracleRowHTML).join("")
