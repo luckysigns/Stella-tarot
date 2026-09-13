@@ -72,6 +72,8 @@
     border:1px solid var(--line);background:var(--surface);color:var(--gold);font-size:18px;line-height:1;cursor:pointer;
     display:flex;align-items:center;justify-content:center;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);transition:.2s}
   .theme-toggle:hover{border-color:var(--gold);transform:scale(1.06)}
+  body.ap-open .theme-toggle{top:14px}
+  body.ap-open #artistPage .ap-top{padding-right:52px}
   /* profile button + menu, top-right */
   .profile-btn{position:fixed;top:14px;right:14px;z-index:60;width:40px;height:40px;border-radius:50%;
     border:1px solid var(--gold-soft);background:radial-gradient(circle at 35% 30%,#2a2762,#0e0d2c);
@@ -487,6 +489,10 @@
   #artistPage a.ah-social,#artistPage a.ah-social:hover{text-decoration:none;display:inline-flex;align-items:center;gap:6px}
   .ah-handle{text-transform:none;letter-spacing:.04em;opacity:.8}
   .artist-hero .ah-actions{margin-top:18px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+  @media(max-width:560px){
+    .artist-hero .ah-actions{flex-direction:column;align-items:center}
+    .artist-hero .ah-actions .dk-use{width:min(100%,280px);justify-content:center;text-align:center}
+  }
   .artist-hero .ah-fan{display:flex;justify-content:center;gap:12px;margin-top:26px}
   .artist-hero .ah-fan img{width:96px;height:160px;border-radius:9px;object-fit:cover;border:1px solid var(--gold-soft);box-shadow:0 12px 30px rgba(0,0,0,.5)}
   .artist-hero .ah-fan img:first-child{transform:rotate(-7deg)}
@@ -1902,11 +1908,13 @@ function showArtistPage(code,deckSlug,nav){
   renderArtistPage();
   $("artistPage").classList.remove("hidden");
   document.body.style.overflow="hidden";
+  document.body.classList.add("ap-open");
   $("artistPage").scrollTop=0;
 }
 function closeArtistPage(nav){
   $("artistPage").classList.add("hidden");
   document.body.style.overflow="";
+  document.body.classList.remove("ap-open");
   AP.code=null;AP.deck=null;
   if(nav!=="none"){ try{history.replaceState(null,"","/"+location.search);}catch(e){} }
   window.trackPath("/","/");
@@ -1921,7 +1929,7 @@ function artistSocialHTML(code){
   const a=(typeof ORACLE_ARTISTS!=="undefined"&&ORACLE_ARTISTS[code])||null;
   if(!a||!a.social||!a.social.length) return "";
   return a.social.map(function(l){
-    return '<a class="dk-use ah-social" href="'+escA(l.url)+'" target="_blank" rel="noopener">'+escA(l.label)+' ↗</a>';
+    return '<a class="dk-use ah-social" href="'+escA(l.url)+'" target="_blank" rel="noopener">'+escA(l.label)+' ↗︎</a>';
   }).join("");
 }
 function renderArtistPage(){
@@ -1943,7 +1951,7 @@ function renderArtistPage(){
       +'<div class="ah-meta">'+escA(singleOr.sub)+' · no reversals · not a tarot deck</div>'
       +'<div class="ah-actions">'
       +  (singleOr.ready?'':'<span class="dk-tag soon">coming soon</span>')
-      +  ((singleOr.shop||ARTIST_VIEW.shop)?'<button type="button" class="dk-use" id="ahShop">Printed deck'+(singleOr.price?" · "+escA(singleOr.price):"")+' ↗</button>':"")
+      +  ((singleOr.shop||ARTIST_VIEW.shop)?'<button type="button" class="dk-use" id="ahShop">Printed deck'+(singleOr.price?" · "+escA(singleOr.price):"")+' ↗︎</button>':"")
       +'</div>'+note
       +'<a href="#" class="ah-browse" id="ahAllDecks">See all decks by '+escA(nm)+' →</a>';
     decksEl.innerHTML="";
@@ -1986,7 +1994,7 @@ function renderArtistPage(){
       +(byLine?'<div class="ah-by">'+escA(byLine)+"</div>":"")
       +(ARTIST_VIEW.bio?'<div class="ah-bio">'+escA(ARTIST_VIEW.bio)+"</div>":"")
       +'<div class="ah-actions">'
-      +(ARTIST_VIEW.shop?'<button type="button" class="dk-use" id="ahShop">Visit their shop ↗</button>':"")
+      +(ARTIST_VIEW.shop?'<button type="button" class="dk-use" id="ahShop">Visit their shop ↗︎</button>':"")
       +artistSocialHTML(AP.code)
       +"</div>"+note;
     const oracles=ORACLE_DECKS.filter(function(d){ return d.artist_code===AP.code; });
@@ -2031,7 +2039,7 @@ function deckRowHTML(dk){
     +   '<div class="dk-sub">'+dk.sub+'</div>'
     +   '<div class="dk-meta">'+deckMetaHTML(dk)+'</div>'
     +   '<details class="dk-more"><summary>Learn more</summary><p>'+dk.blurb
-    +     (dk.shop_url&&dk.artist_code?' <a href="#" class="dk-shop" data-shopdeck="'+dk.id+'">Buy the printed deck ↗</a>':'')
+    +     (dk.shop_url&&dk.artist_code?' <a href="#" class="dk-shop" data-shopdeck="'+dk.id+'">Buy the printed deck ↗︎</a>':'')
     +   '</p></details>'
     + '</div>'
     + action
@@ -4362,7 +4370,7 @@ function renderArchive(){
       +'<span class="at-price">'+t.price+'</span></div>'
         +'<p>'+t.blurb+'</p>'
         +'<a class="dk-use'+(t.life?" fill":"")+'" href="'+t.link+'" target="_blank" rel="noopener">'
-        +(t.life?"Keep them forever ↗":"Choose "+t.name+" ↗")+'</a></div>';
+        +(t.life?"Keep them forever ↗︎":"Choose "+t.name+" ↗︎")+'</a></div>';
     }).join("");
     html+='<div class="arch-grid">'+cards+'</div>';
   }
@@ -4372,7 +4380,7 @@ function renderArchive(){
     +'<span class="at-price">One plan, both apps</span></div>'
     +'<p>Stellar plans cover birth charts, transits and lucky days, and they include this reading archive. '
     +(cur!=="free"?'Moving up replaces the tarot plan above rather than adding to it, so you are never paying twice.':'It is one plan and one payment, not two.')+'</p>'
-    +'<a class="dk-use" href="'+STELLAR_UPGRADE_URL+'" target="_blank" rel="noopener">See the Stellar plans ↗</a></div>';
+    +'<a class="dk-use" href="'+STELLAR_UPGRADE_URL+'" target="_blank" rel="noopener">See the Stellar plans ↗︎</a></div>';
 
   body.innerHTML=html;
 }
@@ -4454,7 +4462,7 @@ function openCapSheet(){
   $("capPlans").innerHTML=order.map(function(t,i){
     return '<div class="cap-plan'+(i===0?' hi':'')+'"><div class="cp-top"><span class="cp-name">'+PLAN_NAMES[t]+'</span><span class="cp-price">'+PLAN_PRICE[t]+'</span></div>'
       +'<ul>'+PLAN_INCL[t].map(function(x){ return '<li>'+x+'</li>'; }).join("")+'</ul>'
-      +'<a class="dk-use'+(i===0?' fill':'')+'" href="'+STELLAR_UPGRADE_URL+'" target="_blank" rel="noopener">Get '+PLAN_NAMES[t]+' in Stellar ↗</a></div>';
+      +'<a class="dk-use'+(i===0?' fill':'')+'" href="'+STELLAR_UPGRADE_URL+'" target="_blank" rel="noopener">Get '+PLAN_NAMES[t]+' in Stellar ↗︎</a></div>';
   }).join("");
   const f=$("capFoot");
   if(f) f.innerHTML='Or keep more readings right here with <a data-archlink>a reading archive plan</a>. Plans also live in Stellar, the astrology app this account shares; one bought there unlocks here the moment you come back. Or <a id="capTidy">delete a few older readings</a> to make room.';
