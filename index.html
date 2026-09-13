@@ -606,8 +606,11 @@
   .dr-about{flex:0 0 100%;font-size:13px;font-style:italic;margin-top:2px}
   .ap-oracle[data-oraclepage]{cursor:pointer;transition:border-color .2s}
   .ap-oracle[data-oraclepage]:hover{border-color:var(--gold-soft)}
-  .artist-hero .ah-fan.oracle img{width:104px;height:auto;aspect-ratio:659/900;object-fit:cover}
-  .artist-hero .ah-fan.oracle img:nth-child(2){width:112px}
+  /* real card faces: never crop them. The flex row would otherwise stretch each
+     to the tallest card, and object-fit:cover would shave the edges off the text. */
+  .artist-hero .ah-fan.oracle{align-items:center}
+  .artist-hero .ah-fan.oracle img{width:104px;height:auto;aspect-ratio:659/900;object-fit:contain}
+  .artist-hero .ah-fan.oracle img:nth-child(2){width:112px;height:auto}
   .artist-hero .ah-meta{font-family:"Trebuchet MS",sans-serif;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-soft);margin-top:14px}
   .oracle-art{position:absolute;inset:0;border-radius:inherit;overflow:hidden;background:var(--surface-2);padding:0}
   .oracle-fallback{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:14px;text-align:center;font-size:13px;line-height:1.5;color:var(--silver);font-style:italic}
