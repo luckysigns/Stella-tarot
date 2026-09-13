@@ -1921,7 +1921,7 @@ function artistSocialHTML(code){
   const a=(typeof ORACLE_ARTISTS!=="undefined"&&ORACLE_ARTISTS[code])||null;
   if(!a||!a.social||!a.social.length) return "";
   return a.social.map(function(l){
-    return '<a class="dk-use ah-social" href="'+escA(l.url)+'" target="_blank" rel="noopener">'+escA(l.label)+(l.handle?' <span class="ah-handle">'+escA(l.handle)+'</span>':'')+' ↗</a>';
+    return '<a class="dk-use ah-social" href="'+escA(l.url)+'" target="_blank" rel="noopener">'+escA(l.label)+' ↗</a>';
   }).join("");
 }
 function renderArtistPage(){
