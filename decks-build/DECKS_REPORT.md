@@ -39,14 +39,25 @@ as they are. If you want WebP later: `brew install webp`, then one pass.
   and any meanings live in `deck.json` beside the art, fetched on first use.
   Deck three is one line plus a folder.
 - Every guided reading now ends with **Finish with a card from another deck**: a
-  tile per deck (back art, name, card count, artist) and a Pull button. Pulled
-  cards flip in with the same markup as the tarot cards, show the affirmation as
-  the card's text, and show a meaning under it if the deck carries one. No repeats
-  within a reading, Put it back to remove one, no reversals (these are not tarot).
-- Pulls save with the reading (`extras` in the payload) and come back with it.
-  A fresh draw empties the drawer.
+  dropdown of every deck the reader can use (their tarot decks first, then the
+  oracle and affirmation decks, each with its artist) and one Pull button. The
+  choice is remembered for the session. A tarot pull draws from the same
+  shuffled order the clarifiers use, so nothing repeats, can land reversed if
+  reversals are on, and shows the face plus its full reading. An oracle pull flips
+  in with the same card markup, shows the affirmation as the card's text, and a
+  meaning under it if the deck carries one. No repeats within a reading, Put it
+  back to remove one, no reversals for oracle decks (these are not tarot).
+- Pulls save with the reading (`extras` in the payload, with `reversed` for tarot)
+  and come back with it. A fresh draw empties the drawer.
 - The drawer sits inside `#capture`, so PNG and PDF exports include the pulled
-  cards. On export the tiles and buttons hide and a credit line stays.
+  cards. On export the picker and buttons hide and a credit line stays.
+- **Each oracle deck has its own page** at `/<artist>/<deck>` (same route the
+  tarot decks use): title, two sample cards either side of the back, the blurb,
+  card count, a Pull button (pulls straight into an open reading, otherwise says
+  to draw first) and a link to the artist's profile. Reached from the artist
+  page rows, the "About this deck" link under the drawer picker, and the deck
+  name under any pulled card. `samples` and `blurb` per deck live in
+  `ORACLE_DECKS`.
 
 ## Artist credit (Part 6)
 

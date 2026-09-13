@@ -579,7 +579,27 @@
   .dr-tile .dk-use{padding:7px 12px;font-size:9.5px}
   .dr-pulls{display:flex;flex-direction:column;gap:18px;margin-bottom:18px}
   .dr-pull{display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap}
-  .tcard.oracle{width:var(--card-w);max-width:100%;height:auto;aspect-ratio:659/900;flex:none}
+  .tcard.drawer-card{width:var(--card-w);max-width:100%;flex:none}
+  .tcard.oracle{height:auto;aspect-ratio:659/900}
+  .dr-pick{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .dr-select{flex:1 1 240px;min-width:0;appearance:none;-webkit-appearance:none;background-color:var(--field-bg);
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23c9a24b' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 15px center;background-size:9px 6px;
+    border:1px solid var(--line);border-radius:999px;color:var(--gold-soft);
+    font-family:"Trebuchet MS",sans-serif;font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;
+    padding:12px 36px 12px 17px;cursor:pointer;transition:border-color .2s,color .2s}
+  .dr-select:hover{border-color:var(--gold-soft);color:var(--gold)}
+  .dr-select:focus{outline:none;border-color:var(--gold);color:var(--gold)}
+  .dr-select option,.dr-select optgroup{background:var(--void-2);color:var(--silver);text-transform:none;letter-spacing:0;font-size:13px}
+  :root[data-theme="light"] .dr-select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%238a6420' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")}
+  :root[data-theme="light"] .dr-select option,:root[data-theme="light"] .dr-select optgroup{background:#fffaf0;color:#332f47}
+  .dr-pick .dk-use{flex:0 0 auto}
+  .dr-about{flex:0 0 100%;font-size:13px;font-style:italic;margin-top:2px}
+  .ap-oracle[data-oraclepage]{cursor:pointer;transition:border-color .2s}
+  .ap-oracle[data-oraclepage]:hover{border-color:var(--gold-soft)}
+  .artist-hero .ah-fan.oracle img{width:104px;height:auto;aspect-ratio:659/900;object-fit:cover}
+  .artist-hero .ah-fan.oracle img:nth-child(2){width:112px}
+  .artist-hero .ah-meta{font-family:"Trebuchet MS",sans-serif;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-soft);margin-top:14px}
   .oracle-art{position:absolute;inset:0;border-radius:inherit;overflow:hidden;background:var(--surface-2);padding:0}
   .oracle-fallback{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:14px;text-align:center;font-size:13px;line-height:1.5;color:var(--silver);font-style:italic}
   .oracle-art .card-art{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
@@ -1769,8 +1789,12 @@ const ORACLE_ARTISTS={
     bio:"Hand-drawn mandalas and affirmations to sit with. The Barley Moon makes oracle decks for a daily practice: one card, one line to carry through the day. The Inner Wisdom and Mandala Oracles live in the drawer here, to finish a reading with."}
 };
 const ORACLE_DECKS=[
-  {id:"barley-inner-wisdom", name:"Inner Wisdom Oracle", sub:"Affirmations · 35 cards", artist:"The Barley Moon", artist_code:"barleymoon", artistUrl:"https://www.thebarleymoon.ie"},
-  {id:"barley-mandala",      name:"Mandala Oracle",      sub:"Affirmations · 36 cards", artist:"The Barley Moon", artist_code:"barleymoon", artistUrl:"https://www.thebarleymoon.ie"}
+  {id:"barley-inner-wisdom", name:"Inner Wisdom Oracle", sub:"Affirmations · 35 cards", artist:"The Barley Moon", artist_code:"barleymoon", artistUrl:"https://www.thebarleymoon.ie",
+   samples:["21","12"],
+   blurb:"Thirty-five affirmations in gold ink, each one held by a small figure sitting quietly beneath a star. No pictures to decode and no reversals, just a single line to carry with you. Pull one to close a reading, or on its own when you only need to be reminded of what you already know."},
+  {id:"barley-mandala",      name:"Mandala Oracle",      sub:"Affirmations · 36 cards", artist:"The Barley Moon", artist_code:"barleymoon", artistUrl:"https://www.thebarleymoon.ie",
+   samples:["10","14"],
+   blurb:"Thirty-six hand-drawn mandalas, each washed in its own colour with an affirmation at its centre. Coral for strength, violet for calm, blue for rest. Read the words first, then sit with the pattern for a moment. It is a gentle way to end a heavier tarot spread on something you can hold."}
 ];
 const ORACLE_CACHE={};   // id -> manifest, or false once a fetch has failed
 function oracleById(id){ for(let i=0;i<ORACLE_DECKS.length;i++){ if(ORACLE_DECKS[i].id===id) return ORACLE_DECKS[i]; } return null; }
@@ -1928,6 +1952,31 @@ function renderArtistPage(){
   const note=ARTIST_VIEW.viaLink
     ?'<div class="ah-note">You arrived through '+escA(nm)+"'s link. Every deck you buy here supports them directly.</div>":"";
   const mine=DECKS.filter(d=>d.artist_code===AP.code);
+  const singleOr=AP.deck?ORACLE_DECKS.find(function(d){ return d.id===AP.deck&&d.artist_code===AP.code; }):null;
+  if(singleOr){
+    /* an oracle deck: two of its cards either side of the back, the blurb, and where it lives */
+    const art=oracleArt(singleOr.id), sm=singleOr.samples||["1","2"];
+    const fan='<div class="ah-fan oracle"><img src="'+art+'full/'+sm[0]+'.jpg" alt=""><img src="'+art+'back.jpg" alt="Card back"><img src="'+art+'full/'+sm[1]+'.jpg" alt=""></div>';
+    const readingOut=!!(state.drawn&&state.drawn.length&&!$("step-read").classList.contains("hidden"));
+    box.innerHTML='<div class="ah-eyebrow">An oracle deck by '+escA(nm)+'</div>'
+      +'<h2>'+goldNameHTML(singleOr.name)+'</h2>'+fan
+      +'<div class="ah-blurb">'+escA(singleOr.blurb||singleOr.sub||"")+'</div>'
+      +'<div class="ah-meta">'+escA(singleOr.sub)+' · no reversals · lives in the drawer under every reading</div>'
+      +'<div class="ah-actions">'
+      +  '<button type="button" class="dk-use fill" id="ahPullOracle">'+(readingOut?"Pull a card from it now":"Use it in the drawer")+'</button>'
+      +  (ARTIST_VIEW.shop?'<button type="button" class="dk-use" id="ahShop">Buy the printed deck ↗</button>':"")
+      +'</div>'+note
+      +'<a href="#" class="ah-browse" id="ahAllDecks">See all decks by '+escA(nm)+' →</a>';
+    decksEl.innerHTML="";
+    const pb=$("ahPullOracle"); if(pb) pb.onclick=function(){
+      state.drawerDeck=singleOr.id; closeArtistPage();
+      if(readingOut){ pullFromDrawer(singleOr.id); }
+      else{ toast("Draw a reading first. The drawer waits under it."); const sp=$("step-spread"); if(sp) setTimeout(function(){ sp.scrollIntoView({behavior:"smooth",block:"start"}); },80); }
+    };
+    const sh=$("ahShop"); if(sh) sh.onclick=()=>shopClick(AP.code,singleOr.id,ARTIST_VIEW.shop);
+    const ad=$("ahAllDecks"); if(ad) ad.onclick=e=>{e.preventDefault();showArtistPage(AP.code,null);};
+    return;
+  }
   const singleDk=AP.deck?mine.find(d=>d.id===AP.deck):null;
   if(singleDk){
     const r=RATINGS[singleDk.id];
@@ -1965,10 +2014,10 @@ function renderArtistPage(){
       +"</div>"+note;
     const oracles=ORACLE_DECKS.filter(function(d){ return d.artist_code===AP.code; });
     const oracleRows=oracles.map(function(dk){
-      return '<div class="dr-tile ap-oracle"><img class="dr-back" src="'+oracleArt(dk.id)+'back.jpg" alt="" loading="lazy" onerror="this.remove()">'
+      return '<div class="dr-tile ap-oracle" data-oraclepage="'+dk.id+'" role="link" tabindex="0"><img class="dr-back" src="'+oracleArt(dk.id)+'back.jpg" alt="" loading="lazy" onerror="this.remove()">'
         +'<div class="dr-tile-body"><div class="dk-name">'+escapeHTML(dk.name)+' <span class="dk-tag">in the drawer</span></div>'
         +'<div class="dk-sub">'+escapeHTML(dk.sub)+'</div>'
-        +'<p class="hint" style="margin:6px 0 0">Not a tarot deck. Finish any reading with a card from it, from the drawer under the reading.</p></div></div>';
+        +'<p class="hint" style="margin:6px 0 0">Not a tarot deck. Finish any reading with a card from it. Tap to see the deck →</p></div></div>';
     }).join("");
     decksEl.innerHTML=mine.map(deckRowHTML).join("")
       +(oracleRows?'<div class="ap-oracles">'+oracleRows+'</div>':"")
@@ -2504,7 +2553,7 @@ function prepCapture(){
   } else {
     $("journalPrint").classList.add("hidden");
   }
-  document.querySelectorAll("#deckDrawer .dr-tiles, #deckDrawer .dr-remove, #deckDrawer .dr-hint").forEach(function(n){
+  document.querySelectorAll("#deckDrawer .dr-pick, #deckDrawer .dr-remove, #deckDrawer .dr-hint").forEach(function(n){
     n.classList.add("hidden"); undo.push(function(){ n.classList.remove("hidden"); });
   });
   const foot=$("captureFoot");
@@ -3036,11 +3085,25 @@ function renderDetail(){
    deck that carries meanings shows them under it. No reversals: these are not
    tarot. The tiles are the picker, and each carries the artist's name. */
 function oracleCardHTML(e,i){
+  const tdk=oracleById(e.deck)?null:deckById(e.deck);
+  if(tdk){
+    const c=DECK[DECK_BY_ID[e.card]]; if(!c) return "";
+    const d={card:c,reversed:!!e.reversed};
+    const face=tcardHTML(d,0).replace('class="tcard materialize','class="tcard drawer-card materialize'+(e._new?"":" flipped"));
+    return '<div class="dr-pull" data-pull="'+i+'">'+face
+      +'<div class="dr-text">'
+      +  '<p class="dr-aff">'+escapeHTML(c.name)+' <span class="orient">'+(d.reversed?"Reversed":"Upright")+'</span></p>'
+      +  '<p class="dr-meaning">'+(d.reversed?c.rev:c.up)+'</p>'
+      +  richReadHTML(d,null,"drawer:"+i)
+      +  '<div class="dr-from">'+escapeHTML(tdk.name)+' · tarot</div>'
+      +  '<button type="button" class="dr-remove" data-removepull="'+i+'">Put it back</button>'
+      +'</div></div>';
+  }
   const dk=oracleById(e.deck), man=ORACLE_CACHE[e.deck];
   const card=man?man.cards.find(function(c){ return c.id===e.card; }):null;
   const text=card?card.text:"";
   return '<div class="dr-pull" data-pull="'+i+'">'
-    +'<div class="tcard oracle materialize'+(e._new?"":" flipped")+'"><div class="inner">'
+    +'<div class="tcard oracle drawer-card materialize'+(e._new?"":" flipped")+'"><div class="inner">'
     +  '<div class="side back">'+backSVG+'<img class="backimg" src="'+oracleArt(e.deck)+'back.jpg" alt="" onerror="this.remove()"></div>'
     +  '<div class="side front"><div class="front-art oracle-art">'
     +    '<div class="oracle-fallback">'+escapeHTML(text)+'</div>'
@@ -3050,33 +3113,45 @@ function oracleCardHTML(e,i){
     +'<div class="dr-text">'
     +  '<p class="dr-aff">'+(text?escapeHTML(text):"…")+'</p>'
     +  (card&&card.meaning?'<p class="dr-meaning">'+escapeHTML(card.meaning)+'</p>':"")
-    +  '<div class="dr-from">'+escapeHTML(dk?dk.name:e.deck)+' · art by '+escapeHTML(dk?dk.artist:"")+'</div>'
+    +  '<div class="dr-from">'+(dk?'<a href="#" data-oraclepage="'+dk.id+'">'+escapeHTML(dk.name)+'</a>':escapeHTML(e.deck))+' · art by '+escapeHTML(dk?dk.artist:"")+'</div>'
     +  '<button type="button" class="dr-remove" data-removepull="'+i+'">Put it back</button>'
     +'</div></div>';
 }
 function drawerHTML(){
   const pulls=(state.extras||[]).map(oracleCardHTML).join("");
-  const tiles=ORACLE_DECKS.map(function(dk){
-    return '<div class="dr-tile">'
-      +'<img class="dr-back" src="'+oracleArt(dk.id)+'back.jpg" alt="" loading="lazy" onerror="this.remove()">'
-      +'<div class="dr-tile-body"><div class="dr-name">'+escapeHTML(dk.name)+'</div>'
-      +'<div class="dr-artist">'+escapeHTML(dk.sub)+' · by '
-      +(dk.artist_code?'<a href="/'+dk.artist_code+'" class="dr-artist-link" data-artistpage="'+dk.artist_code+'">'+escapeHTML(dk.artist)+'</a>':escapeHTML(dk.artist))+'</div>'
-      +'<button type="button" class="dk-use" data-pulldeck="'+dk.id+'">✦ Pull a card</button></div></div>';
-  }).join("");
+  /* every deck the reader can use: their tarot decks first, then the drawer decks */
+  const tarot=DECKS.filter(deckIsMine);
+  const cur=state.drawerDeck||(ORACLE_DECKS[0]&&ORACLE_DECKS[0].id)||(tarot[0]&&tarot[0].id)||"";
+  const opt=function(id,label){ return '<option value="'+id+'"'+(id===cur?' selected':'')+'>'+escapeHTML(label)+'</option>'; };
+  const picker='<div class="dr-pick">'
+    +'<select class="dr-select" id="drawerDeck" aria-label="Deck to pull from">'
+    +(tarot.length?'<optgroup label="Tarot">'+tarot.map(function(d){ return opt(d.id,d.name+" · tarot"); }).join("")+'</optgroup>':"")
+    +'<optgroup label="Oracle and affirmation">'+ORACLE_DECKS.map(function(d){ return opt(d.id,d.name+" · by "+d.artist); }).join("")+'</optgroup>'
+    +'</select>'
+    +'<button type="button" class="dk-use fill" id="drawerPull">✦ Pull a card</button>'
+    +'<a href="#" class="dr-about" id="drawerAbout"'+(drawerDeckHasPage(cur)?"":" hidden")+'>About this deck</a></div>';
   const credit=oracleCredits();
   return '<div class="drawer-wrap">'
     +'<div class="step-label" style="margin-bottom:6px">Finish with a card from another deck</div>'
-    +'<p class="hint dr-hint" style="margin-bottom:12px">The drawer holds decks that are not tarot. Pull one to close the reading, or a few, from whichever speaks to you.</p>'
+    +'<p class="hint dr-hint" style="margin-bottom:12px">Any deck you can use, tarot or not. Pull one to close the reading, or a few, from whichever speaks to you.</p>'
     +(pulls?'<div class="dr-pulls">'+pulls+'</div>':"")
-    +'<div class="dr-tiles">'+tiles+'</div>'
+    +picker
     +(credit?'<div class="dr-credit">'+credit+'</div>':"")
     +'</div>';
+}
+/* only decks with an artist have a page to open */
+function drawerDeckHasPage(id){
+  const o=oracleById(id); if(o) return !!o.artist_code;
+  const d=DECKS.find(function(x){ return x.id===id; }); return !!(d&&d.artist_code);
+}
+function openDeckPage(id){
+  const o=oracleById(id); if(o){ showArtistPage(o.artist_code,o.id); return; }
+  const d=DECKS.find(function(x){ return x.id===id; }); if(d&&d.artist_code) showArtistPage(d.artist_code,d.id);
 }
 function renderDrawer(){
   const el=$("deckDrawer"); if(!el) return;
   el.innerHTML=drawerHTML();
-  el.querySelectorAll(".tcard.oracle:not(.flipped)").forEach(function(c){ setTimeout(function(){ c.classList.add("flipped"); },320); });
+  el.querySelectorAll(".tcard.drawer-card:not(.flipped)").forEach(function(c){ setTimeout(function(){ c.classList.add("flipped"); },320); });
   (state.extras||[]).forEach(function(e){ delete e._new; });
   /* a restored reading may name a deck whose manifest is not here yet */
   const need=(state.extras||[]).map(function(e){ return e.deck; })
@@ -3084,15 +3159,23 @@ function renderDrawer(){
   if(need.length) Promise.all(need.map(loadOracle)).then(renderDrawer);
 }
 async function pullFromDrawer(deckId){
-  const man=await loadOracle(deckId);
-  if(!man){ toast("That deck is not ready yet"); return; }
-  const used={}; (state.extras||[]).forEach(function(e){ if(e.deck===deckId) used[e.card]=1; });
-  const pool=man.cards.filter(function(c){ return !used[c.id]; });
-  if(!pool.length){ toast("Every card in that deck is on the table"); return; }
-  const card=pool[Math.floor(Math.random()*pool.length)];
   state.extras=state.extras||[];
-  state.extras.push({deck:deckId,card:card.id,_new:true});
-  const restore=holdAnchor("#deckDrawer .dr-tiles");
+  if(!oracleById(deckId)){
+    /* a tarot deck: same shuffled order the clarifiers draw from, so nothing repeats */
+    if(!order.length){ toast("Every card is on the table"); return; }
+    const idx=order.shift();
+    const reversed=state.reversals && Math.random()<0.2;
+    state.extras.push({deck:deckId,card:DECK[idx].id,reversed:reversed,_new:true});
+  } else {
+    const man=await loadOracle(deckId);
+    if(!man){ toast("That deck is not ready yet"); return; }
+    const used={}; state.extras.forEach(function(e){ if(e.deck===deckId) used[e.card]=1; });
+    const pool=man.cards.filter(function(c){ return !used[c.id]; });
+    if(!pool.length){ toast("Every card in that deck is on the table"); return; }
+    const card=pool[Math.floor(Math.random()*pool.length)];
+    state.extras.push({deck:deckId,card:card.id,_new:true});
+  }
+  const restore=holdAnchor("#deckDrawer .dr-pick");
   renderDrawer(); restore();
   try{ savesUpdateGuided(); }catch(e){}
   const n=state.extras.length-1;
@@ -3101,11 +3184,24 @@ async function pullFromDrawer(deckId){
 document.addEventListener("click",function(e){
   const ap=e.target.closest&&e.target.closest("[data-artistpage]");
   if(ap){ e.preventDefault(); showArtistPage(ap.dataset.artistpage,null); return; }
-  const p=e.target.closest&&e.target.closest("[data-pulldeck]");
-  if(p){ pullFromDrawer(p.dataset.pulldeck); return; }
+  const op=e.target.closest&&e.target.closest("[data-oraclepage]");
+  if(op){ e.preventDefault(); openDeckPage(op.dataset.oraclepage); return; }
+  if(e.target.closest&&e.target.closest("#drawerAbout")){ e.preventDefault(); const sel=$("drawerDeck"); if(sel) openDeckPage(sel.value); return; }
+  if(e.target.closest&&e.target.closest("#drawerPull")){
+    const sel=$("drawerDeck"); if(sel){ state.drawerDeck=sel.value; pullFromDrawer(sel.value); } return;
+  }
   const r=e.target.closest&&e.target.closest("[data-removepull]");
-  if(r){ (state.extras||[]).splice(+r.dataset.removepull,1); renderDrawer(); try{ savesUpdateGuided(); }catch(err){} }
+  if(r){
+    const gone=(state.extras||[]).splice(+r.dataset.removepull,1)[0];
+    /* a tarot card goes back on top of the order it came from */
+    if(gone&&!oracleById(gone.deck)&&DECK_BY_ID[gone.card]!=null) order.unshift(DECK_BY_ID[gone.card]);
+    renderDrawer(); try{ savesUpdateGuided(); }catch(err){}
+  }
 });
+document.addEventListener("change",function(e){
+  if(e.target&&e.target.id==="drawerDeck"){ state.drawerDeck=e.target.value; const a=$("drawerAbout"); if(a) a.hidden=!drawerDeckHasPage(e.target.value); }
+});
+document.addEventListener("keydown",function(e){ if(e.key==="Enter"&&e.target&&e.target.matches&&e.target.matches("[data-oraclepage][role=link]")) e.target.click(); });
 
 /* ───────── clarifier cards ───────── */
 function drawClarifier(key){
@@ -4555,7 +4651,7 @@ function guidedPayload(){
   const s=SPREADS[state.spread]||{};
   const clar={};
   Object.keys(state.clarifiers||{}).forEach(function(k){ clar[k]=(state.clarifiers[k]||[]).map(cardRef); });
-  const extras=(state.extras||[]).map(function(e){ return {deck:e.deck,card:e.card}; });
+  const extras=(state.extras||[]).map(function(e){ return {deck:e.deck,card:e.card,reversed:!!e.reversed}; });
   return {spread:state.spread,positions:s.positions||[],cards:state.drawn.map(cardRef),clarifiers:clar,extras:extras};
 }
 function askPayload(entry){
@@ -4806,9 +4902,10 @@ function openSaved(r){
     Object.keys(p.clarifiers||{}).forEach(function(k){
       state.clarifiers[k]=(p.clarifiers[k]||[]).map(function(cl){ return {card:DECK[DECK_BY_ID[cl.id]],reversed:!!cl.reversed}; });
     });
-    state.extras=(p.extras||[]).map(function(e){ return {deck:e.deck,card:String(e.card)}; });
+    state.extras=(p.extras||[]).map(function(e){ return {deck:e.deck,card:String(e.card),reversed:!!e.reversed}; });
     const usedIds={}; state.drawn.forEach(function(d){ usedIds[d.card.id]=1; });
     Object.keys(state.clarifiers).forEach(function(k){ state.clarifiers[k].forEach(function(d){ usedIds[d.card.id]=1; }); });
+    state.extras.forEach(function(e){ if(!oracleById(e.deck)) usedIds[e.card]=1; });
     order=shuffled().filter(function(i){ return !usedIds[DECK[i].id]; });
     SAVES.id=r.id; SAVES.capped=false;
     SAVES.restoring=true;
