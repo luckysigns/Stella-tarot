@@ -461,6 +461,8 @@
   .dk-tag{font-family:"Trebuchet MS",sans-serif;font-size:9px;letter-spacing:.14em;text-transform:uppercase;
     border:1px solid var(--line);border-radius:999px;padding:2px 8px;color:var(--mist);vertical-align:middle;margin-left:4px}
   .dk-tag.soon{color:var(--rose);border-color:var(--rose)}
+  .oracle-shop .dk-sub a{color:inherit;text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--line)}
+  .oracle-shop .dk-sub a:hover,#apDecks .dk-sub a:hover{color:var(--gold)}
   .dk-more{margin-top:8px}
   .dk-more summary{cursor:pointer;font-size:12.5px;color:var(--mist);font-style:italic;list-style:none}
   .dk-more summary::-webkit-details-marker{display:none}
@@ -1725,6 +1727,49 @@ const backSVG=`<svg class="face" viewBox="0 0 100 160" preserveAspectRatio="none
 /* real card art per deck - Traditional uses the public-domain Rider-Waite-Smith scans.
    Returns an <img> overlay; a missing file removes itself and the sigil face shows. */
 const DECK_ART={base:"/cards/rws/"};
+/* ═══════════ ORACLE AND AFFIRMATION DECKS · coming soon ═══════════
+   Not tarot: no suits, no numbers, no mapping onto the seventy-eight, so they do
+   not join DECKS or the tarot deck picker. For now they are listed in the shop
+   and on the artist's page as coming soon, art and name only. */
+/* DRAFT profile: she has not sent a brief yet, so this is written from her decks
+   and her site name only. The artist directory in Supabase wins the moment it
+   has a row for the code. */
+const ORACLE_ARTISTS={
+  barleymoon:{name:"The Barley Moon", shop:"https://www.thebarleymoon.ie",
+    bio:"Hand-drawn mandalas and affirmations to sit with. The Barley Moon makes oracle decks for a daily practice: one card, one line to carry through the day."}
+};
+const ORACLE_DECKS=[
+  {id:"barley-inner-wisdom", name:"Inner Wisdom Oracle", sub:"Affirmations · 35 cards", artist:"The Barley Moon", artist_code:"barleymoon", ready:false,
+   blurb:"Thirty-five affirmations, each on a hand-drawn card: a line to sit with, and a figure or a mandala to hold it. For a daily pull, or to finish a reading with."},
+  {id:"barley-mandala",      name:"Mandala Oracle",      sub:"Affirmations · 36 cards", artist:"The Barley Moon", artist_code:"barleymoon", ready:false,
+   blurb:"Thirty-six affirmations over hand-drawn mandalas, each in its own colour. Made to be pulled one at a time, whenever you feel called to."}
+];
+function oracleArt(id){ return "/cards/"+id+"/"; }
+function oracleMatchesSearch(dk){
+  const q=(deckSearchQ||"").toLowerCase(); if(!q) return true;
+  return (dk.name+" "+dk.sub+" "+dk.artist).toLowerCase().indexOf(q)>-1;
+}
+/* the same row the tarot decks use, with the artist's own art and no buy button */
+function oracleRowHTML(dk){
+  const thumbs=[1,2,3].map(function(n){ return '<img class="dk-thumb" src="'+oracleArt(dk.id)+'thumb/'+n+'.jpg" alt="" loading="lazy" onerror="this.remove()">'; }).join("");
+  return '<div class="deckrow soon" data-oracle="'+dk.id+'">'
+    + '<div class="dk-thumbs">'+thumbs+'</div>'
+    + '<div class="dk-body">'
+    +   '<div class="dk-name">'+escapeHTML(dk.name)+' <span class="dk-tag soon">coming soon</span></div>'
+    +   '<div class="dk-sub">'+escapeHTML(dk.sub)+' · by <a href="/'+dk.artist_code+'" data-artistpage="'+dk.artist_code+'">'+escapeHTML(dk.artist)+'</a></div>'
+    +   '<details class="dk-more"><summary>Learn more</summary><p>'+escapeHTML(dk.blurb)+'</p></details>'
+    + '</div></div>';
+}
+function oracleSectionHTML(rows){
+  if(!rows.length) return "";
+  return '<div class="oracle-shop"><div class="step-label" style="margin:22px 0 4px">Oracle and affirmation decks</div>'
+    + '<p class="hint" style="margin-bottom:10px">Not tarot: a card to sit with rather than a spread to read. Coming to Stellar Tarot soon.</p>'
+    + rows.map(oracleRowHTML).join("")+'</div>';
+}
+document.addEventListener("click",function(e){
+  const ap=e.target.closest&&e.target.closest("[data-artistpage]");
+  if(ap){ e.preventDefault(); showArtistPage(ap.dataset.artistpage,null); }
+});
 function cardArtIMG(card){
   const dir=card&&card.id?DECK_ART[state.deck]:null;
   if(!dir) return "";
@@ -1820,9 +1865,12 @@ function goldNameHTML(txt){
 }
 function setArtistFrom(code){
   ARTIST_VIEW.code=code;
-  ARTIST_VIEW.name=(ARTISTS[code]&&ARTISTS[code].name)||null;
-  ARTIST_VIEW.shop=(ARTISTS[code]&&ARTISTS[code].shop)||null;
-  ARTIST_VIEW.bio=(ARTISTS[code]&&ARTISTS[code].bio)||null;
+  /* the directory wins; an artist with no directory row yet falls back to the draft
+     profile beside their decks, so the page still has a name and a bio */
+  const dir=ARTISTS[code]||null, fb=(typeof ORACLE_ARTISTS!=="undefined"&&ORACLE_ARTISTS[code])||null;
+  ARTIST_VIEW.name=(dir&&dir.name)||(fb&&fb.name)||null;
+  ARTIST_VIEW.shop=(dir&&dir.shop)||(fb&&fb.shop)||null;
+  ARTIST_VIEW.bio=(dir&&dir.bio)||(fb&&fb.bio)||null;
 }
 function showArtistPage(code,deckSlug,nav){
   AP.code=code;AP.deck=deckSlug||null;
@@ -1894,10 +1942,11 @@ function renderArtistPage(){
       +'<div class="ah-actions">'
       +(ARTIST_VIEW.shop?'<button type="button" class="dk-use" id="ahShop">Visit their physical shop ↗</button>':"")
       +"</div>"+note;
-    decksEl.innerHTML=mine.map(deckRowHTML).join("")
+    const oracles=ORACLE_DECKS.filter(function(d){ return d.artist_code===AP.code; });
+    decksEl.innerHTML=mine.map(deckRowHTML).join("")+oracles.map(oracleRowHTML).join("")
       +'<a href="#" class="ah-browse" id="ahBrowseAll">Browse the full deck library →</a>';
     wireDeckRows(decksEl);
-    decksEl.querySelectorAll(".deckrow").forEach(row=>{
+    decksEl.querySelectorAll(".deckrow:not([data-oracle])").forEach(row=>{
       row.style.cursor="pointer";
       row.addEventListener("click",e=>{
         if(e.target.closest("button,a,summary,details")) return; /* controls keep their own jobs */
@@ -1991,7 +2040,8 @@ function renderDeckListInto(list,mode){
       :(a,b)=>a.name.localeCompare(b.name);
     rows=rows.slice().sort((a,b)=>desc*by(a,b));
   }
-  if(!rows.length){
+  const oracles=(list.id==="deckShopList"&&mode==="shop")?ORACLE_DECKS.filter(oracleMatchesSearch):[];
+  if(!rows.length&&!oracles.length){
     list.innerHTML='<p class="hint">'+(deckSearchQ&&list.id==="deckShopList"
       ?"Nothing matches that search here. Try the other tab, or a different word."
       :(mode==="shop"
@@ -1999,7 +2049,7 @@ function renderDeckListInto(list,mode){
         :"No decks here yet. Visit the shop tab to find one."))+'</p>';
     return;
   }
-  list.innerHTML=rows.map(deckRowHTML).join("");
+  list.innerHTML=rows.map(deckRowHTML).join("")+oracleSectionHTML(oracles);
   wireDeckRows(list);
 }
 function renderDeckSheet(){
