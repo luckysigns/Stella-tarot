@@ -17,7 +17,7 @@ picker, the base and astro layers, and the 78-card art path are untouched.
 | id | `barley-inner-wisdom` | `barley-mandala` |
 | Playable cards | **35** | **36** |
 | Left out | card 36, the artist's credit card | card 37, the intro card; the box front |
-| Artist | The Barley Moon, thebarleymoon.ie, @thebarleymoon | same |
+| Artist | The Barley Moon (Laura Phillips), makeplayingcards.com/sell/thebarleymoon, @thebarleymoon | same |
 | Card back | yes | yes |
 | Source size | 34 MB | 34 MB |
 | Shipped size | **4.1 MB** (fronts 3.5, thumbs 0.6) | **6.4 MB** (fronts 5.6, thumbs 0.7) |
@@ -65,7 +65,9 @@ as they are. If you want WebP later: `brew install webp`, then one pass.
 - Under each pulled card ("Mandala Oracle · art by The Barley Moon").
 - A credit line inside the export area and appended to the export footer.
 - A standing line in the page footer beside the Tarot Guide credit, linking to
-  thebarleymoon.ie.
+  her MPC shop space (thebarleymoon.ie was down when this was built). Her bio and
+  both deck descriptions are her own words from that shop, taken 13 Sep 2026; the
+  printed-deck buttons go to each deck's MPC listing with the price shown there.
 
 ## QA
 
