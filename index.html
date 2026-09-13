@@ -483,6 +483,7 @@
   .artist-hero h2 em{color:var(--gold)}
   .artist-hero h2 .ah-star{color:var(--gold-soft);font-size:.38em;font-style:normal;vertical-align:middle;opacity:.9}
   .artist-hero .ah-bio{font-size:14.5px;font-style:italic;color:var(--mist);max-width:520px;margin:12px auto 0;line-height:1.6}
+  .artist-hero .ah-by{font-family:"Trebuchet MS",sans-serif;font-size:10.5px;letter-spacing:.3em;text-transform:uppercase;color:var(--mist);margin-top:8px}
   .artist-hero .ah-actions{margin-top:18px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
   .artist-hero .ah-fan{display:flex;justify-content:center;gap:12px;margin-top:26px}
   .artist-hero .ah-fan img{width:96px;height:160px;border-radius:9px;object-fit:cover;border:1px solid var(--gold-soft);box-shadow:0 12px 30px rgba(0,0,0,.5)}
@@ -1741,14 +1742,14 @@ const DECK_ART={base:"/cards/rws/"};
    and her site name only. The artist directory in Supabase wins the moment it
    has a row for the code. */
 const ORACLE_ARTISTS={
-  barleymoon:{name:"The Barley Moon", shop:"https://www.thebarleymoon.ie",
-    bio:"Hand-drawn mandalas and affirmations to sit with. The Barley Moon makes oracle decks for a daily practice: one card, one line to carry through the day."}
+  barleymoon:{name:"The Barley Moon", by:"Laura Phillips", shop:"https://www.makeplayingcards.com/sell/thebarleymoon",
+    bio:"I'm Laura, the mystical moon girl behind The Barley Moon. I'm a spiritual artist and tarot reader and I've always had a deep fascination with the mystical and the unseen. My journey into the realms of spirituality, astrology, and esoteric practices has been nothing short of transformative. Over the past few years, I've delved into ancient wisdom, studied celestial cycles, and immersed myself in the energies of the universe. Each deck I create is designed to help you tap into your inner wisdom, unlock your intuition, and navigate life's twists and turns with clarity. Whether you're a seasoned mystic or a curious newcomer, there's something here to illuminate your path. My mission is to make the esoteric accessible. I believe that everyone has the power to connect with the divine and harness the energy of the cosmos for personal growth and guidance."}
 };
 const ORACLE_DECKS=[
-  {id:"barley-inner-wisdom", name:"Inner Wisdom Oracle", sub:"Affirmations · 35 cards", artist:"The Barley Moon", artist_code:"barleymoon", ready:false, samples:["21","12"],
-   blurb:"Thirty-five affirmations, each on a hand-drawn card: a line to sit with, and a figure or a mandala to hold it. For a daily pull, or to finish a reading with."},
-  {id:"barley-mandala",      name:"Mandala Oracle",      sub:"Affirmations · 36 cards", artist:"The Barley Moon", artist_code:"barleymoon", ready:false, samples:["10","14"],
-   blurb:"Thirty-six affirmations over hand-drawn mandalas, each in its own colour. Made to be pulled one at a time, whenever you feel called to."}
+  {id:"barley-inner-wisdom", artistUrl:"https://www.makeplayingcards.com/sell/thebarleymoon", shop:"https://www.makeplayingcards.com/sell/marketplace/the-barley-moon-inner-wisdom.html", price:"US$17.70", name:"Inner Wisdom Oracle", sub:"Affirmations · 35 cards", artist:"The Barley Moon", artist_code:"barleymoon", ready:false, samples:["21","12"],
+   blurb:"Introducing The Barley Moon Inner Wisdom Oracle. Each card is a portal to the depths of your soul, offering insights, guidance, and a sprinkle of cosmic wisdom. Whether you're navigating tough decisions or just seeking a little daily inspiration, these cards are your trusty companions. Get ready to tap into the universe's secrets and unlock your inner wisdom with every draw. Your spiritual adventure awaits!"},
+  {id:"barley-mandala", artistUrl:"https://www.makeplayingcards.com/sell/thebarleymoon", shop:"https://www.makeplayingcards.com/sell/marketplace/updated-the-barley-moon-mandala-oracle.html", price:"US$21.10",      name:"Mandala Oracle",      sub:"Affirmations · 36 cards", artist:"The Barley Moon", artist_code:"barleymoon", ready:false, samples:["10","14"],
+   blurb:"Connect to your inner wisdom using this mandala inspired deck. A wonderful way to connect to your inner knowledge as part of your daily practice or whenever you feel called to."}
 ];
 function oracleArt(id){ return "/cards/"+id+"/"; }
 function oracleMatchesSearch(dk){
@@ -1931,11 +1932,11 @@ function renderArtistPage(){
       +'<div class="ah-meta">'+escA(singleOr.sub)+' · no reversals · not a tarot deck</div>'
       +'<div class="ah-actions">'
       +  (singleOr.ready?'':'<span class="dk-tag soon">coming soon</span>')
-      +  (ARTIST_VIEW.shop?'<button type="button" class="dk-use" id="ahShop">Buy the printed deck ↗</button>':"")
+      +  ((singleOr.shop||ARTIST_VIEW.shop)?'<button type="button" class="dk-use" id="ahShop">Printed deck'+(singleOr.price?" · "+escA(singleOr.price):"")+' ↗</button>':"")
       +'</div>'+note
       +'<a href="#" class="ah-browse" id="ahAllDecks">See all decks by '+escA(nm)+' →</a>';
     decksEl.innerHTML="";
-    const sh=$("ahShop"); if(sh) sh.onclick=()=>shopClick(AP.code,singleOr.id,ARTIST_VIEW.shop);
+    const sh=$("ahShop"); if(sh) sh.onclick=()=>shopClick(AP.code,singleOr.id,singleOr.shop||ARTIST_VIEW.shop);
     const ad=$("ahAllDecks"); if(ad) ad.onclick=e=>{e.preventDefault();showArtistPage(AP.code,null);};
     return;
   }
@@ -1969,10 +1970,12 @@ function renderArtistPage(){
     const rb=$("ahReviews"); if(rb) rb.onclick=()=>openReviews(singleDk.id);
     const ad=$("ahAllDecks"); if(ad) ad.onclick=e=>{e.preventDefault();showArtistPage(AP.code,null);};
   }else{
+    const byLine=(typeof ORACLE_ARTISTS!=="undefined"&&ORACLE_ARTISTS[AP.code]&&ORACLE_ARTISTS[AP.code].by)||"";
     box.innerHTML='<div class="ah-eyebrow">Decks by</div><h2>'+goldNameHTML(nm)+"</h2>"
+      +(byLine?'<div class="ah-by">'+escA(byLine)+"</div>":"")
       +(ARTIST_VIEW.bio?'<div class="ah-bio">'+escA(ARTIST_VIEW.bio)+"</div>":"")
       +'<div class="ah-actions">'
-      +(ARTIST_VIEW.shop?'<button type="button" class="dk-use" id="ahShop">Visit their physical shop ↗</button>':"")
+      +(ARTIST_VIEW.shop?'<button type="button" class="dk-use" id="ahShop">Visit their shop ↗</button>':"")
       +"</div>"+note;
     const oracles=ORACLE_DECKS.filter(function(d){ return d.artist_code===AP.code; });
     decksEl.innerHTML=mine.map(deckRowHTML).join("")+oracles.map(oracleRowHTML).join("")
