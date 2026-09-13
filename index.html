@@ -590,6 +590,10 @@
   .dr-remove{background:none;border:none;color:var(--mist);font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;padding:8px 0 0}
   .dr-remove:hover{color:var(--rose)}
   .dr-credit{margin-top:14px;font-size:12px;font-style:italic;color:var(--mist);text-align:center}
+  .dr-artist-link{color:inherit;text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--line)}
+  .dr-artist-link:hover{color:var(--gold)}
+  .ap-oracles{display:flex;flex-direction:column;gap:12px;margin-top:14px}
+  .ap-oracle .dr-back{width:64px}
   .clarifiers{margin-top:16px}
   .clar-card{border:1px dashed var(--line);border-radius:12px;background:rgba(217,139,158,.05);padding:16px 18px;margin-bottom:12px}
   .clar-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px}
@@ -856,6 +860,7 @@
   .ask-addlabel{flex:1;min-width:150px;background:var(--field-bg);border:1px solid var(--line);border-radius:8px;color:var(--silver);font-family:inherit;font-size:14px;padding:9px 12px}
   .ask-addlabel:focus{outline:none;border-color:var(--gold)}
   .ask-threadfoot{margin-top:28px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+  .ask-threadtop{margin:0 0 18px;justify-content:flex-end}
 </style>
 <script>
   /* set the theme before first paint (no flash): saved choice, else light.
@@ -1756,9 +1761,16 @@ const DECK_ART={base:"/cards/rws/"};
    to finish. Each entry here is one line; the card list and any meanings live in
    /cards/<id>/deck.json beside the art, fetched the first time the deck is used.
    Adding a deck is one line plus a folder. */
+/* DRAFT profile for the artist page. She has not sent a brief yet; this is written
+   from her decks and her site name only, and is replaced the moment the artist
+   directory in Supabase has a row for the code. */
+const ORACLE_ARTISTS={
+  barleymoon:{name:"The Barley Moon", shop:"https://www.thebarleymoon.ie",
+    bio:"Hand-drawn mandalas and affirmations to sit with. The Barley Moon makes oracle decks for a daily practice: one card, one line to carry through the day. The Inner Wisdom and Mandala Oracles live in the drawer here, to finish a reading with."}
+};
 const ORACLE_DECKS=[
-  {id:"barley-inner-wisdom", name:"Inner Wisdom Oracle", sub:"Affirmations · 35 cards", artist:"The Barley Moon", artistUrl:"https://www.thebarleymoon.ie"},
-  {id:"barley-mandala",      name:"Mandala Oracle",      sub:"Affirmations · 36 cards", artist:"The Barley Moon", artistUrl:"https://www.thebarleymoon.ie"}
+  {id:"barley-inner-wisdom", name:"Inner Wisdom Oracle", sub:"Affirmations · 35 cards", artist:"The Barley Moon", artist_code:"barleymoon", artistUrl:"https://www.thebarleymoon.ie"},
+  {id:"barley-mandala",      name:"Mandala Oracle",      sub:"Affirmations · 36 cards", artist:"The Barley Moon", artist_code:"barleymoon", artistUrl:"https://www.thebarleymoon.ie"}
 ];
 const ORACLE_CACHE={};   // id -> manifest, or false once a fetch has failed
 function oracleById(id){ for(let i=0;i<ORACLE_DECKS.length;i++){ if(ORACLE_DECKS[i].id===id) return ORACLE_DECKS[i]; } return null; }
@@ -1874,9 +1886,12 @@ function goldNameHTML(txt){
 }
 function setArtistFrom(code){
   ARTIST_VIEW.code=code;
-  ARTIST_VIEW.name=(ARTISTS[code]&&ARTISTS[code].name)||null;
-  ARTIST_VIEW.shop=(ARTISTS[code]&&ARTISTS[code].shop)||null;
-  ARTIST_VIEW.bio=(ARTISTS[code]&&ARTISTS[code].bio)||null;
+  /* the directory wins; a drawer artist with no directory row yet falls back to the
+     draft profile beside their decks, so the page still has a name and a bio */
+  const dir=ARTISTS[code]||null, fb=(typeof ORACLE_ARTISTS!=="undefined"&&ORACLE_ARTISTS[code])||null;
+  ARTIST_VIEW.name=(dir&&dir.name)||(fb&&fb.name)||null;
+  ARTIST_VIEW.shop=(dir&&dir.shop)||(fb&&fb.shop)||null;
+  ARTIST_VIEW.bio=(dir&&dir.bio)||(fb&&fb.bio)||null;
 }
 function showArtistPage(code,deckSlug,nav){
   AP.code=code;AP.deck=deckSlug||null;
@@ -1948,7 +1963,15 @@ function renderArtistPage(){
       +'<div class="ah-actions">'
       +(ARTIST_VIEW.shop?'<button type="button" class="dk-use" id="ahShop">Visit their physical shop ↗</button>':"")
       +"</div>"+note;
+    const oracles=ORACLE_DECKS.filter(function(d){ return d.artist_code===AP.code; });
+    const oracleRows=oracles.map(function(dk){
+      return '<div class="dr-tile ap-oracle"><img class="dr-back" src="'+oracleArt(dk.id)+'back.jpg" alt="" loading="lazy" onerror="this.remove()">'
+        +'<div class="dr-tile-body"><div class="dk-name">'+escapeHTML(dk.name)+' <span class="dk-tag">in the drawer</span></div>'
+        +'<div class="dk-sub">'+escapeHTML(dk.sub)+'</div>'
+        +'<p class="hint" style="margin:6px 0 0">Not a tarot deck. Finish any reading with a card from it, from the drawer under the reading.</p></div></div>';
+    }).join("");
     decksEl.innerHTML=mine.map(deckRowHTML).join("")
+      +(oracleRows?'<div class="ap-oracles">'+oracleRows+'</div>':"")
       +'<a href="#" class="ah-browse" id="ahBrowseAll">Browse the full deck library →</a>';
     wireDeckRows(decksEl);
     decksEl.querySelectorAll(".deckrow").forEach(row=>{
@@ -3037,7 +3060,8 @@ function drawerHTML(){
     return '<div class="dr-tile">'
       +'<img class="dr-back" src="'+oracleArt(dk.id)+'back.jpg" alt="" loading="lazy" onerror="this.remove()">'
       +'<div class="dr-tile-body"><div class="dr-name">'+escapeHTML(dk.name)+'</div>'
-      +'<div class="dr-artist">'+escapeHTML(dk.sub)+' · by '+escapeHTML(dk.artist)+'</div>'
+      +'<div class="dr-artist">'+escapeHTML(dk.sub)+' · by '
+      +(dk.artist_code?'<a href="/'+dk.artist_code+'" class="dr-artist-link" data-artistpage="'+dk.artist_code+'">'+escapeHTML(dk.artist)+'</a>':escapeHTML(dk.artist))+'</div>'
       +'<button type="button" class="dk-use" data-pulldeck="'+dk.id+'">✦ Pull a card</button></div></div>';
   }).join("");
   const credit=oracleCredits();
@@ -3075,6 +3099,8 @@ async function pullFromDrawer(deckId){
   setTimeout(function(){ revealIfOffscreen('[data-pull="'+n+'"]'); },80);
 }
 document.addEventListener("click",function(e){
+  const ap=e.target.closest&&e.target.closest("[data-artistpage]");
+  if(ap){ e.preventDefault(); showArtistPage(ap.dataset.artistpage,null); return; }
   const p=e.target.closest&&e.target.closest("[data-pulldeck]");
   if(p){ pullFromDrawer(p.dataset.pulldeck); return; }
   const r=e.target.closest&&e.target.closest("[data-removepull]");
@@ -3992,7 +4018,12 @@ function renderAskThread(animateId,anchorSel){
   var sy=window.pageYOffset||document.documentElement.scrollTop||0;   // hold scroll across the rebuild
   var dkOpen=dkSnap();                       // which "Go deeper" / contexts panels are open
   var restore=holdAnchor(anchorSel);         // and where the caller wants the page pinned
-  wrap.innerHTML=askThread.map(askEntryHTML).join("")
+  /* the same way out at the top as at the bottom: a reopened question thread can
+     be long, and nobody should have to scroll to the end to start afresh */
+  wrap.innerHTML=(askThread.length ? '<div class="ask-threadfoot ask-threadtop">'
+        + '<button class="btn ghost" type="button" id="askFreshTop">Start a fresh reading</button>'
+        + '</div>' : "")
+    + askThread.map(askEntryHTML).join("")
     + (askThread.length ? '<div class="ask-threadfoot">'
         + '<button class="btn ghost" type="button" id="askAnother">✦ Ask another question in this thread</button>'
         + '<button class="btn ghost" type="button" id="askFresh">Start a fresh reading</button>'
