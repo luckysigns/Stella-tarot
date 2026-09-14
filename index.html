@@ -366,6 +366,17 @@
   #readsView{display:none}
   body.reads-open .wrap > *:not(#readsView){display:none}
   body.reads-open #readsView{display:block}
+  #accountView{display:none}
+  body.account-open .wrap > *:not(#accountView){display:none}
+  body.account-open #accountView{display:block}
+  .pm-tiny{display:inline-block;font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-soft);text-decoration:none;margin:0 0 14px}
+  .pm-tiny:hover{color:var(--gold)}
+  .ac-grid{display:grid;grid-template-columns:1fr;gap:14px;margin-top:16px}
+  .ac-card{border:1px solid var(--line);border-radius:14px;padding:16px;background:var(--surface-2)}
+  .ac-card.ac-quiet{background:none}
+  .ac-who{margin:0 0 10px;color:var(--text-strong);font-size:15px;word-break:break-all}
+  .ac-actions{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin-top:4px}
+  .ac-actions .dk-use{display:inline-block;text-decoration:none}
   #plansView{display:none}
   body.plans-open .wrap > *:not(#plansView){display:none}
   body.plans-open #plansView{display:block}
@@ -933,7 +944,8 @@ try{  /* the arrival, which may already be a deep link to an artist or a deck */
   </div>
   <div id="pmSignedIn" class="hidden">
     <p class="pm-soon" style="text-align:left;margin:0 0 4px">Signed in as</p>
-    <p id="pmWho" style="margin:0 0 14px;color:var(--text-strong);font-size:14px;word-break:break-all"></p>
+    <p id="pmWho" style="margin:0 0 2px;color:var(--text-strong);font-size:14px;word-break:break-all"></p>
+    <a href="#account" class="pm-tiny" id="pmAccount">Manage my account →</a>
     <p class="pm-soon" style="text-align:left;margin:0 0 8px">✦ &nbsp;Saved readings &amp; journal</p>
     <div class="pm-saves" id="pmSaves"></div>
     <div id="pmSavesFoot"></div>
@@ -1197,6 +1209,42 @@ try{  /* the arrival, which may already be a deep link to an artist or a deck */
     <div class="pm-saves pm-saves-page" id="rvList"></div>
     <div class="rv-pager" id="rvPager"></div>
     <p class="hint rv-plans-line">Need more room? <a href="#plans" id="rvPlans">See the plans →</a></p>
+  </section>
+
+  <!-- ACCOUNT: email, plan, readings, sign out -->
+  <section class="panel" id="accountView">
+    <div class="rv-top">
+      <button type="button" class="dk-use" id="acBack">← Back to Stellar Tarot</button>
+      <div class="step-label" style="margin:0">Your account</div>
+    </div>
+    <p class="hint" style="margin-bottom:10px">One account for Stellar Tarot and Stellar. Change something here and it changes in both.</p>
+    <div class="ac-grid">
+      <div class="ac-card">
+        <div class="step-label" style="margin:0 0 4px">Email</div>
+        <p class="ac-who" id="acWho"></p>
+        <p class="hint" style="margin:0 0 10px">Sign-in links and receipts go here. To change it, enter the new address; a confirmation goes to both the old and the new inbox, and the change lands once both are clicked.</p>
+        <div class="arch-restore" style="margin-top:0">
+          <input type="email" id="acEmail" placeholder="New email address…" autocomplete="email" />
+          <button class="dk-use" type="button" id="acEmailGo">Change email</button>
+        </div>
+        <p class="arch-note" id="acEmailMsg"></p>
+      </div>
+      <div class="ac-card">
+        <div class="step-label" style="margin:0 0 4px">Plan</div>
+        <div id="acPlanBox"></div>
+        <div class="ac-actions" id="acPlanActions"></div>
+      </div>
+      <div class="ac-card">
+        <div class="step-label" style="margin:0 0 4px">Readings</div>
+        <p class="hint" id="acReadsNote" style="margin:0 0 10px"></p>
+        <div class="ac-actions"><button class="dk-use" type="button" id="acReads">View all readings</button></div>
+      </div>
+      <div class="ac-card ac-quiet">
+        <div class="step-label" style="margin:0 0 4px">Sign out</div>
+        <p class="hint" style="margin:0 0 10px">Your readings stay saved to the account; sign back in any time with a link.</p>
+        <div class="ac-actions"><button class="dk-use" type="button" id="acSignOut">Sign out</button></div>
+      </div>
+    </div>
   </section>
 
   <!-- PLANS: what keeps the readings, tarot and astrology -->
@@ -4770,15 +4818,15 @@ async function renderSaves(){
   const foot=$("pmSavesFoot");
   if(!rows.length){
     box.innerHTML=usage+'<p class="pm-soon" style="margin:0">Nothing saved yet. Finish a reading while signed in and it will appear here.</p>';
-    if(foot){ foot.innerHTML=manageHTML(); wireManage(foot); }
+    if(foot) foot.innerHTML="";
     wireCapMore(box);
     return;
   }
   /* the sheet stays small: the three most recent, the rest behind View all. The button
      lives OUTSIDE the scrolling list, or it gets clipped by its max-height on a phone. */
   box.innerHTML=usage+rows.slice(0,3).map(saveRowHTML).join("");
-  if(foot) foot.innerHTML=(rows.length>3?'<button class="pm-go pm-go-ghost pm-viewall" id="pmViewAll" type="button">View all '+rows.length+' readings</button>':"")+manageHTML();
-  wireCapMore(box); wireManage(foot);
+  if(foot) foot.innerHTML=(rows.length>3?'<button class="pm-go pm-go-ghost pm-viewall" id="pmViewAll" type="button">View all '+rows.length+' readings</button>':"");
+  wireCapMore(box);
   const va=$("pmViewAll");
   if(va) va.onclick=function(){ openReads(); };
   if(readsOpen()) rvRender();
@@ -4987,7 +5035,7 @@ function openReads(){
   try{ $("pmenu").classList.add("hidden"); $("profileBtn").setAttribute("aria-expanded","false"); }catch(e){}
   try{ closeCapSheet(); }catch(e){}
   try{ if(document.body.classList.contains("astro-open")) closeAstro(); }catch(e){}
-  document.body.classList.remove("plans-open");
+  document.body.classList.remove("plans-open","account-open");
   document.body.classList.add("reads-open");
   try{ if(location.hash!=="#readings") history.replaceState(null,"",location.pathname+location.search+"#readings"); }catch(e){}
   window.scrollTo({top:0});
@@ -5001,12 +5049,76 @@ function closeReads(){
   try{ history.replaceState(null,"",location.pathname+location.search); }catch(e){}
 }
 function readsOpen(){ return document.body.classList.contains("reads-open"); }
+/* the account page: email, plan, readings, sign out. Same wing pattern as the readings page. */
+function renderAccount(){
+  const u=savesUser(); if(!u) return;
+  $("acWho").textContent=u.email||"your account";
+  const cap=planCap(), have=PLAN.count, name=planLabelShown();
+  const box=$("acPlanBox"), act=$("acPlanActions");
+  const onStellar=PLAN.tier&&PLAN.tier!=="free", onArch=archTier()!=="free";
+  let line;
+  if(onStellar) line=PLAN_NAMES[PLAN.tier]+" · your Stellar plan · "+(cap===Infinity?"unlimited":cap)+" saved readings";
+  else if(onArch) line=archTierDef(archTier()).name+" · "+archTierDef(archTier()).price+" · "+(cap===Infinity?"unlimited":cap)+" saved readings";
+  else line="No plan yet · "+cap+" saved readings on the free tier";
+  box.innerHTML='<p class="ac-who">'+escapeHTML(line)+'</p>'+archMeterHTML();
+  act.innerHTML=(onArch&&ENT.token?'<button class="dk-use" type="button" id="acManage">Manage my subscription</button>':"")
+    +(onStellar?'<a class="dk-use" href="'+STELLAR_UPGRADE_URL+'" target="_blank" rel="noopener">Manage my plan in Stellar ↗︎</a>':"")
+    +'<button class="dk-use" type="button" id="acPlans">'+((onStellar||onArch)?"See all plans":"See the plans")+'</button>';
+  const mb=$("acManage"); if(mb) mb.onclick=archPortal;
+  const pb=$("acPlans"); if(pb) pb.onclick=openPlans;
+  $("acReadsNote").textContent=(have==null?"Counting your readings…":(have+" saved reading"+(have===1?"":"s")+", with your notes."));
+}
+function openAccount(){
+  if(!savesUser()){ toast("Sign in first"); return; }
+  try{ $("pmenu").classList.add("hidden"); $("profileBtn").setAttribute("aria-expanded","false"); }catch(e){}
+  try{ closeCapSheet(); }catch(e){}
+  try{ if(document.body.classList.contains("astro-open")) closeAstro(); }catch(e){}
+  document.body.classList.remove("reads-open","plans-open");
+  document.body.classList.add("account-open");
+  try{ if(location.hash!=="#account") history.replaceState(null,"",location.pathname+location.search+"#account"); }catch(e){}
+  window.scrollTo({top:0});
+  const m=$("acEmailMsg"); if(m){ m.textContent=""; m.className="arch-note"; }
+  try{ renderAccount(); }catch(e){}
+  try{ savesPlan(false).then(renderAccount).catch(function(){}); }catch(e){}
+}
+function closeAccount(){
+  document.body.classList.remove("account-open");
+  try{ history.replaceState(null,"",location.pathname+location.search); }catch(e){}
+}
+/* the new address has to be confirmed from both inboxes before Supabase switches it */
+async function accountChangeEmail(){
+  const inp=$("acEmail"), msg=$("acEmailMsg"), btn=$("acEmailGo");
+  const email=(inp.value||"").trim().toLowerCase();
+  const u=savesUser(); const sb=savesClient();
+  if(!email||email.indexOf("@")<1){ msg.textContent="Enter the new address first."; msg.className="arch-note bad"; return; }
+  if(u&&u.email&&email===String(u.email).toLowerCase()){ msg.textContent="That is already your address."; msg.className="arch-note bad"; return; }
+  if(!sb||!sb.auth||!sb.auth.updateUser){ msg.textContent="Could not reach your account right now."; msg.className="arch-note bad"; return; }
+  btn.disabled=true; msg.textContent="Sending confirmation links…"; msg.className="arch-note";
+  try{
+    const r=await sb.auth.updateUser({email:email});
+    if(r&&r.error) throw r.error;
+    msg.textContent="Check "+email+" and your current inbox. Click the link in each and the change goes through.";
+    inp.value="";
+  }catch(err){
+    msg.textContent="Could not change it ("+((err&&err.message)||"try again")+").";
+    msg.className="arch-note bad";
+  }
+  btn.disabled=false;
+}
+(function wireAccount(){
+  const b=$("acBack"); if(b) b.onclick=closeAccount;
+  const a=$("pmAccount"); if(a) a.onclick=function(e){ e.preventDefault(); openAccount(); };
+  const g=$("acEmailGo"); if(g) g.onclick=accountChangeEmail;
+  const i=$("acEmail"); if(i) i.addEventListener("keydown",function(e){ if(e.key==="Enter"){ e.preventDefault(); accountChangeEmail(); } });
+  const r=$("acReads"); if(r) r.onclick=openReads;
+  const so=$("acSignOut"); if(so) so.onclick=function(){ closeAccount(); const b=$("pmSignOut"); if(b) b.click(); };
+})();
 /* the plans page: same wing pattern as the readings page */
 function openPlans(){
   try{ $("pmenu").classList.add("hidden"); $("profileBtn").setAttribute("aria-expanded","false"); }catch(e){}
   try{ closeCapSheet(); }catch(e){}
   try{ if(document.body.classList.contains("astro-open")) closeAstro(); }catch(e){}
-  document.body.classList.remove("reads-open");
+  document.body.classList.remove("reads-open","account-open");
   document.body.classList.add("plans-open");
   try{ if(location.hash!=="#plans") history.replaceState(null,"",location.pathname+location.search+"#plans"); }catch(e){}
   window.scrollTo({top:0});
@@ -5153,7 +5265,7 @@ window.addEventListener("stellar:ready",function(){
   if(i) i.addEventListener("keydown",function(e){ if(e.key==="Enter"){ e.preventDefault(); archRestore(i.value); } });
   if(i&&ENT.email) i.value=ENT.email;
 })();
-try{ if(location.hash==="#readings") setTimeout(openReads,0); else if(location.hash==="#plans") setTimeout(openPlans,0); }catch(e){}
+try{ if(location.hash==="#readings") setTimeout(openReads,0); else if(location.hash==="#plans") setTimeout(openPlans,0); else if(location.hash==="#account") window.addEventListener("stellar:ready",function(){ if(savesUser()) openAccount(); },{once:true}); }catch(e){}
 archHandleReturn();
 archRevalidate();
 
