@@ -4531,6 +4531,7 @@ const PLAN_INCL={
   lifetime:["Unlimited saved tarot readings","Unlimited saved birth charts","Everything in Star Reader, kept forever","One payment, no renewals · $150 only until 11/11 this year"]
 };
 const STELLAR_UPGRADE_URL="https://www.stellarastro.app/?upgrade=readings";
+const STELLAR_ACCOUNT_URL="https://www.stellarastro.app/?account=1";   // the account sheet there: plan, billing, email
 const PLAN={uid:null,tier:"free",count:null,nagged:false};
 async function stellarTier(sb,uid){
   try{
@@ -4580,7 +4581,7 @@ function capUsageHTML(){
 /* "Manage my subscription": Stripe's portal for a tarot plan bought here, Stellar for a Stellar plan */
 function manageHTML(){
   if(archTier()!=="free"&&ENT.token) return '<button class="pm-go pm-go-ghost" id="pmManage" type="button">Manage my subscription</button>';
-  if(savesUser()&&PLAN.tier&&PLAN.tier!=="free") return '<a class="pm-go pm-go-ghost" id="pmManage" href="'+STELLAR_UPGRADE_URL+'" target="_blank" rel="noopener">Manage my plan in Stellar ↗︎</a>';
+  if(savesUser()&&PLAN.tier&&PLAN.tier!=="free") return '<a class="pm-go pm-go-ghost" id="pmManage" href="'+STELLAR_ACCOUNT_URL+'" target="_blank" rel="noopener">Manage my plan in Stellar ↗︎</a>';
   return "";
 }
 function wireManage(box){ const b=box&&box.querySelector("button#pmManage"); if(b) b.onclick=openSubSheet; }
@@ -5125,7 +5126,7 @@ function renderAccount(){
   else line="No plan yet · "+cap+" saved readings on the free tier";
   box.innerHTML='<p class="ac-who">'+escapeHTML(line)+'</p>'+archMeterHTML();
   act.innerHTML=(onArch&&ENT.token?'<button class="dk-use" type="button" id="acManage">Manage my subscription</button>':"")
-    +(onStellar?'<a class="dk-use" href="'+STELLAR_UPGRADE_URL+'" target="_blank" rel="noopener">Manage my plan in Stellar ↗︎</a>':"")
+    +(onStellar?'<a class="dk-use" href="'+STELLAR_ACCOUNT_URL+'" target="_blank" rel="noopener">Manage my plan in Stellar ↗︎</a>':"")
     +'<button class="dk-use" type="button" id="acPlans">'+((onStellar||onArch)?"See all plans":"See the plans")+'</button>';
   const mb=$("acManage"); if(mb) mb.onclick=openSubSheet;
   const pb=$("acPlans"); if(pb) pb.onclick=function(){ openPlans("account"); };
