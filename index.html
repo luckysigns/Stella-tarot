@@ -338,6 +338,11 @@
   .sub-hero .dk-use.fill{font-size:11px;padding:12px 20px}
   .sub-quiet{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px}
   .sub-cancel{color:var(--mist);border-color:var(--line)}
+  .sub-stellar{display:inline-block;font-family:"Trebuchet MS",sans-serif;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
+    color:#3f8f6e;border:1px solid rgba(63,143,110,.45);border-radius:999px;padding:11px 18px;text-decoration:none;transition:.2s}
+  .sub-stellar:hover{color:#2f7a5c;border-color:#3f8f6e;background:rgba(63,143,110,.08)}
+  :root:not([data-theme="light"]) .sub-stellar{color:#7fd3aa;border-color:rgba(127,211,170,.4)}
+  :root:not([data-theme="light"]) .sub-stellar:hover{color:#9fe4c0;border-color:#7fd3aa;background:rgba(127,211,170,.08)}
   .cap-foot a{color:var(--gold);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
   /* ── reading archive · the paid tiers, built from the same tokens as .cap-plan ── */
   .arch-meter{height:4px;border-radius:3px;background:var(--surface);border:1px solid var(--line);overflow:hidden;margin:8px 0 4px}
@@ -4642,7 +4647,7 @@ function openStellarSubSheet(){
     html+='<div class="cap-plan"><div class="cp-top"><span class="cp-name">Receipts</span></div><p class="hint" style="margin:6px 0 10px">Your Deep Sky receipt and any earlier invoices.</p>'
       +'<button type="button" class="dk-use" data-subflow="portal">Open billing</button></div>';
   }
-  html+='<p class="hint" style="text-align:center;margin:14px 0 0"><a href="'+STELLAR_ACCOUNT_URL+'" target="_blank" rel="noopener">Open my account in Stellar ↗︎</a></p>';
+  html+='<p style="text-align:center;margin:16px 0 0"><a class="sub-stellar" href="'+STELLAR_ACCOUNT_URL+'" target="_blank" rel="noopener">✷ Open my account in Stellar ↗︎</a></p>';
   $("subBody").innerHTML=html;
   m.classList.remove("hidden");
 }
