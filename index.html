@@ -381,6 +381,8 @@
   body.plans-open .wrap > *:not(#plansView){display:none}
   body.plans-open #plansView{display:block}
   .rv-plans-line{margin:22px 0 0;text-align:center}
+  .pg-title{font-size:clamp(28px,4.5vw,40px);font-weight:400;line-height:1.05;color:var(--text-strong);margin:4px 0 10px}
+  .pg-title em{font-style:italic;color:var(--gold)}
   .pl-current{font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);border:1px solid var(--gold);border-radius:999px;padding:3px 9px;margin-left:8px;vertical-align:middle}
   .arch-tier ul{margin:10px 0 0;padding-left:18px;font-size:13.5px;line-height:1.7;color:var(--silver)}
   .rv-top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
@@ -968,6 +970,18 @@ try{  /* the arrival, which may already be a deep link to an artist or a deck */
   </div>
 </div>
 
+<div class="deckmodal hidden" id="subModal">
+  <div class="decksheet">
+    <div class="dk-head">
+      <h3>Your subscription</h3>
+      <button class="pmenu-close" id="subClose" type="button" aria-label="Close">✕</button>
+    </div>
+    <p class="hint" id="subMsg"></p>
+    <div id="subBody"></div>
+    <p class="cap-foot" id="subFoot">Changes happen on Stripe's secure page and come straight back here. Nothing you have saved is ever removed.</p>
+  </div>
+</div>
+
 <div class="deckmodal hidden" id="deckModal">
   <div class="decksheet">
     <div class="dk-head">
@@ -1215,8 +1229,9 @@ try{  /* the arrival, which may already be a deep link to an artist or a deck */
   <section class="panel" id="accountView">
     <div class="rv-top">
       <button type="button" class="dk-use" id="acBack">← Back to Stellar Tarot</button>
-      <div class="step-label" style="margin:0">Your account</div>
+      <div class="step-label" style="margin:0">Account</div>
     </div>
+    <h2 class="pg-title">Your <em>account</em></h2>
     <p class="hint" style="margin-bottom:10px">One account for Stellar Tarot and Stellar. Change something here and it changes in both.</p>
     <div class="ac-grid">
       <div class="ac-card">
@@ -1253,6 +1268,7 @@ try{  /* the arrival, which may already be a deep link to an artist or a deck */
       <button type="button" class="dk-use" id="plBack">← Back to Stellar Tarot</button>
       <div class="step-label" style="margin:0">Plans</div>
     </div>
+    <h2 class="pg-title">Choose a <em>plan</em></h2>
     <p class="hint" style="margin-bottom:10px">How many readings you keep is up to your plan. One account, one payment: a tarot plan on its own, or a Stellar plan that covers both apps.</p>
     <div id="plansStatusBox"></div>
     <div class="pl-section">
@@ -4473,7 +4489,7 @@ function renderArchive(){
 
   if(cur!=="free") html+='<p class="arch-note">Moving to a Stellar plan below replaces this one rather than adding to it.</p>';
   body.innerHTML=html;
-  const mb=$("archManage"); if(mb) mb.onclick=archPortal;
+  const mb=$("archManage"); if(mb) mb.onclick=openSubSheet;
 }
 /* the Stellar plans, briefly: what each holds and what it costs. The reader's own plan is marked, not sold. */
 function renderStellarPlans(){
@@ -4559,11 +4575,43 @@ function manageHTML(){
   if(savesUser()&&PLAN.tier&&PLAN.tier!=="free") return '<a class="pm-go pm-go-ghost" id="pmManage" href="'+STELLAR_UPGRADE_URL+'" target="_blank" rel="noopener">Manage my plan in Stellar ↗︎</a>';
   return "";
 }
-function wireManage(box){ const b=box&&box.querySelector("button#pmManage"); if(b) b.onclick=archPortal; }
-async function archPortal(){
-  const btns=document.querySelectorAll("#pmManage,#archManage"); btns.forEach(function(b){ b.disabled=true; });
-  const j=await archGet("/api/portal?token="+encodeURIComponent(ENT.token||""));
-  btns.forEach(function(b){ b.disabled=false; });
+function wireManage(box){ const b=box&&box.querySelector("button#pmManage"); if(b) b.onclick=openSubSheet; }
+/* the subscription sheet: what they have, and the ways to change it */
+function openSubSheet(){
+  const m=$("subModal"); if(!m) return;
+  const cur=archTier(), t=archTierDef(cur); if(!t) return;
+  const life=cur==="lifetime";
+  $("subMsg").textContent=life
+    ? "Lifetime · paid once, yours to keep. Nothing renews and there is nothing to cancel."
+    : t.name+" · "+t.price+" · keeps "+t.cap+" readings"+(ENT.email?" · "+ENT.email:"")+".";
+  const rows=[];
+  if(!life){
+    const up=ARCH_TIERS.filter(function(x){ return !x.life&&ARCH_RANK[x.id]>ARCH_RANK[cur]; });
+    if(up.length) rows.push({id:"update",hi:true,name:"Upgrade to "+up[0].name,sub:up[0].price+" · "+archCount(up[0])+". Stripe swaps the plan and prorates the month.",btn:"Change my plan"});
+    rows.push({id:"lifetime",name:"Keep them forever",sub:"Lifetime · $111.11 once, no renewals. Buy it, then cancel the monthly plan below; your readings stay put.",href:archTierDef("lifetime").link});
+    rows.push({id:"portal",name:"Card and receipts",sub:"Update the card, see every invoice.",btn:"Open billing"});
+    rows.push({id:"cancel",name:"Cancel my subscription",sub:"Keeps working to the end of the paid month. The readings stay; you just cannot add past the free ten.",btn:"Cancel"});
+  }else{
+    rows.push({id:"portal",name:"Receipts",sub:"Your lifetime receipt and any earlier invoices.",btn:"Open billing"});
+  }
+  $("subBody").innerHTML=rows.map(function(r){
+    return '<div class="cap-plan'+(r.hi?" hi":"")+'"><div class="cp-top"><span class="cp-name">'+r.name+'</span></div><p class="hint" style="margin:6px 0 10px">'+r.sub+'</p>'
+      +(r.href?'<a class="dk-use" href="'+r.href+'" target="_blank" rel="noopener">Keep them forever ↗︎</a>'
+              :'<button type="button" class="dk-use'+(r.hi?" fill":"")+'" data-subflow="'+r.id+'">'+r.btn+'</button>')+'</div>';
+  }).join("");
+  m.classList.remove("hidden");
+}
+function closeSubSheet(){ const m=$("subModal"); if(m) m.classList.add("hidden"); }
+document.addEventListener("click",function(e){
+  const b=e.target.closest&&e.target.closest("[data-subflow]");
+  if(b){ archPortal(b.dataset.subflow==="portal"?"":b.dataset.subflow, b); return; }
+  if(e.target.closest&&e.target.closest("#subClose")){ closeSubSheet(); return; }
+  if(e.target.id==="subModal") closeSubSheet();
+});
+async function archPortal(flow,btn){
+  if(btn) btn.disabled=true;
+  const j=await archGet("/api/portal?token="+encodeURIComponent(ENT.token||"")+(flow?"&flow="+flow:""));
+  if(btn) btn.disabled=false;
   if(j&&j.ok&&j.url){ location.href=j.url; return; }
   toast((j&&j.reason)?("Could not open billing: "+j.reason):"Could not open billing right now");
 }
@@ -5064,8 +5112,8 @@ function renderAccount(){
   act.innerHTML=(onArch&&ENT.token?'<button class="dk-use" type="button" id="acManage">Manage my subscription</button>':"")
     +(onStellar?'<a class="dk-use" href="'+STELLAR_UPGRADE_URL+'" target="_blank" rel="noopener">Manage my plan in Stellar ↗︎</a>':"")
     +'<button class="dk-use" type="button" id="acPlans">'+((onStellar||onArch)?"See all plans":"See the plans")+'</button>';
-  const mb=$("acManage"); if(mb) mb.onclick=archPortal;
-  const pb=$("acPlans"); if(pb) pb.onclick=openPlans;
+  const mb=$("acManage"); if(mb) mb.onclick=openSubSheet;
+  const pb=$("acPlans"); if(pb) pb.onclick=function(){ openPlans("account"); };
   $("acReadsNote").textContent=(have==null?"Counting your readings…":(have+" saved reading"+(have===1?"":"s")+", with your notes."));
 }
 function openAccount(){
@@ -5114,7 +5162,10 @@ async function accountChangeEmail(){
   const so=$("acSignOut"); if(so) so.onclick=function(){ closeAccount(); const b=$("pmSignOut"); if(b) b.click(); };
 })();
 /* the plans page: same wing pattern as the readings page */
-function openPlans(){
+let PLANS_FROM=null;   // "account" when opened from the account page, so Back returns there
+function openPlans(from){
+  PLANS_FROM=(from==="account")?"account":null;
+  const pb=$("plBack"); if(pb) pb.textContent=PLANS_FROM?"← Back to your account":"← Back to Stellar Tarot";
   try{ $("pmenu").classList.add("hidden"); $("profileBtn").setAttribute("aria-expanded","false"); }catch(e){}
   try{ closeCapSheet(); }catch(e){}
   try{ if(document.body.classList.contains("astro-open")) closeAstro(); }catch(e){}
@@ -5130,7 +5181,7 @@ function closePlans(){
   try{ history.replaceState(null,"",location.pathname+location.search); }catch(e){}
 }
 (function wirePlans(){
-  const b=$("plBack"); if(b) b.onclick=closePlans;
+  const b=$("plBack"); if(b) b.onclick=function(){ closePlans(); if(PLANS_FROM==="account") openAccount(); };
   const l=$("rvPlans"); if(l) l.onclick=function(e){ e.preventDefault(); openPlans(); };
 })();
 (function wireReads(){

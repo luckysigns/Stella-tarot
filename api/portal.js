@@ -1,10 +1,11 @@
 /* Stellar Tarot · Copyright (c) 2026 Lucky Media LLC. All rights reserved. Proprietary. */
 /* ============================================================
-   GET /api/portal?token=<entitlement token>
+   GET /api/portal?token=<entitlement token>&flow=update|cancel
 
    "Manage my subscription": opens Stripe's customer portal for the
-   reader who holds this archive token, where they can change the card,
-   cancel, or download receipts. The token is the proof: it names the
+   reader who holds this archive token. With flow=update it lands
+   straight on the change-plan screen, flow=cancel on the cancel screen;
+   without a flow it opens the portal home (card, receipts, everything). The token is the proof: it names the
    email Stripe charged, signed by us, so nobody can open someone else's
    billing by guessing an address.
 
@@ -52,10 +53,22 @@ module.exports = async function handler(req, res) {
     const found = await U.stripeGet("customers?email=" + encodeURIComponent(body.email) + "&limit=1");
     const customer = found && found.data && found.data[0];
     if (!customer) return U.json(res, 200, { ok: false, reason: "no purchase found" });
-    const session = await stripePost("billing_portal/sessions", {
-      customer: customer.id,
-      return_url: RETURN_URL
-    });
+    const params = { customer: customer.id, return_url: RETURN_URL };
+    const flow = String((req.query && req.query.flow) || "");
+    if (flow === "update" || flow === "cancel") {
+      /* the archive subscription this customer holds, if any; lifetime holders have none */
+      const subs = await U.stripeGet("subscriptions?limit=10&status=active&customer=" + encodeURIComponent(customer.id));
+      const sub = (subs.data || []).find(function (s) {
+        return ((s.items && s.items.data) || []).some(function (it) { return it.price && it.price.product === U.PROD_SUB; });
+      });
+      if (sub) {
+        params["flow_data[type]"] = flow === "cancel" ? "subscription_cancel" : "subscription_update";
+        params["flow_data[" + (flow === "cancel" ? "subscription_cancel" : "subscription_update") + "][subscription]"] = sub.id;
+        params["flow_data[after_completion][type]"] = "redirect";
+        params["flow_data[after_completion][redirect][return_url]"] = RETURN_URL;
+      }
+    }
+    const session = await stripePost("billing_portal/sessions", params);
     return U.json(res, 200, { ok: true, url: session.url });
   } catch (err) {
     console.error("portal:", (err && err.message) || err, (err && err.detail) || "");
