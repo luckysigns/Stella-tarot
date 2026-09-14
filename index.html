@@ -330,6 +330,14 @@
   .cap-usage{font-size:12px;color:var(--mist);font-style:italic;margin:0 0 4px;display:flex;justify-content:space-between;gap:8px}
   .cap-usage a{color:var(--gold)}
   .cap-foot{margin-top:16px;font-size:12.5px;font-style:italic;color:var(--mist);text-align:center;line-height:1.6}
+  .sub-hero{position:relative;margin-top:22px;padding:18px 16px 16px;box-shadow:0 0 0 1px var(--gold),0 12px 30px rgba(233,196,106,.12)}
+  .sub-hero .arch-badge{position:absolute;top:-10px;left:14px}
+  .sub-hero .cp-name{font-size:24px;color:var(--text-strong)}
+  .sub-hero .cp-price{color:var(--gold)}
+  .sub-hero>p{font-size:14px;line-height:1.6;margin:8px 0 12px}
+  .sub-hero .dk-use.fill{font-size:11px;padding:12px 20px}
+  .sub-quiet{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px}
+  .sub-cancel{color:var(--mist);border-color:var(--line)}
   .cap-foot a{color:var(--gold);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
   /* ── reading archive · the paid tiers, built from the same tokens as .cap-plan ── */
   .arch-meter{height:4px;border-radius:3px;background:var(--surface);border:1px solid var(--line);overflow:hidden;margin:8px 0 4px}
@@ -4584,21 +4592,28 @@ function openSubSheet(){
   $("subMsg").textContent=life
     ? "Lifetime · paid once, yours to keep. Nothing renews and there is nothing to cancel."
     : t.name+" · "+t.price+" · keeps "+t.cap+" readings"+(ENT.email?" · "+ENT.email:"")+".";
-  const rows=[];
+  let html="";
   if(!life){
-    const up=ARCH_TIERS.filter(function(x){ return !x.life&&ARCH_RANK[x.id]>ARCH_RANK[cur]; });
-    if(up.length) rows.push({id:"update",hi:true,name:"Upgrade to "+up[0].name,sub:up[0].price+" · "+archCount(up[0])+". Stripe swaps the plan and prorates the month.",btn:"Change my plan"});
-    rows.push({id:"lifetime",name:"Keep them forever",sub:"Lifetime · $111.11 once, no renewals. Buy it, then cancel the monthly plan below; your readings stay put.",href:archTierDef("lifetime").link});
-    rows.push({id:"portal",name:"Card and receipts",sub:"Update the card, see every invoice.",btn:"Open billing"});
-    rows.push({id:"cancel",name:"Cancel my subscription",sub:"Keeps working to the end of the paid month. The readings stay; you just cannot add past the free ten.",btn:"Cancel"});
+    /* the upgrade leads, big and gold; then the two other ways up; card, receipts and cancel sit quietly underneath */
+    const up=ARCH_TIERS.filter(function(x){ return !x.life&&ARCH_RANK[x.id]>ARCH_RANK[cur]; })[0];
+    if(up) html+='<div class="cap-plan hi sub-hero"><span class="arch-badge">Upgrade</span>'
+      +'<div class="cp-top"><span class="cp-name">'+up.name+'</span><span class="cp-price">'+up.price+'</span></div>'
+      +'<p>'+archCount(up)+' with your notes, instead of '+t.cap+'. Stripe swaps the plan today and only charges the difference for the rest of the month.</p>'
+      +'<button type="button" class="dk-use fill" data-subflow="update">Upgrade to '+up.name+' ↗︎</button></div>';
+    html+='<div class="cap-plan"><div class="cp-top"><span class="cp-name">Bundle with astrology</span><span class="cp-price">from $4.99 a month</span></div>'
+      +'<p class="hint" style="margin:6px 0 10px">Stellar\'s plans include this archive: Star Gazer keeps 100 readings, Star Reader 1,000, Deep Sky unlimited, and they add birth charts, transits and lucky days. One plan for both apps. Pick one in Stellar, then cancel this plan below so you are never paying twice.</p>'
+      +'<a class="dk-use" href="'+STELLAR_UPGRADE_URL+'" target="_blank" rel="noopener">See the Stellar plans ↗︎</a></div>';
+    html+='<div class="cap-plan"><div class="cp-top"><span class="cp-name">Keep them forever</span><span class="cp-price">$111.11 once</span></div>'
+      +'<p class="hint" style="margin:6px 0 10px">Lifetime, no renewals. Buy it, then cancel the monthly plan below; your readings stay put.</p>'
+      +'<a class="dk-use" href="'+archTierDef("lifetime").link+'" target="_blank" rel="noopener">Keep them forever ↗︎</a></div>';
+    html+='<div class="sub-quiet"><button type="button" class="dk-use" data-subflow="portal">Card and receipts</button>'
+      +'<button type="button" class="dk-use sub-cancel" data-subflow="cancel">Cancel my subscription</button></div>'
+      +'<p class="hint" style="text-align:center;margin:8px 0 0">Cancelling keeps the plan to the end of the paid month. The readings stay; you just cannot add past the free ten.</p>';
   }else{
-    rows.push({id:"portal",name:"Receipts",sub:"Your lifetime receipt and any earlier invoices.",btn:"Open billing"});
+    html+='<div class="cap-plan"><div class="cp-top"><span class="cp-name">Receipts</span></div><p class="hint" style="margin:6px 0 10px">Your lifetime receipt and any earlier invoices.</p>'
+      +'<button type="button" class="dk-use" data-subflow="portal">Open billing</button></div>';
   }
-  $("subBody").innerHTML=rows.map(function(r){
-    return '<div class="cap-plan'+(r.hi?" hi":"")+'"><div class="cp-top"><span class="cp-name">'+r.name+'</span></div><p class="hint" style="margin:6px 0 10px">'+r.sub+'</p>'
-      +(r.href?'<a class="dk-use" href="'+r.href+'" target="_blank" rel="noopener">Keep them forever ↗︎</a>'
-              :'<button type="button" class="dk-use'+(r.hi?" fill":"")+'" data-subflow="'+r.id+'">'+r.btn+'</button>')+'</div>';
-  }).join("");
+  $("subBody").innerHTML=html;
   m.classList.remove("hidden");
 }
 function closeSubSheet(){ const m=$("subModal"); if(m) m.classList.add("hidden"); }
