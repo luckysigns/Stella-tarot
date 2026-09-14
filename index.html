@@ -4580,14 +4580,16 @@ function capUsageHTML(){
 }
 /* "Manage my subscription": Stripe's portal for a tarot plan bought here, Stellar for a Stellar plan */
 function manageHTML(){
-  if(archTier()!=="free"&&ENT.token) return '<button class="pm-go pm-go-ghost" id="pmManage" type="button">Manage my subscription</button>';
-  if(savesUser()&&PLAN.tier&&PLAN.tier!=="free") return '<a class="pm-go pm-go-ghost" id="pmManage" href="'+STELLAR_ACCOUNT_URL+'" target="_blank" rel="noopener">Manage my plan in Stellar ↗︎</a>';
+  if((archTier()!=="free"&&ENT.token)||(savesUser()&&PLAN.tier&&PLAN.tier!=="free")) return '<button class="pm-go pm-go-ghost" id="pmManage" type="button">Manage my subscription</button>';
   return "";
 }
+/* which plan the sheet is about: a tarot plan bought here, else the Stellar plan */
+function subKind(){ if(archTier()!=="free"&&ENT.token) return "tarot"; if(savesUser()&&PLAN.tier&&PLAN.tier!=="free") return "stellar"; return null; }
 function wireManage(box){ const b=box&&box.querySelector("button#pmManage"); if(b) b.onclick=openSubSheet; }
 /* the subscription sheet: what they have, and the ways to change it */
 function openSubSheet(){
   const m=$("subModal"); if(!m) return;
+  if(subKind()==="stellar"){ openStellarSubSheet(); return; }
   const cur=archTier(), t=archTierDef(cur); if(!t) return;
   const life=cur==="lifetime";
   $("subMsg").textContent=life
@@ -4617,6 +4619,33 @@ function openSubSheet(){
   $("subBody").innerHTML=html;
   m.classList.remove("hidden");
 }
+/* the same sheet for a Stellar plan: managed through the same Stripe customer, from here */
+function openStellarSubSheet(){
+  const m=$("subModal"), tier=PLAN.tier, life=tier==="lifetime";
+  $("subMsg").textContent=life
+    ? PLAN_NAMES.lifetime+" · paid once, yours to keep, in Stellar and here. Nothing renews and there is nothing to cancel."
+    : PLAN_NAMES[tier]+" · your Stellar plan · "+PLAN_PRICE[tier]+" · keeps "+(SAVE_CAP[tier]===Infinity?"unlimited":SAVE_CAP[tier])+" readings here.";
+  let html="";
+  if(!life){
+    const up=tier==="plus"?"premium":null;
+    if(up) html+='<div class="cap-plan hi sub-hero"><span class="arch-badge">Upgrade</span>'
+      +'<div class="cp-top"><span class="cp-name">'+PLAN_NAMES[up]+'</span><span class="cp-price">'+PLAN_PRICE[up]+'</span></div>'
+      +'<p>'+PLAN_INCL[up].slice(0,4).join(" · ")+'. Stripe swaps the plan today and only charges the difference for the rest of the period.</p>'
+      +'<button type="button" class="dk-use fill" data-subflow="update">Upgrade to '+PLAN_NAMES[up]+' ↗︎</button></div>';
+    html+='<div class="cap-plan'+(up?"":" hi sub-hero")+'">'+(up?"":'<span class="arch-badge">Upgrade</span>')+'<div class="cp-top"><span class="cp-name">'+PLAN_NAMES.lifetime+'</span><span class="cp-price">'+PLAN_PRICE.lifetime+'</span></div>'
+      +'<p class="hint" style="margin:6px 0 10px">'+PLAN_INCL.lifetime.slice(0,3).join(" · ")+'. Bought in Stellar; your monthly plan ends with it.</p>'
+      +'<a class="dk-use'+(up?"":" fill")+'" href="'+STELLAR_UPGRADE_URL+'" target="_blank" rel="noopener">Get '+PLAN_NAMES.lifetime+' in Stellar ↗︎</a></div>';
+    html+='<div class="sub-quiet"><button type="button" class="dk-use" data-subflow="portal">Card and receipts</button>'
+      +'<button type="button" class="dk-use sub-cancel" data-subflow="cancel">Cancel my subscription</button></div>'
+      +'<p class="hint" style="text-align:center;margin:8px 0 0">Cancelling keeps the plan to the end of the paid period, in both apps. Your charts and readings stay.</p>';
+  }else{
+    html+='<div class="cap-plan"><div class="cp-top"><span class="cp-name">Receipts</span></div><p class="hint" style="margin:6px 0 10px">Your Deep Sky receipt and any earlier invoices.</p>'
+      +'<button type="button" class="dk-use" data-subflow="portal">Open billing</button></div>';
+  }
+  html+='<p class="hint" style="text-align:center;margin:14px 0 0"><a href="'+STELLAR_ACCOUNT_URL+'" target="_blank" rel="noopener">Open my account in Stellar ↗︎</a></p>';
+  $("subBody").innerHTML=html;
+  m.classList.remove("hidden");
+}
 function closeSubSheet(){ const m=$("subModal"); if(m) m.classList.add("hidden"); }
 document.addEventListener("click",function(e){
   const b=e.target.closest&&e.target.closest("[data-subflow]");
@@ -4626,7 +4655,16 @@ document.addEventListener("click",function(e){
 });
 async function archPortal(flow,btn){
   if(btn) btn.disabled=true;
-  const j=await archGet("/api/portal?token="+encodeURIComponent(ENT.token||"")+(flow?"&flow="+flow:""));
+  let j=null;
+  if(subKind()==="stellar"){
+    /* a Stellar plan: prove who is asking with the session, not an archive token */
+    try{
+      const sb=savesClient(); const r=sb&&await sb.auth.getSession(); const tok=r&&r.data&&r.data.session&&r.data.session.access_token;
+      if(tok){ const res=await fetch("/api/portal?flow="+(flow||""),{headers:{Accept:"application/json",Authorization:"Bearer "+tok}}); j=res.ok?await res.json():null; }
+    }catch(e){ j=null; }
+  }else{
+    j=await archGet("/api/portal?token="+encodeURIComponent(ENT.token||"")+(flow?"&flow="+flow:""));
+  }
   if(btn) btn.disabled=false;
   if(j&&j.ok&&j.url){ location.href=j.url; return; }
   toast((j&&j.reason)?("Could not open billing: "+j.reason):"Could not open billing right now");
@@ -5125,8 +5163,7 @@ function renderAccount(){
   else if(onArch) line=archTierDef(archTier()).name+" · "+archTierDef(archTier()).price+" · "+(cap===Infinity?"unlimited":cap)+" saved readings";
   else line="No plan yet · "+cap+" saved readings on the free tier";
   box.innerHTML='<p class="ac-who">'+escapeHTML(line)+'</p>'+archMeterHTML();
-  act.innerHTML=(onArch&&ENT.token?'<button class="dk-use" type="button" id="acManage">Manage my subscription</button>':"")
-    +(onStellar?'<a class="dk-use" href="'+STELLAR_ACCOUNT_URL+'" target="_blank" rel="noopener">Manage my plan in Stellar ↗︎</a>':"")
+  act.innerHTML=(subKind()?'<button class="dk-use" type="button" id="acManage">Manage my subscription</button>':"")
     +'<button class="dk-use" type="button" id="acPlans">'+((onStellar||onArch)?"See all plans":"See the plans")+'</button>';
   const mb=$("acManage"); if(mb) mb.onclick=openSubSheet;
   const pb=$("acPlans"); if(pb) pb.onclick=function(){ openPlans("account"); };
