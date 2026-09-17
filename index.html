@@ -775,7 +775,7 @@
   .aw-place-list button:hover{color:var(--gold);background:rgba(233,196,106,.06)}
   .aw-natal{margin:0 0 14px;text-align:center}
   .aw-natal a{color:var(--gold);text-decoration:none;font-size:14px}
-  .aw-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+  .aw-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;align-items:start}
   .aw-item{border:1px solid var(--line);border-radius:14px;background:var(--surface);padding:16px}
   .aw-pos{font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-soft);margin-bottom:8px}
   .aw-stage{display:flex;justify-content:center;margin:0 0 12px}
@@ -784,6 +784,9 @@
   .aw-sub{font-family:"Trebuchet MS",sans-serif;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-soft);text-align:center;margin-bottom:10px}
   .aw-item p{font-size:13.5px;line-height:1.6;color:var(--silver);margin:0}
   .aw-clause{color:var(--gold)}
+  .aw-item p.aw-ctx{color:var(--gold);font-size:12.5px;line-height:1.55;margin-top:10px}
+  .aw-item p.aw-deep{margin-top:9px}
+  .aw-sec{font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-soft);margin:16px 0 0}
   .aw-item .aw-how{font-size:12.5px;line-height:1.55;color:var(--mist);font-style:italic;border-left:2px solid var(--line);padding-left:10px;margin:0 0 10px}
   .aw-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
   .aw-actions .btn{width:auto;display:inline-flex;padding:10px 20px;margin:0}
@@ -3529,6 +3532,39 @@ function awPosText(deck,id,label,orient){
   try{ const p=CONTENT.base[id].positions[label]; if(p&&p[orient]) return p[orient]; }catch(e){}
   return "";
 }
+/* ---- deep readings: the in-depth layer, one JSON per card in /deep/ (written by
+   astra-data/deep, see DEEP_SPEC.md). Fetched when a card is first shown, never inlined:
+   a card's file holds its reading against every sign as Sun, Moon and Rising, and in every
+   house. A file that isn't there yet simply leaves the short weave in place, so the wing
+   reads properly however far the writing has got. ---- */
+const AW_DEEP={}, AW_DEEP_WAIT={};
+const AW_SIGNS=["Aries","Taurus","Gemini","Cancer","Leo","Virgo","Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces"];
+function awDeepLoad(key){
+  if(key in AW_DEEP) return Promise.resolve(AW_DEEP[key]);
+  if(AW_DEEP_WAIT[key]) return AW_DEEP_WAIT[key];
+  return AW_DEEP_WAIT[key]=fetch("/deep/"+key+".json").then(r=>r.ok?r.json():null).catch(()=>null)
+    .then(d=>{ AW_DEEP[key]=d||null; delete AW_DEEP_WAIT[key]; return AW_DEEP[key]; });
+}
+/* fetch whatever isn't in yet, then draw the page again once, keeping any note being typed */
+function awDeepEnsure(keys){
+  const need=keys.filter(k=>k&&!(k in AW_DEEP)); if(!need.length) return;
+  Promise.all(need.map(awDeepLoad)).then(res=>{
+    if(!AW.open||!res.some(Boolean)) return;
+    document.querySelectorAll("#awBody [data-awnote]").forEach(t=>{ const k=AW.tab; AW.notes[k]=AW.notes[k]||[]; AW.notes[k][+t.dataset.awnote]=t.value; });
+    awRender();
+  });
+}
+function awDeepSign(id,sign,placement,orient){ try{ return AW_DEEP[id].signs[String(sign).toLowerCase()][placement][orient]||""; }catch(e){ return ""; } }
+function awDeepHouse(id,n,orient){ try{ return AW_DEEP[id].houses[String(n)][orient]||""; }catch(e){ return ""; } }
+function awParas(t,cls){ return String(t||"").split(/\n\s*\n/).map(x=>x.trim()).filter(Boolean).map(x=>'<p class="'+cls+'">'+awEsc(x)+'</p>').join(""); }
+function awOrdinal(n){ return n+(n===1?"st":n===2?"nd":n===3?"rd":"th"); }
+/* whole-sign houses: the sign a house falls in, and the house a sign falls in, counted from
+   the Rising, or from the Sun when the chart has no birth time */
+function awHouseBase(P){
+  const r=P.rising&&P.rising.sign?AW_SIGNS.indexOf(P.rising.sign):-1; if(r>=0) return {idx:r,from:P.rising.sign+" Rising",timed:true};
+  const su=P.sun&&P.sun.sign?AW_SIGNS.indexOf(P.sun.sign):-1; if(su>=0) return {idx:su,from:P.sun.sign+" Sun",timed:false};
+  return null;
+}
 /* ---- Your Cards: fixed by the chart, read as identity, no clause ---- */
 function awRenderCards(chart){
   const S=window.STELLAR; let idn=null;
@@ -3558,6 +3594,11 @@ function awRenderCards(chart){
     const di=it.decan||0, face=FACE[((su.index||0)*3+di)%7];
     return "Your Sun sits at "+Math.floor(su.degInSign)+"° "+su.sign+", in its "+ord[di]+" decan ("+span[di]+"). Every sign is cut into three ten-degree decans, each with a ruling planet and one Minor card assigned to it in the Golden Dawn system; this one is ruled by "+face+", and its card is this one. It's the finer grain of your Sun - the flavour of "+su.sign+" you actually carry.";
   }
+  const FIELD={sun:"asSun",moon:"asMoon",rising:"asRising",birth:"asBirthCard",sunDecan:"asDecan"}, want=[];
+  function awIdentityDeep(cid,field){
+    const d=AW_DEEP["identity/"+cid], secs=d&&d[field]; if(!Array.isArray(secs)) return "";
+    return secs.map(x=>'<div class="aw-sec">'+awEsc(x.h)+'</div><p class="aw-deep">'+awEsc(x.p)+'</p>').join("");
+  }
   let html=chips?'<div class="aw-placements">'+chips+'</div>':'';
   html+='<div class="aw-actions">'+awExportButtons()+'</div>';
   html+='<div class="aw-grid">';
@@ -3572,8 +3613,10 @@ function awRenderCards(chart){
     html+='<div class="aw-item"><div class="aw-pos">'+title+(it.sign?' · '+awEsc(it.sign):'')+'</div>'
       +awCardHTML(c,false)+'<h4>'+awEsc(c.name)+'</h4><div class="aw-sub">'+awEsc(sub)+'</div>'
       +(how?'<p class="aw-how">'+awEsc(how)+'</p>':'')
-      +'<p>'+awEsc(it.reading||"")+'</p></div>';
+      +'<p>'+awEsc(it.reading||"")+'</p>'+awIdentityDeep(cid,FIELD[k])+'</div>';
+    want.push("identity/"+cid);
   });
+  awDeepEnsure(want);
   return html+'</div>';
 }
 /* ---- Big Three / The Houses / Year Ahead: drawn, then woven against the chart ---- */
@@ -3595,16 +3638,16 @@ function awRenderSpread(kind,chart){
      once cards are down, a single line so the reading has the room */
   const INTRO={
     big3:["Your Big Three are the three placements astrologers reach for first. Your Sun is the core of who you are and what you're here to do. Your Moon is how you feel and what you need in order to feel safe. Your Rising is the face you show the world and the way you walk into a room. Together they're the shortest honest description of a chart.",
-      "This spread draws one card for each. The card for your light is read against your actual Sun sign, the card for your tides against your Moon, and the card for your mask against your Rising, so every reading names the placement and speaks to it. Where a card pulls against the sign it lands on, that tension is left standing; it's usually the most useful part. Expect three short readings, each closing with a line on how it meets your chart, with a note box under each card. Draw again whenever you like, and each draw is kept in your saved readings."],
+      "This spread draws one card for each. The card for your light is read against your actual Sun sign, the card for your tides against your Moon, and the card for your mask against your Rising, so every reading names the placement and speaks to it. Each card gets a reading written for that exact pairing - this card on a Leo Moon is a different reading from the same card on a Virgo Moon - built on the real astrology between them: the card's planet at home or out of its element in your sign, the two signs in step or square to each other. Where a card pulls against the sign it lands on, that tension is left standing; it's usually the most useful part. There's a note box under each card. Draw again whenever you like, and each draw is kept in your saved readings."],
     houses:["The twelve houses are the areas of a life as a chart divides them: self, money, voice, home, play, health, partners, depths, horizons, career, community and dreams. One card is laid in each and read for what that house speaks about, so instead of one question answered you get a picture of where things stand across the whole of your life at once.",
-      "It's a long reading, and it's meant to be taken a house at a time. Each card closes with a line on what that house is about, and there's a note box under every one. Reversals are on by default; switch them off if you'd rather read twelve cards upright."],
+      "It's a long reading, and it's meant to be taken a house at a time. Each card is read in depth for the house it fell in, and where your chart has a birth time you'll also see which sign that house falls in for you. There's a note box under every one. Reversals are on by default; switch them off if you'd rather read twelve cards upright."],
     year:["A solar return is the Sun coming back to the exact place it held when you were born: your own new year. This spread lays twelve cards, one for each month from whichever month you choose to start, and reads each as the theme colouring that month.",
-      "Set the start to your birthday month to read your solar year, or leave it on the current month to read the twelve months ahead. Each month's card is read on its own, so the year can be dipped into as it arrives rather than all at once."]
+      "Set the start to your birthday month to read your solar year, or leave it on the current month to read the twelve months ahead. Each month is read twice over: first as its place in the year's arc, then against your chart. The Sun moves through one of your houses each month, so September's card is also read for the part of your life the Sun is lighting in September. The year can be dipped into as it arrives rather than all at once."]
   }[kind];
   const short={
     big3:"Three cards for your light, your tides and your mask, each read against your actual Sun, Moon and Rising.",
     houses:"Twelve cards, one per house, each read for what that house speaks about.",
-    year:"Twelve cards, one for each month of your year, from the month you chose."
+    year:"Twelve cards, one for each month of your year, each read for the house of your chart the Sun lights that month."
   }[kind];
   let html=AW.draws[kind]?'<p class="aw-note">'+short+'</p>':INTRO.map(t=>'<p class="aw-intro">'+t+'</p>').join("");
   /* the reversals switch is the tarot side's own setting (state.reversals), surfaced here so a
@@ -3617,22 +3660,43 @@ function awRenderSpread(kind,chart){
   if(!AW.draws[kind]) return html;
   const P=awPlacements();
   const deck=awDeck();
+  const base=awHouseBase(P);
+  const PLACE={sun:"Sun",moon:"Moon",rising:"Rising"};
+  awDeepEnsure(AW.draws[kind].map(d=>DECK[d.deckIdx].id));
   html+='<div class="aw-grid">';
   AW.draws[kind].forEach((d,i)=>{
     const c=DECK[d.deckIdx], orient=d.reversed?"reversed":"upright", label=labels[i];
-    let text="", clause="", missing="";
-    if(kind==="year"){ text=awPosText(deck,c.id,label,orient); }
+    /* text: the card in this seat. ctx: a gold line naming what it's read against in this
+       chart. deep: the in-depth reading for exactly that pairing, when it's been written;
+       until then the short clause (or, for a month, the card's short house reading) stands in */
+    let text="", clause="", missing="", ctx="", deep="";
+    if(kind==="year"){
+      text=awPosText(deck,c.id,label,orient);
+      if(base){
+        const m=(AW.yearStart+i)%12, season=(m+9)%12, n=((season-base.idx+12)%12)+1, hn=AW_LABELS.houses[n-1];
+        ctx="For most of "+AW_MONTHS[m]+" the Sun is in "+AW_SIGNS[season]+", lighting your "+awOrdinal(n)+" house, "+hn+" - counted in whole signs from your "+base.from+(base.timed?"":", as this chart has no birth time")+".";
+        deep=awDeepHouse(c.id,n,orient);
+        if(!deep){ let w=null; try{ w=S.weave(deck,c.id,hn,orient,"house",n); }catch(e){} deep=(w&&w.text)||awPosText(deck,c.id,hn,orient); }
+      }
+    }
     else{
       const cl=awClause(kind,i,P); let w=null;
       try{ w=S.weave(deck,c.id,label,orient,cl?cl[0]:null,cl?cl[1]:null); }catch(e){}
       text=(w&&w.text)||awPosText(deck,c.id,label,orient); clause=(w&&w.clause)||"";
+      if(kind==="big3"&&cl){ deep=awDeepSign(c.id,cl[1],cl[0],orient); if(deep) ctx="Read against your "+cl[1]+" "+PLACE[cl[0]]+"."; }
+      if(kind==="houses"){
+        deep=awDeepHouse(c.id,i+1,orient);
+        if(base&&base.timed) ctx="In your chart this house falls in "+AW_SIGNS[(base.idx+i)%12]+", counting whole signs from your "+base.from+".";
+      }
       if(kind==="big3"&&i===2&&!cl) missing="Add a birth time to this chart in Stellar and this card reads against your Rising too.";
     }
     let bottom=""; try{ bottom=cardBottomLabel(c)||""; }catch(e){}
     const shown=(kind==="year")?(label+" · "+AW_MONTHS[(AW.yearStart+i)%12]):label;
     html+='<div class="aw-item"><div class="aw-pos">'+awEsc(shown)+(d.reversed?' · reversed':'')+'</div>'
       +awCardHTML(c,d.reversed)+'<h4>'+awEsc(c.name)+'</h4><div class="aw-sub">'+awEsc(bottom)+'</div>'
-      +'<p>'+awEsc(text)+(clause?' <span class="aw-clause">'+awEsc(clause)+'</span>':'')+'</p>'
+      +'<p>'+awEsc(text)+(clause&&!deep?' <span class="aw-clause">'+awEsc(clause)+'</span>':'')+'</p>'
+      +(ctx?'<p class="aw-ctx">'+awEsc(ctx)+'</p>':'')
+      +awParas(deep,"aw-deep")
       +(missing?'<p class="aw-note" style="margin-top:8px">'+missing+'</p>':'')
       +'<textarea class="aw-note-in" data-awnote="'+i+'" placeholder="Your note on this card" rows="2">'+awEsc(((AW.notes[kind]||[])[i])||"")+'</textarea><div class="aw-note-st" data-awnotest="'+i+'"></div></div>';
   });
@@ -3898,6 +3962,7 @@ async function awCapture(){
   el.classList.add("exporting"); undo.push(()=>el.classList.remove("exporting"));
   const undoCards=standInCards(el); undo.push(undoCards);
   try{
+    await Promise.all(Object.keys(AW_DEEP_WAIT).map(k=>AW_DEEP_WAIT[k]));
     await readyForCapture(el);
     await new Promise(r=>setTimeout(r,120));
     return await html2canvas(el,{backgroundColor:exportBG(),scale:2,useCORS:true});
