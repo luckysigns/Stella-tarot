@@ -52,6 +52,8 @@ Supabase for auth and saved readings, shared with Stellar.
 | `api/check.js` | revalidates a token (signature + expiry), no Stripe call |
 | `scripts/point-payment-links.js` | one-off: points the payment links back at the app |
 | `vercel.json` | rewrites and security headers |
+| `deep/<cardId>.json`, `deep/identity/<cardId>.json` | the in-depth astrology readings, fetched by the wing when a card is shown (never inlined) |
+| `astra-data/deep/` | the tooling that writes them (gitignored): `DEEP_SPEC.md`, `facts.js`, `validate.js`, `deep_run.sh`, `publish.sh` |
 
 ## Notes
 - **Vercel Hobby caps 12 serverless functions.** Currently 5. A 13th builds fine
@@ -70,3 +72,25 @@ Supabase for auth and saved readings, shared with Stellar.
   show everyone as free. That is expected; test on tarot.stellarastro.app.
 - Stripe account is **Revisual Media**; checkout branding shows "Stellar".
 - No em dashes in user-facing copy.
+- **Deep astrology readings.** Each card has one file in `/deep/` holding its reading
+  against every sign as Sun, Moon and Rising (both orientations) and in every house;
+  `/deep/identity/` holds the long-form "Your Cards" sections. The wing shows them under
+  the short position text and falls back to the old one-line clause for any file not
+  written yet, so partial progress is always safe to ship. Year Ahead reads each month
+  for the whole-sign house the Sun lights that month (from the Rising, or the Sun when
+  there's no birth time), reusing the card x house readings.
+  Write more: `bash astra-data/deep/deep_run.sh` (night window 21:00-07:00, `FORCE=1`
+  to run now, `touch astra-data/deep/HALT` to stop). Progress:
+  `node astra-data/deep/validate.js --status`. Ship: `bash astra-data/deep/publish.sh`.
+- The Magician is **The Magician**. "The Magus" (and The Voyager, The Hanged Star, The
+  Cosmos) were names from the unreleased celestial deck and must not appear under
+  Rider-Waite art.
+- **Oracle decks (The Barley Moon).** Not tarot; they live in `ORACLE_DECKS`, art in
+  `cards/barley-inner-wisdom` (35) and `cards/barley-mandala` (36). An account with a
+  `deck_ownership` row for the slug sees "owned" and a Draw a card button (the oracle
+  sheet, `openOracle`); everyone else sees coming soon. There are no `decks` rows for
+  them yet, so nothing sells them; ownership is granted by hand (admin session,
+  `source: gift`).
+- **Writing voice.** Reading content must read like an astrologer talking across a
+  table, not essay prose. The rules and a before/after are in
+  `astra-data/deep/DEEP_SPEC.md` under "Sounding like a person, not a model".
