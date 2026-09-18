@@ -112,7 +112,14 @@
   .note{font-size:11px;color:var(--mist);opacity:.5;margin-top:18px;line-height:1.5;
     max-width:430px;margin-left:auto;margin-right:auto}
 
-  .switch[hidden]{display:none}
+  /* ---- menu: the decks on offer, one tile each ---- */
+  .menu{margin:auto;padding:12px 20px 40px;display:flex;gap:26px;flex-wrap:wrap;justify-content:center;position:relative;z-index:2}
+  .tile{width:min(240px,42vw);text-align:center;cursor:pointer;background:none;border:none;color:inherit;font:inherit;padding:0}
+  .tile img{width:100%;aspect-ratio:659/900;object-fit:cover;border-radius:12px;box-shadow:0 14px 40px var(--shadow);transition:transform .2s;display:block}
+  .tile:hover img,.tile:focus-visible img{transform:translateY(-4px)}
+  .tile .t-name{font-size:17px;font-style:italic;color:var(--text-strong);margin-top:14px}
+  .tile .t-count{font-family:"SF Mono",ui-monospace,Menlo,monospace;font-size:10.5px;letter-spacing:.2em;color:var(--mist);margin-top:6px}
+  .menu[hidden],.switch[hidden]{display:none}
   .switch{display:flex;justify-content:center;gap:6px;margin-top:12px}
   .switch button{font:inherit;font-size:12px;letter-spacing:.04em;padding:6px 14px;border-radius:999px;cursor:pointer;
     background:var(--ink);border:1px solid var(--line);color:var(--mist);backdrop-filter:blur(6px)}
@@ -136,6 +143,8 @@
   <div class="artist" id="deckArtist"></div>
   <div class="switch" id="switch" hidden></div>
 </header>
+
+<div class="menu" id="menu" hidden></div>
 
 <div class="stage" id="stage" hidden>
   <button class="nav prev" id="prev" type="button" aria-label="Previous card">&#8249;</button>
@@ -182,9 +191,9 @@ var DECKS = {
   }
 };
 
-/* A token can also open SEVERAL decks for one artist: the header carries a
-   switcher between them and the first opens straight away. The single-deck
-   tokens above keep working on their own. */
+/* A token can also open SEVERAL decks for one artist: a menu of the decks
+   first, then the gallery with a switcher between them in the header. The
+   single-deck tokens above keep working on their own. */
 var SETS = {
   "b7rl3ymn": { artist: "The Barley Moon", decks: ["wk3f9qz2","m8vt4xr6"] }
 };
@@ -339,8 +348,25 @@ document.addEventListener("dragstart",function(e){ e.preventDefault(); });
 })();
 /* ---- boot ---- */
 var SET=null;
+function showMenu(){
+  deck=null;
+  document.getElementById("deckTitle").textContent=SET.artist;
+  document.getElementById("deckArtist").textContent="Decks to review · choose one";
+  document.getElementById("switch").hidden=true;
+  var m=document.getElementById("menu"); m.innerHTML="";
+  SET.decks.forEach(function(k){
+    var d=DECKS[k]; if(!d) return;
+    var b=document.createElement("button"); b.className="tile"; b.type="button";
+    b.innerHTML='<img src="'+BASE+'/'+d.slug+'/full/1.jpg" alt=""><div class="t-name">'+d.title+'</div><div class="t-count">'+d.count+' cards</div>';
+    b.addEventListener("click",function(){ openDeck(k); });
+    m.appendChild(b);
+  });
+  m.hidden=false; document.getElementById("head").hidden=false;
+  ["stage","foot"].forEach(function(id){ document.getElementById(id).hidden=true; });
+}
 function openDeck(k){
   deck=DECKS[k]; pos=0; target=0;
+  document.getElementById("menu").hidden=true;
   document.getElementById("deckTitle").textContent=deck.title;
   document.getElementById("deckArtist").textContent=deck.artist;
   document.getElementById("note").textContent =
@@ -356,6 +382,8 @@ function openDeck(k){
       b.addEventListener("click",function(){ if(kk!==k) openDeck(kk); });
       sw.appendChild(b);
     });
+    var back=document.createElement("button"); back.type="button"; back.textContent="\u2039 Decks";
+    back.addEventListener("click",showMenu); sw.appendChild(back);
     sw.hidden=false;
   }
   ["head","stage","foot"].forEach(function(id){ document.getElementById(id).hidden=false; });
@@ -364,7 +392,7 @@ function openDeck(k){
 }
 (function(){
   var k=window.PREVIEW_K||new URLSearchParams(location.search).get("k");
-  if(k && Object.prototype.hasOwnProperty.call(SETS,k)){ SET=SETS[k]; openDeck(SET.decks[0]); return; }
+  if(k && Object.prototype.hasOwnProperty.call(SETS,k)){ SET=SETS[k]; showMenu(); return; }
   if(k && Object.prototype.hasOwnProperty.call(DECKS,k)){ openDeck(k); return; }
   document.getElementById("invalid").hidden=false;
 })();
