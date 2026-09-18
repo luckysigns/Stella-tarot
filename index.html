@@ -505,6 +505,11 @@
     padding:14px;margin-top:14px;background:var(--surface-2)}
   .deckrow.on{border-color:var(--gold)}
   .deckrow.soon{opacity:.72}
+  .oracle-sheet{width:min(720px,95vw)}
+  .or-row{display:flex;justify-content:center;gap:14px;flex-wrap:wrap;margin-top:10px}
+  .or-card{width:min(300px,80vw);aspect-ratio:659/900;border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.45);object-fit:cover}
+  .or-row.three .or-card{width:min(210px,29vw)}
+  .or-back{opacity:.9}
   .deckrow[data-oracle]{cursor:pointer;transition:border-color .2s,opacity .2s}
   .deckrow[data-oracle]:hover{border-color:var(--gold-soft);opacity:1}
   /* real card faces: never crop them. The flex row would otherwise stretch each
@@ -876,6 +881,7 @@
 .spark-burst .ring{position:absolute;left:50%;top:50%;width:120px;height:120px;border-radius:50%;border:2px solid var(--gold);box-shadow:0 0 24px 6px rgba(233,196,106,.55);animation:astraBurstRing .8s ease-out forwards}
 .spark-burst .spk{position:absolute;left:50%;top:50%;width:6px;height:6px;border-radius:50%;background:var(--gold);box-shadow:0 0 8px 2px rgba(233,196,106,.9);animation:astraSpark .8s ease-out forwards}
 .tcard.materialize{animation:astraMaterialize .7s cubic-bezier(.2,.7,.2,1) both}
+.or-card.materialize{animation:astraMaterialize .7s cubic-bezier(.2,.7,.2,1) both}
 </style>
 <style>
   /* ── Ask a question mode ── */
@@ -1009,6 +1015,18 @@ try{  /* the arrival, which may already be a deep link to an artist or a deck */
     </div>
     <p class="hint">The reading is the same either way - the deck changes the art and the voice it's written in.</p>
     <div id="deckList"></div>
+  </div>
+</div>
+
+<div class="deckmodal hidden" id="oracleModal">
+  <div class="decksheet oracle-sheet">
+    <div class="dk-head">
+      <h3 id="oracleTitle">Oracle</h3>
+      <button class="pmenu-close" id="oracleClose" type="button" aria-label="Close">✕</button>
+    </div>
+    <p class="hint" id="oracleBy"></p>
+    <div id="oracleStage"></div>
+    <div class="aw-actions" id="oracleActions" style="justify-content:center;margin-top:14px"></div>
   </div>
 </div>
 
@@ -1883,9 +1901,9 @@ const ORACLE_ARTISTS={
     bio:"I'm Laura, the mystical moon girl behind The Barley Moon. I'm a spiritual artist and tarot reader and I've always had a deep fascination with the mystical and the unseen. My journey into the realms of spirituality, astrology, and esoteric practices has been nothing short of transformative. Over the past few years, I've delved into ancient wisdom, studied celestial cycles, and immersed myself in the energies of the universe. Each deck I create is designed to help you tap into your inner wisdom, unlock your intuition, and navigate life's twists and turns with clarity. Whether you're a seasoned mystic or a curious newcomer, there's something here to illuminate your path. My mission is to make the esoteric accessible. I believe that everyone has the power to connect with the divine and harness the energy of the cosmos for personal growth and guidance."}
 };
 const ORACLE_DECKS=[
-  {id:"barley-inner-wisdom", artistUrl:"https://www.makeplayingcards.com/sell/thebarleymoon", shop:"https://www.makeplayingcards.com/sell/marketplace/the-barley-moon-inner-wisdom.html", price:"US$17.70", name:"Inner Wisdom Oracle", sub:"Affirmations · 35 cards", artist:"The Barley Moon", artist_code:"barleymoon", ready:false, samples:["21","12"],
+  {id:"barley-inner-wisdom", artistUrl:"https://www.makeplayingcards.com/sell/thebarleymoon", shop:"https://www.makeplayingcards.com/sell/marketplace/the-barley-moon-inner-wisdom.html", price:"US$17.70", name:"Inner Wisdom Oracle", sub:"Affirmations · 35 cards", artist:"The Barley Moon", artist_code:"barleymoon", ready:false, count:35, samples:["21","12"],
    blurb:"Introducing The Barley Moon Inner Wisdom Oracle. Each card is a portal to the depths of your soul, offering insights, guidance, and a sprinkle of cosmic wisdom. Whether you're navigating tough decisions or just seeking a little daily inspiration, these cards are your trusty companions. Get ready to tap into the universe's secrets and unlock your inner wisdom with every draw. Your spiritual adventure awaits!"},
-  {id:"barley-mandala", artistUrl:"https://www.makeplayingcards.com/sell/thebarleymoon", shop:"https://www.makeplayingcards.com/sell/marketplace/updated-the-barley-moon-mandala-oracle.html", price:"US$21.10",      name:"Mandala Oracle",      sub:"Affirmations · 36 cards", artist:"The Barley Moon", artist_code:"barleymoon", ready:false, samples:["10","14"],
+  {id:"barley-mandala", artistUrl:"https://www.makeplayingcards.com/sell/thebarleymoon", shop:"https://www.makeplayingcards.com/sell/marketplace/updated-the-barley-moon-mandala-oracle.html", price:"US$21.10",      name:"Mandala Oracle",      sub:"Affirmations · 36 cards", artist:"The Barley Moon", artist_code:"barleymoon", ready:false, count:36, samples:["10","14"],
    blurb:"Connect to your inner wisdom using this mandala inspired deck. A wonderful way to connect to your inner knowledge as part of your daily practice or whenever you feel called to."}
 ];
 function oracleArt(id){ return "/cards/"+id+"/"; }
@@ -1896,19 +1914,67 @@ function oracleMatchesSearch(dk){
 /* the same row the tarot decks use, with the artist's own art and no buy button */
 function oracleRowHTML(dk){
   const thumbs=[1,2,3].map(function(n){ return '<img class="dk-thumb" src="'+oracleArt(dk.id)+'thumb/'+n+'.jpg" alt="" loading="lazy" onerror="this.remove()">'; }).join("");
-  return '<div class="deckrow soon" data-oracle="'+dk.id+'" role="link" tabindex="0">'
+  /* an account that holds the deck (a purchase, a gift, or the owner testing it) can draw
+     from it now; everyone else sees it as coming soon */
+  const owned=oracleOwned(dk);
+  return '<div class="deckrow'+(owned?'':' soon')+'" data-oracle="'+dk.id+'" role="link" tabindex="0">'
     + '<div class="dk-thumbs">'+thumbs+'</div>'
     + '<div class="dk-body">'
-    +   '<div class="dk-name">'+escapeHTML(dk.name)+' <span class="dk-tag soon">coming soon</span></div>'
+    +   '<div class="dk-name">'+escapeHTML(dk.name)+(owned?' <span class="dk-tag">owned</span>':' <span class="dk-tag soon">coming soon</span>')+'</div>'
     +   '<div class="dk-sub">'+escapeHTML(dk.sub)+' · by <a href="/'+dk.artist_code+'" data-artistpage="'+dk.artist_code+'">'+escapeHTML(dk.artist)+'</a></div>'
     +   '<details class="dk-more"><summary>Learn more</summary><p>'+escapeHTML(dk.blurb)+' <a href="/'+dk.artist_code+'/'+dk.id+'" data-oraclepage="'+dk.id+'">See the deck →</a></p></details>'
-    + '</div></div>';
+    + '</div>'
+    + (owned?'<button type="button" class="dk-use" data-oracledraw="'+dk.id+'">Draw a card</button>':'')
+    + '</div>';
 }
+function oracleOwned(dk){ return !!(dk&&dk.count&&typeof OWNED!=="undefined"&&OWNED.has(dk.id)); }
+/* ---- the oracle reading: not a spread, a card to sit with. The affirmation is printed
+   on the card itself, so there is nothing to interpret; the deck is shuffled, one or
+   three cards are turned, and that is the reading. ---- */
+const ORACLE={deck:null,cards:[]};
+function openOracle(id){
+  const dk=ORACLE_DECKS.find(function(d){ return d.id===id; }); if(!dk||!oracleOwned(dk)) return;
+  ORACLE.deck=dk; ORACLE.cards=[];
+  $("oracleTitle").textContent=dk.name;
+  $("oracleBy").innerHTML='by <a href="/'+dk.artist_code+'" data-artistpage="'+dk.artist_code+'">'+escapeHTML(dk.artist)+'</a> · '+escapeHTML(dk.sub)+(dk.shop?' · <a href="'+dk.shop+'" target="_blank" rel="noopener">Buy the printed deck ↗︎</a>':'');
+  renderOracle();
+  $("oracleModal").classList.remove("hidden");
+}
+function closeOracle(){ $("oracleModal").classList.add("hidden"); }
+function oracleDraw(n){
+  const dk=ORACLE.deck; if(!dk) return;
+  const pool=[]; for(let i=1;i<=dk.count;i++) pool.push(i);
+  for(let i=pool.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); const t=pool[i]; pool[i]=pool[j]; pool[j]=t; }
+  ORACLE.cards=pool.slice(0,n);
+  renderOracle();
+}
+function renderOracle(){
+  const dk=ORACLE.deck, st=$("oracleStage"); if(!dk||!st) return;
+  const art=oracleArt(dk.id);
+  if(!ORACLE.cards.length){
+    st.innerHTML='<div class="or-row"><img class="or-card or-back" src="'+art+'back.jpg" alt="" onerror="this.style.visibility=\'hidden\'"></div>'
+      +'<p class="hint" style="text-align:center;margin:12px 0 0">Settle for a moment, then turn a card. Take it as it is: the words on the card are the reading.</p>';
+  } else {
+    st.innerHTML='<div class="or-row'+(ORACLE.cards.length>1?' three':'')+'">'
+      +ORACLE.cards.map(function(n,i){ return '<img class="or-card materialize" style="animation-delay:'+(i*160)+'ms" src="'+art+'full/'+n+'.jpg" alt="'+escapeHTML(dk.name)+' card">'; }).join("")+'</div>';
+  }
+  $("oracleActions").innerHTML='<button class="btn" type="button" data-ordraw="1">'+(ORACLE.cards.length?"Another card":"Turn a card")+'</button>'
+    +'<button class="btn ghost" type="button" data-ordraw="3">Three cards</button>';
+}
+document.addEventListener("click",function(e){
+  const d=e.target.closest&&e.target.closest("[data-oracledraw]");
+  if(d){ e.preventDefault(); e.stopPropagation(); openOracle(d.dataset.oracledraw); return; }
+  const dr=e.target.closest&&e.target.closest("[data-ordraw]");
+  if(dr){ oracleDraw(+dr.dataset.ordraw); return; }
+  if(e.target&&(e.target.id==="oracleModal"||e.target.id==="oracleClose")) closeOracle();
+});
+document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeOracle(); });
 function openOraclePage(id){ const o=ORACLE_DECKS.find(function(d){ return d.id===id; }); if(o) showArtistPage(o.artist_code,o.id); }
 function oracleSectionHTML(rows){
   if(!rows.length) return "";
+  const allOwned=rows.every(oracleOwned);
   return '<div class="oracle-shop"><div class="step-label" style="margin:22px 0 4px">Oracle and affirmation decks</div>'
-    + '<p class="hint" style="margin-bottom:10px">Not tarot: a card to sit with rather than a spread to read. Coming to Stellar Tarot soon.</p>'
+    + '<p class="hint" style="margin-bottom:10px">Not tarot: a card to sit with rather than a spread to read.'+(allOwned?'':' Coming to Stellar Tarot soon.')+'</p>'
     + rows.map(oracleRowHTML).join("")+'</div>';
 }
 document.addEventListener("click",function(e){
@@ -1918,7 +1984,7 @@ document.addEventListener("click",function(e){
   if(op){ e.preventDefault(); openOraclePage(op.dataset.oraclepage); return; }
   /* the whole row is the link; its own controls keep their jobs */
   const row=e.target.closest&&e.target.closest(".deckrow[data-oracle]");
-  if(row&&!e.target.closest("a,button,summary,details")) openOraclePage(row.dataset.oracle);
+  if(row&&!e.target.closest("a,button,summary,details,[data-oracledraw]")) openOraclePage(row.dataset.oracle);
 });
 document.addEventListener("keydown",function(e){ if(e.key==="Enter"&&e.target&&e.target.matches&&e.target.matches(".deckrow[data-oracle]")) openOraclePage(e.target.dataset.oracle); });
 function cardArtIMG(card){
@@ -2223,7 +2289,8 @@ function renderDeckListInto(list,mode){
       :(a,b)=>a.name.localeCompare(b.name);
     rows=rows.slice().sort((a,b)=>desc*by(a,b));
   }
-  const oracles=(list.id==="deckShopList"&&mode==="shop")?ORACLE_DECKS.filter(oracleMatchesSearch):[];
+  /* the shop lists every oracle deck; "my decks" and the picker list the ones this account holds */
+  const oracles=(list.id==="deckShopList"&&mode==="shop")?ORACLE_DECKS.filter(oracleMatchesSearch):ORACLE_DECKS.filter(function(d){ return oracleOwned(d)&&(list.id!=="deckShopList"||oracleMatchesSearch(d)); });
   if(!rows.length&&!oracles.length){
     list.innerHTML='<p class="hint">'+(deckSearchQ&&list.id==="deckShopList"
       ?"Nothing matches that search here. Try the other tab, or a different word."
