@@ -8,6 +8,10 @@
       "destination": "https://tfukuaqtkbzdjssanrly.supabase.co/:path*"
     },
     {
+      "source": "/preview",
+      "destination": "/deck-preview.html"
+    },
+    {
       "source": "/:artist([a-z0-9-]+)",
       "destination": "/"
     },
