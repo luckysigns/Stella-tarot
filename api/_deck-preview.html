@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<!--
+  Stellar Tarot  ·  Deck preview
+  Copyright (c) 2026 Lucky Media LLC. All rights reserved. Proprietary.
+
+  A private preview of a prepared deck, sent to the artist before launch.
+  One page serves every artist. The deck is chosen by an unguessable key in
+  the URL rather than by a readable slug, so a link given to one artist does
+  not let them browse another artist's unreleased work.
+
+  Images are the prepared display resolution files only. Print resolution
+  originals never reach this page.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Deck preview</title>
+<meta name="robots" content="noindex, nofollow, noarchive, noimageindex">
+<meta name="referrer" content="no-referrer">
+<style>
+  :root{
+    --void:#0a0a1f; --void-2:#11102e; --ink:#070612;
+    --gold:#e9c46a; --gold-soft:#c9a24b; --silver:#cdd6f4; --mist:#8b8fb5;
+    --rose:#d98b9e; --line:rgba(233,196,106,.22);
+    --cw:min(52vw, 286px);           /* card width, everything scales off this */
+    --ch:calc(var(--cw) * 1.3657);   /* 900 / 659 */
+  }
+  /* light mode: the same page on parchment. Follows the system unless the
+     sun/moon button has been used, which is remembered on this device. */
+  :root[data-theme="light"]{
+    --void:#f4efe4; --void-2:#ebe4d3; --ink:#fbf8f1;
+    --gold:#8a6a1c; --gold-soft:#a5832f; --silver:#2a2640; --mist:#6b6a80;
+    --rose:#b25a70; --line:rgba(138,106,28,.28);
+    --glow-a:#fff8e6; --glow-b:#e9e1cc; --text-strong:#1a1730; --shadow:rgba(40,30,10,.28); --fade:rgba(244,239,228,.72);
+  }
+  :root{ --glow-a:#1c1a44; --glow-b:#141232; --text-strong:#fff; --shadow:rgba(0,0,0,.62); --fade:rgba(10,10,31,.72) }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    background:
+      radial-gradient(1100px 700px at 50% -15%, var(--glow-a) 0%, transparent 62%),
+      radial-gradient(800px 500px at 10% 110%, var(--glow-b) 0%, transparent 55%),
+      var(--void);
+    color:var(--silver);
+    font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    -webkit-font-smoothing:antialiased;
+    display:flex; flex-direction:column;
+    min-height:100dvh; overflow-x:hidden;
+    user-select:none; -webkit-user-select:none;
+  }
+  :root[data-theme="light"] .stars{display:none}
+  .theme{position:fixed;top:max(14px,env(safe-area-inset-top));right:14px;z-index:5;width:38px;height:38px;border-radius:50%;
+    display:grid;place-items:center;background:var(--ink);border:1px solid var(--line);color:var(--gold);
+    font-size:16px;cursor:pointer;backdrop-filter:blur(6px)}
+  .stars{position:fixed;inset:0;pointer-events:none;opacity:.5;
+    background-image:radial-gradient(1px 1px at 20% 30%,#fff,transparent),
+      radial-gradient(1px 1px at 70% 20%,#fff,transparent),
+      radial-gradient(1px 1px at 40% 70%,#fff,transparent),
+      radial-gradient(1px 1px at 85% 60%,#fff,transparent),
+      radial-gradient(1px 1px at 12% 85%,#fff,transparent),
+      radial-gradient(1px 1px at 58% 45%,#fff,transparent);}
+
+  header{text-align:center;padding:max(26px,env(safe-area-inset-top)) 20px 4px;position:relative;z-index:2}
+  .eyebrow{font-family:"SF Mono",ui-monospace,Menlo,monospace;font-size:10.5px;letter-spacing:.3em;
+    text-transform:uppercase;color:var(--gold-soft);opacity:.9}
+  h1{font-size:clamp(23px,5.4vw,34px);font-weight:400;font-style:italic;letter-spacing:-.01em;
+    margin:9px 0 3px;color:var(--text-strong)}
+  .artist{font-size:14px;color:var(--mist);letter-spacing:.02em}
+
+  /* ---- stage ---- */
+  .stage{flex:1;position:relative;display:flex;align-items:center;justify-content:center;
+    perspective:1600px;perspective-origin:50% 48%;
+    touch-action:pan-y;cursor:grab;overflow:hidden;min-height:calc(var(--ch) + 70px)}
+  .stage.dragging{cursor:grabbing}
+  .stage::before,.stage::after{content:"";position:absolute;top:0;bottom:0;width:11%;
+    z-index:150;pointer-events:none}
+  .stage::before{left:0;background:linear-gradient(90deg,var(--void) 0%,var(--fade) 42%,transparent 100%)}
+  .stage::after{right:0;background:linear-gradient(270deg,var(--void) 0%,var(--fade) 42%,transparent 100%)}
+  /* Opacity on a preserve-3d element flattens it in every engine, which kills
+     backface-visibility and shows a mirrored front instead of the back. So the
+     slot owns position, scale and opacity, and the flip inside owns the rotation. */
+  .card{position:absolute;width:var(--cw);height:var(--ch);will-change:transform,opacity;
+    transition:transform .52s cubic-bezier(.22,.68,.32,1), opacity .52s ease}
+  .flip{position:absolute;inset:0;transform-style:preserve-3d;will-change:transform;
+    transition:transform .52s cubic-bezier(.22,.68,.32,1)}
+  .stage.dragging .card,.stage.dragging .flip{transition:none}
+  .face{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+    border-radius:12px;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+    box-shadow:0 22px 54px var(--shadow), 0 0 0 1px var(--line);
+    background:var(--ink)}
+  .face.back{transform:rotateY(180deg)}
+  .card.centre .flip .face{box-shadow:0 28px 66px rgba(0,0,0,.7), 0 0 0 1px rgba(233,196,106,.42),
+    0 0 44px rgba(233,196,106,.14)}
+  .card:not(.centre){cursor:pointer}
+
+  /* ---- controls ---- */
+  .nav{position:absolute;top:50%;transform:translateY(-50%);z-index:200;
+    width:44px;height:44px;border-radius:50%;display:grid;place-items:center;
+    background:var(--ink);border:1px solid var(--line);color:var(--gold);
+    font-size:19px;cursor:pointer;backdrop-filter:blur(6px);transition:opacity .2s,transform .12s}
+  .nav:active{transform:translateY(-50%) scale(.94)}
+  .nav[disabled]{opacity:.22;cursor:default}
+  .nav.prev{left:14px} .nav.next{right:14px}
+  @media (max-width:720px){ .nav{display:none} }
+
+  footer{text-align:center;padding:2px 20px max(26px,env(safe-area-inset-bottom));position:relative;z-index:2}
+  .cardname{font-size:15px;color:var(--text-strong);min-height:1.3em;letter-spacing:.02em}
+  .counter{font-family:"SF Mono",ui-monospace,Menlo,monospace;font-size:11px;letter-spacing:.2em;
+    color:var(--mist);margin-top:7px}
+  .hint{font-size:11.5px;color:var(--mist);opacity:.65;margin-top:14px;letter-spacing:.03em}
+  .note{font-size:11px;color:var(--mist);opacity:.5;margin-top:18px;line-height:1.5;
+    max-width:430px;margin-left:auto;margin-right:auto}
+
+  /* ---- menu: the decks on offer, one tile each ---- */
+  .menu{margin:auto;padding:12px 20px 40px;display:flex;gap:26px;flex-wrap:wrap;justify-content:center;position:relative;z-index:2}
+  .tile{width:min(240px,42vw);text-align:center;cursor:pointer;background:none;border:none;color:inherit;font:inherit;padding:0}
+  .tile img{width:100%;aspect-ratio:659/900;object-fit:cover;border-radius:12px;box-shadow:0 14px 40px var(--shadow);transition:transform .2s;display:block}
+  .tile:hover img,.tile:focus-visible img{transform:translateY(-4px)}
+  .tile .t-name{font-size:17px;font-style:italic;color:var(--text-strong);margin-top:14px}
+  .tile .t-count{font-family:"SF Mono",ui-monospace,Menlo,monospace;font-size:10.5px;letter-spacing:.2em;color:var(--mist);margin-top:6px}
+  .menu[hidden],.switch[hidden]{display:none}
+  .switch{display:flex;justify-content:center;gap:6px;margin-top:12px}
+  .switch button{font:inherit;font-size:12px;letter-spacing:.04em;padding:6px 14px;border-radius:999px;cursor:pointer;
+    background:var(--ink);border:1px solid var(--line);color:var(--mist);backdrop-filter:blur(6px)}
+  .switch button.on{color:var(--gold);border-color:var(--gold-soft)}
+  .invalid{margin:auto;text-align:center;padding:40px 24px;max-width:420px}
+  .invalid h2{font-size:20px;font-weight:400;font-style:italic;color:var(--text-strong);margin-bottom:10px}
+  .invalid p{font-size:14px;color:var(--mist);line-height:1.6}
+
+  @media (max-width:520px){ :root{ --cw:min(46vw, 205px) } }
+  @media (max-width:380px){ :root{ --cw:min(50vw, 180px) } }
+  @media (prefers-reduced-motion: reduce){ .card{transition:none} }
+</style>
+</head>
+<body>
+<div class="stars"></div>
+<button class="theme" id="theme" type="button" aria-label="Switch between light and dark">☾</button>
+
+<header id="head" hidden>
+  <div class="eyebrow">Stellar Tarot</div>
+  <h1 id="deckTitle"></h1>
+  <div class="artist" id="deckArtist"></div>
+  <div class="switch" id="switch" hidden></div>
+</header>
+
+<div class="menu" id="menu" hidden></div>
+
+<div class="stage" id="stage" hidden>
+  <button class="nav prev" id="prev" type="button" aria-label="Previous card">&#8249;</button>
+  <button class="nav next" id="next" type="button" aria-label="Next card">&#8250;</button>
+</div>
+
+<footer id="foot" hidden>
+  <div class="cardname" id="cardName"></div>
+  <div class="counter" id="counter"></div>
+  <div class="hint">Swipe, scroll, or use the arrow keys</div>
+  <div class="note" id="note"></div>
+</footer>
+
+<div class="invalid" id="invalid" hidden>
+  <h2>This preview link is not valid</h2>
+  <p>Preview links are personal and expire. If you were sent one and it is not opening, reply to the email you received and a new link will be sent.</p>
+</div>
+
+<script>
+/* ------------------------------------------------------------------
+   DECK REGISTRY
+
+   Keyed by an unguessable token, not by the deck slug, so the URL given
+   to one artist reveals nothing about any other deck and cannot be edited
+   into someone else's preview. Add a deck by adding a row here, generating
+   a fresh token, and sending <site>/preview?k=<token>.
+
+     slug    folder under /cards
+     count   number of cards in that folder's full/ directory
+     names   optional, index 0 is card 1. Omit for numbered cards.
+   ------------------------------------------------------------------ */
+var DECKS = {
+  "wk3f9qz2": {
+    slug:   "barley-inner-wisdom",
+    title:  "Inner Wisdom Oracle",
+    artist: "The Barley Moon",
+    count:  35
+  },
+  "m8vt4xr6": {
+    slug:   "barley-mandala",
+    title:  "Mandala Oracle Deck",
+    artist: "The Barley Moon",
+    count:  36
+  }
+};
+
+/* A token can also open SEVERAL decks for one artist: a menu of the decks
+   first, then the gallery with a switcher between them in the header. The
+   single-deck tokens above keep working on their own. */
+var SETS = {
+  "b7rl3ymn": { artist: "The Barley Moon", decks: ["wk3f9qz2","m8vt4xr6"] }
+};
+
+var BASE = "/cards";   /* where the prepared decks live */
+
+/* ---- geometry, indexed by distance from centre ----
+   Five cards read face up, the centre plus two each side. Beyond that the
+   rotation passes ninety degrees, so the back face turns toward the viewer
+   on its own and the card reads as face down. Dragging interpolates through
+   these, so a card visibly turns as it travels out to the edge. */
+var XS = [0, 0.63, 1.07, 1.39, 1.60];   /* multiples of card width */
+var SC = [1, 0.80, 0.63, 0.49, 0.38];
+var RY = [0, 30,   58,   172,  196];    /* degrees */
+var OP = [1, 1,    1,    0.92, 0.5];
+var MAX = 4;
+
+var stage=document.getElementById("stage"), cards=[], deck=null, pos=0, target=0, raf=null;
+
+function at(arr,a){
+  if(a>=arr.length-1) return arr[arr.length-1];
+  var i=Math.floor(a), f=a-i;
+  return arr[i]+(arr[i+1]-arr[i])*f;
+}
+
+function layout(){
+  var cw = cards.length ? cards[0].el.offsetWidth : 0;
+  for(var i=0;i<cards.length;i++){
+    var off=i-pos, a=Math.abs(off), s=off<0?-1:1;
+    var vis=a<=MAX+0.6;
+    var el=cards[i].el;
+    if(!vis){ el.style.opacity=0; el.style.pointerEvents="none"; el.style.visibility="hidden"; continue; }
+    el.style.visibility="visible";
+    var ac=Math.min(a,MAX);
+    var x=s*at(XS,ac)*cw, sc=at(SC,ac), ry=s*at(RY,ac), op=a>MAX?0:at(OP,ac);
+    el.style.transform="translate3d("+x+"px,0,"+(-ac*60)+"px) scale("+sc+")";
+    cards[i].flip.style.transform="rotateY("+ry+"deg)";
+    el.style.opacity=op;
+    el.style.zIndex=String(100-Math.round(a*10));
+    el.style.pointerEvents=a<0.5?"none":"auto";
+    el.classList.toggle("centre", a<0.5);
+  }
+}
+
+function settle(){
+  /* ease pos toward target, then stop */
+  cancelAnimationFrame(raf);
+  (function step(){
+    var d=target-pos;
+    if(Math.abs(d)<0.001){ pos=target; layout(); updateMeta(); return; }
+    pos+=d*0.18; layout();
+    raf=requestAnimationFrame(step);
+  })();
+}
+
+function go(n){
+  target=Math.max(0,Math.min(deck.count-1,n));
+  stage.classList.remove("dragging");
+  settle();
+  updateMeta();
+}
+
+function updateMeta(){
+  var i=Math.round(target);
+  document.getElementById("counter").textContent=(i+1)+" / "+deck.count;
+  var nm = deck.names && deck.names[i] ? deck.names[i] : "";
+  document.getElementById("cardName").textContent=nm;
+  document.getElementById("prev").disabled = i<=0;
+  document.getElementById("next").disabled = i>=deck.count-1;
+}
+
+function build(){
+  var frag=document.createDocumentFragment();
+  for(var i=1;i<=deck.count;i++){
+    var el=document.createElement("div"); el.className="card";
+    var fl=document.createElement("div"); fl.className="flip";
+    var f=document.createElement("img");
+    f.className="face front"; f.draggable=false; f.alt="";
+    f.src=BASE+"/"+deck.slug+"/full/"+i+".jpg";
+    f.loading = i<=8 ? "eager" : "lazy";
+    var b=document.createElement("img");
+    b.className="face back"; b.draggable=false; b.alt="";
+    b.src=BASE+"/"+deck.slug+"/back.jpg";
+    fl.appendChild(f); fl.appendChild(b); el.appendChild(fl);
+    (function(idx){ el.addEventListener("click",function(){ if(Math.abs(idx-target)>0.5) go(idx); }); })(i-1);
+    frag.appendChild(el);
+    cards.push({el:el, flip:fl});
+  }
+  stage.appendChild(frag);
+  layout(); updateMeta();
+}
+
+/* ---- pointer drag, the card follows the finger ---- */
+var down=false, startX=0, startPos=0, moved=0;
+stage.addEventListener("pointerdown",function(e){
+  if(e.target.closest(".nav")) return;
+  down=true; moved=0; startX=e.clientX; startPos=pos;
+  stage.classList.add("dragging"); stage.setPointerCapture(e.pointerId);
+});
+stage.addEventListener("pointermove",function(e){
+  if(!down) return;
+  var cw=cards[0].el.offsetWidth || 1;
+  var dx=e.clientX-startX; moved=Math.abs(dx);
+  pos=Math.max(-0.6,Math.min(deck.count-0.4, startPos - dx/(cw*0.62)));
+  layout();
+});
+function release(){
+  if(!down) return;
+  down=false; stage.classList.remove("dragging");
+  go(Math.round(pos));
+}
+stage.addEventListener("pointerup",release);
+stage.addEventListener("pointercancel",release);
+stage.addEventListener("click",function(e){ if(moved>8) e.stopPropagation(); },true);
+
+/* ---- wheel and trackpad ---- */
+var wheelLock=false;
+stage.addEventListener("wheel",function(e){
+  var d=Math.abs(e.deltaX)>Math.abs(e.deltaY)?e.deltaX:e.deltaY;
+  if(Math.abs(d)<4||wheelLock) return;
+  e.preventDefault(); wheelLock=true;
+  go(Math.round(target)+(d>0?1:-1));
+  setTimeout(function(){wheelLock=false;},220);
+},{passive:false});
+
+/* ---- keyboard ---- */
+document.addEventListener("keydown",function(e){
+  if(!deck) return;
+  if(e.key==="ArrowRight"){ go(Math.round(target)+1); e.preventDefault(); }
+  else if(e.key==="ArrowLeft"){ go(Math.round(target)-1); e.preventDefault(); }
+  else if(e.key==="Home"){ go(0); e.preventDefault(); }
+  else if(e.key==="End"){ go(deck.count-1); e.preventDefault(); }
+});
+document.getElementById("prev").addEventListener("click",function(){go(Math.round(target)-1);});
+document.getElementById("next").addEventListener("click",function(){go(Math.round(target)+1);});
+window.addEventListener("resize",layout);
+
+/* the artwork is the artist's, so make casual saving inconvenient */
+document.addEventListener("contextmenu",function(e){ if(e.target.closest(".card")) e.preventDefault(); });
+document.addEventListener("dragstart",function(e){ e.preventDefault(); });
+
+/* ---- light / dark ---- */
+(function(){
+  var KEY="preview.theme", root=document.documentElement, btn=document.getElementById("theme");
+  function apply(t){ root.setAttribute("data-theme",t); btn.textContent = t==="light" ? "☾" : "☀"; }
+  var saved=null; try{ saved=localStorage.getItem(KEY); }catch(e){}
+  apply(saved || (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark"));
+  btn.addEventListener("click",function(){
+    var t = root.getAttribute("data-theme")==="light" ? "dark" : "light";
+    apply(t); try{ localStorage.setItem(KEY,t); }catch(e){}
+  });
+})();
+/* ---- boot ---- */
+var SET=null;
+function showMenu(){
+  deck=null;
+  document.getElementById("deckTitle").textContent=SET.artist;
+  document.getElementById("deckArtist").textContent="Decks to review · choose one";
+  document.getElementById("switch").hidden=true;
+  var m=document.getElementById("menu"); m.innerHTML="";
+  SET.decks.forEach(function(k){
+    var d=DECKS[k]; if(!d) return;
+    var b=document.createElement("button"); b.className="tile"; b.type="button";
+    b.innerHTML='<img src="'+BASE+'/'+d.slug+'/full/1.jpg" alt=""><div class="t-name">'+d.title+'</div><div class="t-count">'+d.count+' cards</div>';
+    b.addEventListener("click",function(){ openDeck(k); });
+    m.appendChild(b);
+  });
+  m.hidden=false; document.getElementById("head").hidden=false;
+  ["stage","foot"].forEach(function(id){ document.getElementById(id).hidden=true; });
+}
+function openDeck(k){
+  deck=DECKS[k]; pos=0; target=0;
+  document.getElementById("menu").hidden=true;
+  document.getElementById("deckTitle").textContent=deck.title;
+  document.getElementById("deckArtist").textContent=deck.artist;
+  document.getElementById("note").textContent =
+    "A private preview of "+deck.title+" as prepared for Stellar Tarot. "+
+    "Cards are shown at the resolution the app displays them, not at print resolution. "+
+    "Nothing is public and nothing is for sale until you say so.";
+  var sw=document.getElementById("switch");
+  if(SET){
+    sw.innerHTML="";
+    SET.decks.forEach(function(kk){
+      var d=DECKS[kk]; if(!d) return;
+      var b=document.createElement("button"); b.type="button"; b.textContent=d.title; if(kk===k) b.className="on";
+      b.addEventListener("click",function(){ if(kk!==k) openDeck(kk); });
+      sw.appendChild(b);
+    });
+    var back=document.createElement("button"); back.type="button"; back.textContent="\u2039 Decks";
+    back.addEventListener("click",showMenu); sw.appendChild(back);
+    sw.hidden=false;
+  }
+  ["head","stage","foot"].forEach(function(id){ document.getElementById(id).hidden=false; });
+  Array.prototype.slice.call(stage.querySelectorAll(".card")).forEach(function(c){ c.remove(); });
+  cards=[]; build();
+}
+(function(){
+  var k=window.PREVIEW_K||new URLSearchParams(location.search).get("k");
+  if(k && Object.prototype.hasOwnProperty.call(SETS,k)){ SET=SETS[k]; showMenu(); return; }
+  if(k && Object.prototype.hasOwnProperty.call(DECKS,k)){ openDeck(k); return; }
+  document.getElementById("invalid").hidden=false;
+})();
+</script>
+</body>
+</html>
