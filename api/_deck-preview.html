@@ -119,7 +119,7 @@
   .tile:hover img,.tile:focus-visible img{transform:translateY(-4px)}
   .tile .t-name{font-size:17px;font-style:italic;color:var(--text-strong);margin-top:14px}
   .tile .t-count{font-family:"SF Mono",ui-monospace,Menlo,monospace;font-size:10.5px;letter-spacing:.2em;color:var(--mist);margin-top:6px}
-  .menu[hidden],.switch[hidden]{display:none}
+  .menu[hidden],.switch[hidden],.stage[hidden],header[hidden],footer[hidden]{display:none}
   .switch{display:flex;justify-content:center;gap:6px;margin-top:12px}
   .switch button{font:inherit;font-size:12px;letter-spacing:.04em;padding:6px 14px;border-radius:999px;cursor:pointer;
     background:var(--ink);border:1px solid var(--line);color:var(--mist);backdrop-filter:blur(6px)}
@@ -181,13 +181,15 @@ var DECKS = {
     slug:   "barley-inner-wisdom",
     title:  "Inner Wisdom Oracle",
     artist: "The Barley Moon",
-    count:  35
+    count:  35,
+    price:  "US$4.99"
   },
   "m8vt4xr6": {
     slug:   "barley-mandala",
     title:  "Mandala Oracle Deck",
     artist: "The Barley Moon",
-    count:  36
+    count:  36,
+    price:  "US$4.99"
   }
 };
 
@@ -357,7 +359,7 @@ function showMenu(){
   SET.decks.forEach(function(k){
     var d=DECKS[k]; if(!d) return;
     var b=document.createElement("button"); b.className="tile"; b.type="button";
-    b.innerHTML='<img src="'+BASE+'/'+d.slug+'/full/1.jpg" alt=""><div class="t-name">'+d.title+'</div><div class="t-count">'+d.count+' cards</div>';
+    b.innerHTML='<img src="'+BASE+'/'+d.slug+'/full/1.jpg" alt=""><div class="t-name">'+d.title+'</div><div class="t-count">'+d.count+' cards'+(d.price?' · '+d.price:'')+'</div>';
     b.addEventListener("click",function(){ openDeck(k); });
     m.appendChild(b);
   });
@@ -368,7 +370,7 @@ function openDeck(k){
   deck=DECKS[k]; pos=0; target=0;
   document.getElementById("menu").hidden=true;
   document.getElementById("deckTitle").textContent=deck.title;
-  document.getElementById("deckArtist").textContent=deck.artist;
+  document.getElementById("deckArtist").textContent=deck.artist+" · "+deck.count+" cards"+(deck.price?" · "+deck.price:"");
   document.getElementById("note").textContent =
     "A private preview of "+deck.title+" as prepared for Stellar Tarot. "+
     "Cards are shown at the resolution the app displays them, not at print resolution. "+
