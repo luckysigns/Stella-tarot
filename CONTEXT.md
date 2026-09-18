@@ -85,3 +85,12 @@ Supabase for auth and saved readings, shared with Stellar.
 - The Magician is **The Magician**. "The Magus" (and The Voyager, The Hanged Star, The
   Cosmos) were names from the unreleased celestial deck and must not appear under
   Rider-Waite art.
+- **Oracle decks (The Barley Moon).** Not tarot; they live in `ORACLE_DECKS`, art in
+  `cards/barley-inner-wisdom` (35) and `cards/barley-mandala` (36). An account with a
+  `deck_ownership` row for the slug sees "owned" and a Draw a card button (the oracle
+  sheet, `openOracle`); everyone else sees coming soon. There are no `decks` rows for
+  them yet, so nothing sells them; ownership is granted by hand (admin session,
+  `source: gift`).
+- **Writing voice.** Reading content must read like an astrologer talking across a
+  table, not essay prose. The rules and a before/after are in
+  `astra-data/deep/DEEP_SPEC.md` under "Sounding like a person, not a model".
