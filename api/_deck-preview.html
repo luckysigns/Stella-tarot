@@ -363,7 +363,7 @@ function openDeck(k){
   cards=[]; build();
 }
 (function(){
-  var k=new URLSearchParams(location.search).get("k");
+  var k=window.PREVIEW_K||new URLSearchParams(location.search).get("k");
   if(k && Object.prototype.hasOwnProperty.call(SETS,k)){ SET=SETS[k]; openDeck(SET.decks[0]); return; }
   if(k && Object.prototype.hasOwnProperty.call(DECKS,k)){ openDeck(k); return; }
   document.getElementById("invalid").hidden=false;

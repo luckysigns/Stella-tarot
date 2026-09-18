@@ -8,8 +8,8 @@
       "destination": "https://tfukuaqtkbzdjssanrly.supabase.co/:path*"
     },
     {
-      "source": "/preview",
-      "destination": "/deck-preview.html"
+      "source": "/thebarleymoonpreviews",
+      "destination": "/api/preview-gate"
     },
     {
       "source": "/:artist([a-z0-9-]+)",
@@ -46,5 +46,10 @@
         }
       ]
     }
-  ]
+  ],
+  "functions": {
+    "api/preview-gate.js": {
+      "includeFiles": "api/_deck-preview.html"
+    }
+  }
 }
