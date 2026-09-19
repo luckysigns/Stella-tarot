@@ -3813,7 +3813,15 @@ function awChartFromForm(){
 async function awChartCap(sb,uid){
   const t=await stellarTier(sb,uid);
   if(t==="lifetime") return {cap:Infinity,tier:"lifetime"};
-  return {cap:AW_CHART_CAP[t],tier:t};
+  /* extra chart spaces bought in Stellar count here too, while the plan is paid up (Stellar's
+     chartCap does the same: included spaces plus the extras in force) */
+  let extra=0;
+  try{
+    const r=await sb.from("stellar_entitlements").select("status,addons").eq("user_id",uid).maybeSingle();
+    const e=r&&r.data;
+    if(e&&(e.status==="active"||e.status==="trialing")) extra=Math.max(0,parseInt(e.addons&&e.addons.extra_spaces,10)||0);
+  }catch(e){}
+  return {cap:AW_CHART_CAP[t]+extra,tier:t};
 }
 async function awWriteChart(chart){
   const S=window.STELLAR, sb=S&&S._sb&&S._sb(), u=S&&S.user;
