@@ -131,9 +131,9 @@ module.exports = async function handler(req, res) {
       res.status(400).json({ error: "This deck is free. Nothing to buy." });
       return;
     }
-    /* the artist sets the price, $5 to $25; anything outside that is a
+    /* the artist sets the price, $4.99 to $25; anything outside that is a
        misconfigured row and must not reach Stripe */
-    if (!Number.isInteger(deck.price_cents) || deck.price_cents < 500 || deck.price_cents > 2500) {
+    if (!Number.isInteger(deck.price_cents) || deck.price_cents < 499 || deck.price_cents > 2500) {
       res.status(500).json({ error: "Deck price is not configured correctly." });
       return;
     }

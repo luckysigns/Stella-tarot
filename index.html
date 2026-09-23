@@ -505,11 +505,6 @@
     padding:14px;margin-top:14px;background:var(--surface-2)}
   .deckrow.on{border-color:var(--gold)}
   .deckrow.soon{opacity:.72}
-  .oracle-sheet{width:min(720px,95vw)}
-  .or-row{display:flex;justify-content:center;gap:14px;flex-wrap:wrap;margin-top:10px}
-  .or-card{width:min(300px,80vw);aspect-ratio:659/900;border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.45);object-fit:cover}
-  .or-row.three .or-card{width:min(210px,29vw)}
-  .or-back{opacity:.9}
   .deckrow[data-oracle]{cursor:pointer;transition:border-color .2s,opacity .2s}
   .deckrow[data-oracle]:hover{border-color:var(--gold-soft);opacity:1}
   /* real card faces: never crop them. The flex row would otherwise stretch each
@@ -657,17 +652,49 @@
   .capture-card{display:block;overflow:hidden;border-radius:12px;background:var(--void)}
   .capture-card>*{position:relative !important;inset:auto !important;transform:none !important;
     backface-visibility:visible !important;width:100% !important;height:100% !important}
-  #capture.exporting .clar-btn{display:none}
+  #capture.exporting .clar-btn,#capture.exporting .clar-tools,#capture.exporting .clar-remove{display:none}
   .ask-actions{margin-top:18px;border-top:1px solid var(--line);padding-top:14px}
-  .ask-journal{width:100%;box-sizing:border-box;min-height:76px;background:var(--field-bg);border:1px solid var(--line);
-    border-radius:12px;color:var(--silver);font:inherit;font-size:14px;padding:10px 14px;margin-top:10px;resize:vertical}
+  .ask-journal{width:100%;box-sizing:border-box;min-height:100px;background:var(--field-bg);border:1px solid var(--line);
+    border-radius:12px;color:var(--silver);font:inherit;font-size:14px;line-height:1.55;padding:12px 14px;margin-top:10px}
   .ask-journal:focus{outline:none;border-color:var(--gold)}
   .ask-journalhint{margin-top:6px}
   .ask-actionbtns{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
-  .ask-entry.exporting .ask-del,.ask-entry.exporting .ask-addspread,.ask-entry.exporting .ask-actions{display:none}
+  .ask-entry.exporting .ask-del,.ask-entry.exporting .ask-addspread,.ask-entry.exporting .ask-actions,.ask-entry.exporting .clar-tools,.ask-entry.exporting .clar-remove{display:none}
   .ask-entry.exporting{background:#0a0a1f}
   :root[data-theme="light"] .ask-entry.exporting{background:#f2e8d5}
   .signin-row{display:flex;justify-content:center;margin-top:26px}
+
+  /* ── the board: every card carries its name, so the art never has to be squinted at ── */
+  .slot .slot-name{font-size:12.5px;line-height:1.3;color:var(--silver);text-align:center;max-width:100%}
+  .slot .slot-name .rv{display:block;font-family:"Trebuchet MS",sans-serif;font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--rose);margin-top:3px}
+  .front-art .card-art.or-face{object-fit:contain;background:#0c0b28}
+  /* ── extra cards: the deck menu beside the button, a remove button on each card ── */
+  .clar-tools{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+  .deck-pick{appearance:none;-webkit-appearance:none;max-width:100%;font-family:"Trebuchet MS",sans-serif;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--gold-soft);background-color:var(--field-bg);border:1px solid var(--line);border-radius:999px;padding:9px 34px 9px 15px;cursor:pointer;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23c9a24b' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 14px center;background-size:9px 6px;transition:border-color .2s,color .2s}
+  .deck-pick:hover,.deck-pick:focus{outline:none;border-color:var(--gold);color:var(--gold)}
+  .clar-remove{margin-left:auto;background:none;border:1px solid transparent;color:var(--mist);font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;padding:4px 10px;border-radius:999px;transition:.2s}
+  .clar-remove:hover{color:var(--rose);border-color:var(--rose)}
+  .meaning h4 .clar-remove{font-size:9px;align-self:center}
+  .clar-deck{font-family:"Trebuchet MS",sans-serif;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-soft);border:1px solid var(--line);border-radius:999px;padding:3px 9px}
+  .clar-body{display:flex;gap:16px;align-items:flex-start}
+  .clar-body>div{flex:1;min-width:0}
+  .clar-art{flex:none;width:86px;aspect-ratio:5/8;object-fit:cover;border-radius:8px;border:1px solid var(--line);background:#0c0b28;display:block}
+  .clar-art.rev{transform:rotate(180deg)}
+  .clar-art.or{width:150px;aspect-ratio:659/900;object-fit:contain;border-radius:10px;border:none;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+  .clar-card.oracle{border-style:solid;background:rgba(233,196,106,.04)}
+  @media (max-width:520px){
+    .clar-body{display:block}
+    .clar-art{float:left;margin:0 12px 8px 0;width:70px}
+    .clar-art.or{float:none;margin:0 auto 12px;width:min(220px,80%)}
+  }
+  /* a follow-up question typed for one card, quoted above its reading */
+  .ask-subq{border-left:2px solid var(--line);padding:4px 0 4px 14px;margin:8px 0 12px;font-style:italic;color:var(--text-strong);font-size:15.5px;line-height:1.45}
+  .ask-subq .ask-subq-l{display:block;font-family:"Trebuchet MS",sans-serif;font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-soft);font-style:normal;margin-bottom:3px}
+  /* boxes that grow with what is typed */
+  textarea.autogrow{resize:none;overflow:hidden;box-sizing:border-box}
   .capture-foot,.cap-foot{text-align:center;font-size:12px;font-style:italic;color:var(--mist);margin-top:18px}
   .ask-entry .cap-foot{display:none}
   .ask-entry.exporting .cap-foot{display:block}
@@ -682,7 +709,7 @@
   /* journal */
   .journal{margin-top:26px;border:1px solid var(--line);border-radius:14px;background:var(--surface-2);padding:20px}
   .journal textarea{
-    width:100%;min-height:120px;resize:vertical;margin-top:6px;
+    width:100%;min-height:120px;margin-top:6px;
     background:var(--field-bg);border:1px solid var(--line);border-radius:10px;
     color:var(--silver);font-family:inherit;font-size:15px;line-height:1.6;padding:14px;
   }
@@ -881,12 +908,11 @@
 .spark-burst .ring{position:absolute;left:50%;top:50%;width:120px;height:120px;border-radius:50%;border:2px solid var(--gold);box-shadow:0 0 24px 6px rgba(233,196,106,.55);animation:astraBurstRing .8s ease-out forwards}
 .spark-burst .spk{position:absolute;left:50%;top:50%;width:6px;height:6px;border-radius:50%;background:var(--gold);box-shadow:0 0 8px 2px rgba(233,196,106,.9);animation:astraSpark .8s ease-out forwards}
 .tcard.materialize{animation:astraMaterialize .7s cubic-bezier(.2,.7,.2,1) both}
-.or-card.materialize{animation:astraMaterialize .7s cubic-bezier(.2,.7,.2,1) both}
 </style>
 <style>
   /* ── Ask a question mode ── */
   #modeSeg button{padding:9px 22px}
-  textarea#askQ{width:100%;min-height:92px;resize:vertical;background:var(--field-bg);border:1px solid var(--line);border-radius:10px;color:var(--silver);font-family:inherit;font-size:15px;line-height:1.6;padding:14px;margin-top:6px}
+  textarea#askQ{width:100%;min-height:92px;background:var(--field-bg);border:1px solid var(--line);border-radius:10px;color:var(--silver);font-family:inherit;font-size:15px;line-height:1.6;padding:14px;margin-top:6px}
   textarea#askQ:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 1px rgba(233,196,106,.3)}
   textarea#askQ::placeholder{color:var(--mist);opacity:.7;font-style:italic}
   .ask-meanings summary{cursor:pointer;color:var(--gold-soft);font-size:14px;margin-top:14px}
@@ -910,8 +936,9 @@
     color:var(--text-strong);font-size:1.34rem;font-weight:600;line-height:1.35;letter-spacing:.005em}
   .ask-meta{font-size:12px;color:var(--mist);letter-spacing:.06em;text-transform:uppercase;margin-bottom:12px}
   .ask-board{margin:6px 0 20px}
-  .ask-addspread{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:18px;padding-top:16px;border-top:1px dashed var(--line)}
-  .ask-addlabel{flex:1;min-width:150px;background:var(--field-bg);border:1px solid var(--line);border-radius:8px;color:var(--silver);font-family:inherit;font-size:14px;padding:9px 12px}
+  .ask-addspread{margin-top:18px;padding-top:16px;border-top:1px dashed var(--line)}
+  .ask-addspread .clar-tools{margin-top:10px}
+  .ask-addlabel{display:block;width:100%;box-sizing:border-box;min-height:44px;background:var(--field-bg);border:1px solid var(--line);border-radius:10px;color:var(--silver);font-family:inherit;font-size:14px;line-height:1.5;padding:11px 12px}
   .ask-addlabel:focus{outline:none;border-color:var(--gold)}
   .ask-threadfoot{margin-top:28px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
 </style>
@@ -1015,18 +1042,6 @@ try{  /* the arrival, which may already be a deep link to an artist or a deck */
     </div>
     <p class="hint">The reading is the same either way - the deck changes the art and the voice it's written in.</p>
     <div id="deckList"></div>
-  </div>
-</div>
-
-<div class="deckmodal hidden" id="oracleModal">
-  <div class="decksheet oracle-sheet">
-    <div class="dk-head">
-      <h3 id="oracleTitle">Oracle</h3>
-      <button class="pmenu-close" id="oracleClose" type="button" aria-label="Close">✕</button>
-    </div>
-    <p class="hint" id="oracleBy"></p>
-    <div id="oracleStage"></div>
-    <div class="aw-actions" id="oracleActions" style="justify-content:center;margin-top:14px"></div>
   </div>
 </div>
 
@@ -1163,7 +1178,7 @@ try{  /* the arrival, which may already be a deep link to an artist or a deck */
 
     <div class="journal">
       <div class="step-label">Your notes</div>
-      <textarea id="journalBox" placeholder="What does this reading stir up? Jot down impressions, questions, what rings true, what you want to remember…"></textarea>
+      <textarea id="journalBox" class="autogrow" placeholder="What does this reading stir up? Jot down impressions, questions, what rings true, what you want to remember…"></textarea>
       <div class="journal-row">
         <span class="hint" id="journalSaved">Notes stay with this reading until you draw again.</span>
       </div>
@@ -1185,7 +1200,7 @@ try{  /* the arrival, which may already be a deep link to an artist or a deck */
   <!-- ASK A QUESTION -->
   <section class="panel hidden" id="step-ask">
     <div class="step-label">Ask the cards a question</div>
-    <textarea id="askQ" placeholder="Ask anything - “How do I move forward with…”, “What's really going on with…”, “Should I…”"></textarea>
+    <textarea id="askQ" class="autogrow" placeholder="Ask anything - “How do I move forward with…”, “What's really going on with…”, “Should I…”"></textarea>
     <div class="step-label" style="margin-top:14px">How many cards</div>
     <div class="controls"><div class="seg" id="askCountSeg"></div></div>
     <details class="ask-meanings" id="askMeanings">
@@ -1896,7 +1911,7 @@ const DECK_ART={base:"/cards/rws/"};
    and her site name only. The artist directory in Supabase wins the moment it
    has a row for the code. */
 const ORACLE_ARTISTS={
-  barleymoon:{name:"The Barley Moon", by:"Laura Phillips", shop:"https://www.makeplayingcards.com/sell/thebarleymoon",
+  barleymoon:{name:"The Barley Moon", by:"Laura Metcalfe", shop:"https://www.makeplayingcards.com/sell/thebarleymoon",
     social:[{label:"Instagram",handle:"@thebarleymoon",url:"https://www.instagram.com/thebarleymoon/"},{label:"All her links",url:"https://linktr.ee/thebarleymoon"}],
     bio:"I'm Laura, the mystical moon girl behind The Barley Moon. I'm a spiritual artist and tarot reader and I've always had a deep fascination with the mystical and the unseen. My journey into the realms of spirituality, astrology, and esoteric practices has been nothing short of transformative. Over the past few years, I've delved into ancient wisdom, studied celestial cycles, and immersed myself in the energies of the universe. Each deck I create is designed to help you tap into your inner wisdom, unlock your intuition, and navigate life's twists and turns with clarity. Whether you're a seasoned mystic or a curious newcomer, there's something here to illuminate your path. My mission is to make the esoteric accessible. I believe that everyone has the power to connect with the divine and harness the energy of the cosmos for personal growth and guidance."}
 };
@@ -1916,65 +1931,25 @@ function oracleRowHTML(dk){
   const thumbs=[1,2,3].map(function(n){ return '<img class="dk-thumb" src="'+oracleArt(dk.id)+'thumb/'+n+'.jpg" alt="" loading="lazy" onerror="this.remove()">'; }).join("");
   /* an account that holds the deck (a purchase, a gift, or the owner testing it) can draw
      from it now; everyone else sees it as coming soon */
-  const owned=oracleOwned(dk);
-  return '<div class="deckrow'+(owned?'':' soon')+'" data-oracle="'+dk.id+'" role="link" tabindex="0">'
+  const owned=oracleOwned(dk), buyable=!owned&&!!dk.on_sale;
+  return '<div class="deckrow'+((owned||dk.on_sale)?'':' soon')+'" data-oracle="'+dk.id+'" role="link" tabindex="0">'
     + '<div class="dk-thumbs">'+thumbs+'</div>'
     + '<div class="dk-body">'
-    +   '<div class="dk-name">'+escapeHTML(dk.name)+(owned?' <span class="dk-tag">owned</span>':' <span class="dk-tag soon">coming soon</span>')+'</div>'
+    +   '<div class="dk-name">'+escapeHTML(dk.name)+(owned?' <span class="dk-tag">owned</span>':(dk.on_sale?'':' <span class="dk-tag soon">coming soon</span>'))+'</div>'
     +   '<div class="dk-sub">'+escapeHTML(dk.sub)+' · by <a href="/'+dk.artist_code+'" data-artistpage="'+dk.artist_code+'">'+escapeHTML(dk.artist)+'</a></div>'
+    +   (owned?'<p class="hint" style="margin-top:6px">Yours to turn: pick it from the deck menu beside "Draw a clarifier" or "Add a card" in any reading.</p>':'')
     +   '<details class="dk-more"><summary>Learn more</summary><p>'+escapeHTML(dk.blurb)+' <a href="/'+dk.artist_code+'/'+dk.id+'" data-oraclepage="'+dk.id+'">See the deck →</a></p></details>'
     + '</div>'
-    + (owned?'<button type="button" class="dk-use" data-oracledraw="'+dk.id+'">Draw a card</button>':'')
+    + (buyable?'<button type="button" class="dk-use" data-buydeck="'+dk.id+'">'+(dk.ready?'Buy · ':'Pre-order · ')+deckPriceLabel(dk)+'</button>':'')
     + '</div>';
 }
 function oracleOwned(dk){ return !!(dk&&dk.count&&typeof OWNED!=="undefined"&&OWNED.has(dk.id)); }
-/* ---- the oracle reading: not a spread, a card to sit with. The affirmation is printed
-   on the card itself, so there is nothing to interpret; the deck is shuffled, one or
-   three cards are turned, and that is the reading. ---- */
-const ORACLE={deck:null,cards:[]};
-function openOracle(id){
-  const dk=ORACLE_DECKS.find(function(d){ return d.id===id; }); if(!dk||!oracleOwned(dk)) return;
-  ORACLE.deck=dk; ORACLE.cards=[];
-  $("oracleTitle").textContent=dk.name;
-  $("oracleBy").innerHTML='by <a href="/'+dk.artist_code+'" data-artistpage="'+dk.artist_code+'">'+escapeHTML(dk.artist)+'</a> · '+escapeHTML(dk.sub)+(dk.shop?' · <a href="'+dk.shop+'" target="_blank" rel="noopener">Buy the printed deck ↗︎</a>':'');
-  renderOracle();
-  $("oracleModal").classList.remove("hidden");
-}
-function closeOracle(){ $("oracleModal").classList.add("hidden"); }
-function oracleDraw(n){
-  const dk=ORACLE.deck; if(!dk) return;
-  const pool=[]; for(let i=1;i<=dk.count;i++) pool.push(i);
-  for(let i=pool.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); const t=pool[i]; pool[i]=pool[j]; pool[j]=t; }
-  ORACLE.cards=pool.slice(0,n);
-  renderOracle();
-}
-function renderOracle(){
-  const dk=ORACLE.deck, st=$("oracleStage"); if(!dk||!st) return;
-  const art=oracleArt(dk.id);
-  if(!ORACLE.cards.length){
-    st.innerHTML='<div class="or-row"><img class="or-card or-back" src="'+art+'back.jpg" alt="" onerror="this.style.visibility=\'hidden\'"></div>'
-      +'<p class="hint" style="text-align:center;margin:12px 0 0">Settle for a moment, then turn a card. Take it as it is: the words on the card are the reading.</p>';
-  } else {
-    st.innerHTML='<div class="or-row'+(ORACLE.cards.length>1?' three':'')+'">'
-      +ORACLE.cards.map(function(n,i){ return '<img class="or-card materialize" style="animation-delay:'+(i*160)+'ms" src="'+art+'full/'+n+'.jpg" alt="'+escapeHTML(dk.name)+' card">'; }).join("")+'</div>';
-  }
-  $("oracleActions").innerHTML='<button class="btn" type="button" data-ordraw="1">'+(ORACLE.cards.length?"Another card":"Turn a card")+'</button>'
-    +'<button class="btn ghost" type="button" data-ordraw="3">Three cards</button>';
-}
-document.addEventListener("click",function(e){
-  const d=e.target.closest&&e.target.closest("[data-oracledraw]");
-  if(d){ e.preventDefault(); e.stopPropagation(); openOracle(d.dataset.oracledraw); return; }
-  const dr=e.target.closest&&e.target.closest("[data-ordraw]");
-  if(dr){ oracleDraw(+dr.dataset.ordraw); return; }
-  if(e.target&&(e.target.id==="oracleModal"||e.target.id==="oracleClose")) closeOracle();
-});
-document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeOracle(); });
 function openOraclePage(id){ const o=ORACLE_DECKS.find(function(d){ return d.id===id; }); if(o) showArtistPage(o.artist_code,o.id); }
 function oracleSectionHTML(rows){
   if(!rows.length) return "";
   const allOwned=rows.every(oracleOwned);
   return '<div class="oracle-shop"><div class="step-label" style="margin:22px 0 4px">Oracle and affirmation decks</div>'
-    + '<p class="hint" style="margin-bottom:10px">Not tarot: a card to sit with rather than a spread to read.'+(allOwned?'':' Coming to Stellar Tarot soon.')+'</p>'
+    + '<p class="hint" style="margin-bottom:10px">Not tarot: a card to sit with rather than a spread to read.'+(rows.some(oracleOwned)?' The ones you hold join the deck menu when you draw a clarifier or add a card to a reading.':'')+(rows.every(function(d){ return oracleOwned(d)||d.on_sale; })?'':' Coming to Stellar Tarot soon.')+'</p>'
     + rows.map(oracleRowHTML).join("")+'</div>';
 }
 document.addEventListener("click",function(e){
@@ -1987,10 +1962,14 @@ document.addEventListener("click",function(e){
   if(row&&!e.target.closest("a,button,summary,details,[data-oracledraw]")) openOraclePage(row.dataset.oracle);
 });
 document.addEventListener("keydown",function(e){ if(e.key==="Enter"&&e.target&&e.target.matches&&e.target.matches(".deckrow[data-oracle]")) openOraclePage(e.target.dataset.oracle); });
-function cardArtIMG(card){
-  const dir=card&&card.id?DECK_ART[state.deck]:null;
-  if(!dir) return "";
-  return '<img class="card-art" src="'+dir+card.id+'.jpg" alt="'+String(card.name).replace(/"/g,"&quot;")+'" loading="lazy" onerror="this.remove()">';
+function cardArtSrc(card,deckId){
+  const dir=card&&card.id?DECK_ART[deckId||state.deck]:null;
+  return dir?(dir+card.id+'.jpg'):null;
+}
+function cardArtIMG(card,deckId){
+  const src=cardArtSrc(card,deckId);
+  if(!src) return "";
+  return '<img class="card-art" src="'+src+'" alt="'+String(card.name).replace(/"/g,"&quot;")+'" loading="lazy" onerror="this.remove()">';
 }
 /* build spread chooser */
 const spreadList=$("spreadList");
@@ -2144,12 +2123,15 @@ function renderArtistPage(){
       +'<div class="ah-blurb">'+escA(singleOr.blurb||singleOr.sub||"")+'</div>'
       +'<div class="ah-meta">'+escA(singleOr.sub)+' · no reversals · not a tarot deck</div>'
       +'<div class="ah-actions">'
-      +  (singleOr.ready?'':'<span class="dk-tag soon">coming soon</span>')
+      +  (oracleOwned(singleOr)?'<span class="dk-tag">owned · in your deck menu</span>'
+          :singleOr.on_sale?'<button type="button" class="dk-use fill" id="ahBuyOr">'+(singleOr.ready?'Buy this deck · ':'Pre-order · ')+deckPriceLabel(singleOr)+'</button>'
+          :'<span class="dk-tag soon">coming soon</span>')
       +  ((singleOr.shop||ARTIST_VIEW.shop)?'<button type="button" class="dk-use" id="ahShop">Printed deck'+(singleOr.price?" · "+escA(singleOr.price):"")+' ↗︎</button>':"")
       +'</div>'+note
       +'<a href="#" class="ah-browse" id="ahAllDecks">See all decks by '+escA(nm)+' →</a>';
     decksEl.innerHTML="";
     const sh=$("ahShop"); if(sh) sh.onclick=()=>shopClick(AP.code,singleOr.id,singleOr.shop||ARTIST_VIEW.shop);
+    const bo=$("ahBuyOr"); if(bo) bo.onclick=function(){ buyDeck(singleOr.id,bo); };
     const ad=$("ahAllDecks"); if(ad) ad.onclick=e=>{e.preventDefault();showArtistPage(AP.code,null);};
     return;
   }
@@ -2417,7 +2399,19 @@ async function refreshDecks(){
     const rows=await res.json();
     if(!Array.isArray(rows)||!rows.length) return;
     const local={}; DECKS.forEach(d=>{local[d.id]=d;});
-    const mapped=rows.filter(r=>r.status!=="retired").map(r=>{
+    /* an oracle deck's row dresses its ORACLE_DECKS entry (price, on sale, live) rather than
+       joining the tarot list: no suits, no numbers, no place in the tarot deck picker */
+    const oracleById={}; ORACLE_DECKS.forEach(o=>{oracleById[o.id]=o;});
+    rows.forEach(r=>{
+      const o=oracleById[r.slug]; if(!o) return;
+      o.price_cents=r.price_cents||0; o.currency=r.currency||"usd"; o.is_free=!!r.is_free;
+      o.on_sale=(r.status==="live"||r.status==="preorder")&&!r.is_free&&(r.price_cents||0)>0;
+      o.ready=r.status==="live";
+      if(r.shop_url) o.shop=r.shop_url;
+      if(r.title) o.name=r.title;
+      if(r.blurb) o.blurb=r.blurb;
+    });
+    const mapped=rows.filter(r=>r.status!=="retired"&&!oracleById[r.slug]).map(r=>{
       const l=local[r.slug]||null;
       return {
         id:r.slug,
@@ -2457,7 +2451,7 @@ async function refreshDecks(){
           showArtistPage(ARTIST_VIEW.code,dk,"replace");
         }
       }
-    }
+    } else { renderDeckSheet(); }   // only oracle rows came back: the shop still has to show them
   }catch(e){}
 }
 async function refreshOwned(){
@@ -2737,11 +2731,13 @@ function prepCapture(){
   }
   return function(){ undo.forEach(function(f){ try{f();}catch(e){} }); };
 }
+function extraCount(){ let n=0; Object.keys(state.clarifiers||{}).forEach(k=>{ n+=(state.clarifiers[k]||[]).length; }); return n; }
 function stamp(){
   const s=SPREADS[state.spread];
   const d=new Date();
   const date=d.toLocaleDateString(undefined,{year:"numeric",month:"long",day:"numeric"});
-  $("capMeta").textContent=`${s.name} · ${date}`;
+  const total=state.drawn.length+extraCount();   // clarifiers and extra cards are cards too
+  $("capMeta").textContent=`${s.name} · ${total} card${total===1?"":"s"} · ${date}`;
   return {date};
 }
 async function renderCanvas(){
@@ -3019,6 +3015,7 @@ function reveal(){
       </div>`;
     card.onclick=()=>{card.classList.toggle("flipped");};
     slot.appendChild(card);
+    slot.insertAdjacentHTML("beforeend",slotNameHTML(d));
     board.appendChild(slot);
     // auto-flip in sequence
     setTimeout(()=>card.classList.add("flipped"),300+i*260);
@@ -3249,23 +3246,102 @@ function renderDetail(){
 
 /* ───────── clarifier cards ───────── */
 function drawClarifier(key){
-  if(!order.length){
-    // extremely unlikely (only after drawing all 78), but guard anyway
-    return;
-  }
-  const deckIdx=order.shift();
-  const reversed=state.reversals && Math.random()<0.2;
+  // from whichever deck the menu beside the button names: the reading's own tarot deck, another
+  // tarot deck this account holds, or an oracle deck (a card to sit with, no orientation)
+  const x=drawExtra(()=>order.length?order.shift():null, oracleUsedGuided);
+  if(!x) return;                       // that deck has nothing left to turn for this reading
   if(!state.clarifiers[key]) state.clarifiers[key]=[];
-  state.clarifiers[key].push({card:DECK[deckIdx],reversed});
+  state.clarifiers[key].push(x.oracle?x:{card:DECK[x.deckIdx],reversed:x.reversed,deck:x.deck});
   try{ savesUpdateGuided(); }catch(e){}
   // pin the clarifier block where it sits so the redraw does not throw the page around
   const restore=holdAnchor(`[data-clarifier-anchor="${key}"]`);
-  renderDetail();
+  renderDetail(); stamp();
   restore();
   requestAnimationFrame(restore);
   // the new card lands above the button - only chase it if it fell off screen
   const last=(state.clarifiers[key]||[]).length-1;
   setTimeout(()=>{ revealIfOffscreen(`[data-clarcard="g:${key}:${last}"]`); },80);
+}
+/* a slip of the finger: take an extra card back out. A tarot card returns to the pool. */
+function removeClarifier(key,idx){
+  const list=state.clarifiers[key]||[]; const x=list[idx]; if(!x) return;
+  list.splice(idx,1); if(!list.length) delete state.clarifiers[key];
+  if(x.card) order.push(DECK_BY_ID[x.card.id]);
+  try{ savesUpdateGuided(); }catch(e){}
+  const restore=holdAnchor(`[data-clarifier-anchor="${key}"]`);
+  renderDetail(); stamp();
+  restore();
+  requestAnimationFrame(restore);
+}
+function oracleUsedGuided(oid){
+  const used=[];
+  Object.keys(state.clarifiers||{}).forEach(k=>{ (state.clarifiers[k]||[]).forEach(x=>{ if(x.oracle===oid) used.push(x.n); }); });
+  return used;
+}
+
+/* ───────── extra cards from another deck ─────────
+   The menu beside every "Draw a clarifier" / "Draw another card" / "Add a card" button lists the
+   tarot decks this account can use and the oracle decks it holds. It only appears when there is
+   a choice to make, and the choice is remembered for the rest of the visit. */
+var EXTRA_DECK=null;
+function oracleDeckById(id){ return ORACLE_DECKS.find(function(o){ return o.id===id; })||null; }
+function extraDeckOptions(){
+  var opts=[];
+  DECKS.forEach(function(d){ if(deckIsMine(d)) opts.push({v:"t:"+d.id,label:d.name}); });
+  ORACLE_DECKS.forEach(function(o){ if(oracleOwned(o)) opts.push({v:"o:"+o.id,label:o.name+" · oracle"}); });
+  return opts;
+}
+function extraDeckValue(){
+  var opts=extraDeckOptions(), cur=EXTRA_DECK||("t:"+state.deck);
+  if(!opts.some(function(o){ return o.v===cur; })) cur="t:"+state.deck;
+  return cur;
+}
+function deckPickHTML(){
+  var opts=extraDeckOptions(); if(opts.length<2) return "";
+  var cur=extraDeckValue();
+  return '<select class="deck-pick" aria-label="Deck to draw the next card from">'
+    + opts.map(function(o){ return '<option value="'+o.v+'"'+(o.v===cur?' selected':'')+'>'+escapeHTML(o.label)+'</option>'; }).join("")
+    + '</select>';
+}
+document.addEventListener("change",function(e){
+  var s=e.target&&e.target.closest&&e.target.closest(".deck-pick"); if(!s) return;
+  EXTRA_DECK=s.value;
+  document.querySelectorAll(".deck-pick").forEach(function(x){ if(x!==s) x.value=EXTRA_DECK; });
+});
+/* one extra card from the chosen deck. takeTarot() hands over the next index from the reading's
+   own pool (or null when it is spent); usedOracle(id) lists the oracle cards already on the table */
+function drawExtra(takeTarot, usedOracle){
+  var v=extraDeckValue();
+  if(v.slice(0,2)==="o:"){
+    var o=oracleDeckById(v.slice(2)); if(!o) return null;
+    var used=usedOracle(o.id), free=[];
+    for(var i=1;i<=o.count;i++){ if(used.indexOf(i)<0) free.push(i); }
+    if(!free.length) return null;
+    return {oracle:o.id, n:free[Math.floor(Math.random()*free.length)]};
+  }
+  var idx=takeTarot(); if(idx==null) return null;
+  var deckId=v.slice(2);
+  return {deckIdx:idx, reversed:!!(state.reversals && Math.random()<0.2), deck:(deckId&&deckId!==state.deck)?deckId:undefined};
+}
+function deckTagHTML(deckId){
+  if(!deckId||deckId===state.deck) return "";
+  var dk=deckById(deckId); return '<span class="clar-deck">'+escapeHTML(dk?dk.name:deckId)+'</span>';
+}
+function clarArtHTML(card,rev,deckId){
+  var src=cardArtSrc(card,deckId); if(!src) return "";
+  return '<img class="clar-art'+(rev?" rev":"")+'" src="'+src+'" alt="'+escapeHTML(card.name)+'" loading="lazy" onerror="this.remove()">';
+}
+/* an oracle card inside a reading: the picture is the whole of it */
+function oracleCardHTML(x, key, note, removeBtn){
+  var o=oracleDeckById(x.oracle); if(!o) return "";
+  var src=oracleArt(o.id)+'full/'+x.n+'.jpg';
+  return '<div class="clar-card oracle" data-clarcard="'+key+'">'
+    + '<div class="clar-head"><span class="clar-sigil">✦</span><span class="clar-name">'+escapeHTML(o.name)+'</span><span class="orient">Oracle</span>'+(removeBtn||"")+'</div>'
+    + '<div class="clar-body"><img class="clar-art or" src="'+src+'" alt="'+escapeHTML(o.name)+' card '+x.n+'" loading="lazy"><div>'
+    + '<div class="glyphline">by '+escapeHTML(o.artist)+' · card '+x.n+' of '+o.count+'</div>'
+    + '<p>Take it as it is: the words on the card are the reading. Sit with it a moment before you read on.</p>'
+    + (note?'<p class="clar-note">'+note+'</p>':'')
+    + '</div></div></div>';
 }
 
 function richReadHTML(d, position, dk){
@@ -3292,6 +3368,11 @@ function richReadHTML(d, position, dk){
 function clarifierHTML(key, forPosition){
   const list=state.clarifiers[key]||[];
   const cards=list.map((d,ci)=>{
+    const rm=`<button class="clar-remove" type="button" onclick="removeClarifier('${key}',${ci})" title="Take this card back out">Remove</button>`;
+    const note=forPosition
+      ? `Drawn to clarify <b style="color:var(--gold)">${forPosition.toLowerCase()}</b> - read it as a lens over that card, sharpening or qualifying what it said.`
+      : `An extra card for the reading as a whole - added context beyond the original spread.`;
+    if(d.oracle) return oracleCardHTML(d, `g:${key}:${ci}`, note, rm);
     const c=d.card;
     const astroLine = c.arcana==="major"
       ? `${c.sigil} ${c.astro} ${c.glyph}`
@@ -3302,13 +3383,14 @@ function clarifierHTML(key, forPosition){
           <span class="clar-sigil">${c.sigil}</span>
           <span class="clar-name">${c.name}</span>
           <span class="orient">${d.reversed?"Reversed":"Upright"}</span>
+          ${deckTagHTML(d.deck)}${rm}
         </div>
+        <div class="clar-body">${clarArtHTML(c,d.reversed,d.deck)}<div>
         <div class="glyphline">${astroLine}</div>
         <p>${d.reversed?c.rev:c.up}</p>
         ${richReadHTML(d, forPosition, "g:"+key+":c"+ci)}
-        <p class="clar-note">${forPosition
-          ? `Drawn to clarify <b style="color:var(--gold)">${forPosition.toLowerCase()}</b> - read it as a lens over that card, sharpening or qualifying what it said.`
-          : `An extra card for the reading as a whole - added context beyond the original spread.`}</p>
+        <p class="clar-note">${note}</p>
+        </div></div>
       </div>`;
   }).join("");
   const label = forPosition ? "Draw a clarifier" : "Draw another card";
@@ -3316,7 +3398,7 @@ function clarifierHTML(key, forPosition){
   return `
     <div class="clarifiers" data-clarifier-anchor="${key}">
       ${cards}
-      <button class="btn ghost clar-btn" onclick="drawClarifier('${key}')">${list.length?"+ "+more:"✦ "+label}</button>
+      <div class="clar-tools"><button class="btn ghost clar-btn" onclick="drawClarifier('${key}')">${list.length?"+ "+more:"✦ "+label}</button>${deckPickHTML()}</div>
     </div>`;
 }
 
@@ -4126,26 +4208,57 @@ var askCount=3, askId=0, askSavedGuided=null;
 const ASK_MAX=6;          // quick-pick buttons, then a 6+ chooser
 const ASK_MAX_ROWS=78;    // the deck itself is the only real ceiling
 function escapeHTML(s){return String(s==null?"":s).replace(/[&<>"]/g,function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m];});}
-function entryLabel(entry,i){ var L=entry.labels&&entry.labels[i]?entry.labels[i]:""; return L||("Card "+(i+1)); }
+/* what the reader called this card, if anything. Nothing typed means nothing: the card is read
+   straight against the question, never as "Card 2". A label ending in a question mark, or
+   longer than a few words, is a follow-up question rather than the name of a position. */
+function entryLabel(entry,i){ return entry.labels&&entry.labels[i]?String(entry.labels[i]).trim():""; }
+function labelKind(L){ if(!L) return "none"; return (/\?\s*$/.test(L)||L.split(/\s+/).length>5)?"question":"position"; }
+/* the shape askCardHTML/tcardHTML read: a tarot card (from whichever deck) or an oracle card */
+function askCardObj(cc){ return cc.oracle?{oracle:cc.oracle,n:cc.n}:{card:DECK[cc.deckIdx],reversed:!!cc.reversed,deck:cc.deck}; }
+/* textareas grow with what is typed, so a long question or note never scrolls out of sight */
+function autoGrow(el){ if(!el) return; el.style.height="auto"; el.style.height=(el.scrollHeight+2)+"px"; }
+function growAll(root){ (root||document).querySelectorAll("textarea.autogrow").forEach(autoGrow); }
+document.addEventListener("input",function(e){ var t=e.target; if(t&&t.tagName==="TEXTAREA"&&t.classList.contains("autogrow")) autoGrow(t); });
 
 /* one flip-card, reusing the guided reveal markup */
 function tcardHTML(d,i){
-  return '<div class="tcard materialize'+(d.reversed?" rev":"")+'" style="animation-delay:'+(i*0.1)+'s"><div class="inner"><div class="side back">'+backSVG+'</div><div class="side front"><div class="front-art" data-arcana="'+d.card.arcana+'" data-cardid="'+d.card.id+'"><div class="num">'+cardTopLabel(d.card)+'</div><div class="sigil">'+d.card.sigil+'</div><div class="nm">'+d.card.name+'</div><div class="astro">'+cardBottomLabel(d.card)+'</div>'+cardArtIMG(d.card)+'</div></div></div></div>';
+  if(d.oracle){
+    var o=oracleDeckById(d.oracle), nm=o?o.name:"Oracle";
+    return '<div class="tcard materialize" style="animation-delay:'+(i*0.1)+'s"><div class="inner"><div class="side back">'+backSVG+'</div><div class="side front"><div class="front-art" data-arcana="oracle"><div class="num">ORACLE</div><div class="sigil">✦</div><div class="nm">'+escapeHTML(nm)+'</div><div class="astro">card '+d.n+'</div>'+(o?'<img class="card-art or-face" src="'+oracleArt(o.id)+'full/'+d.n+'.jpg" alt="'+escapeHTML(nm)+' card" loading="lazy" onerror="this.remove()">':'')+'</div></div></div></div>';
+  }
+  return '<div class="tcard materialize'+(d.reversed?" rev":"")+'" style="animation-delay:'+(i*0.1)+'s"><div class="inner"><div class="side back">'+backSVG+'</div><div class="side front"><div class="front-art" data-arcana="'+d.card.arcana+'" data-cardid="'+d.card.id+'"><div class="num">'+cardTopLabel(d.card)+'</div><div class="sigil">'+d.card.sigil+'</div><div class="nm">'+d.card.name+'</div><div class="astro">'+cardBottomLabel(d.card)+'</div>'+cardArtIMG(d.card,d.deck)+'</div></div></div></div>';
+}
+/* the card's name under its picture on the board, so nobody has to read it off the art */
+function slotNameHTML(d){
+  if(d.oracle){ var o=oracleDeckById(d.oracle); return '<div class="slot-name">'+escapeHTML(o?o.name:"Oracle")+'<span class="rv">card '+d.n+'</span></div>'; }
+  return '<div class="slot-name">'+escapeHTML(d.card.name)+(d.reversed?'<span class="rv">reversed</span>':'')+'</div>';
 }
 
-/* one card's full reading in an ask entry - label as its position, deep read + contexts + clarifier */
-function askCardHTML(d,label,clarKey,clarList){
-  var c=d.card, rev=d.reversed, orient=rev?"reversed":"upright";
+/* one card's full reading in an ask entry: its meaning, the position text when the label names a
+   position the deck knows, deep read + contexts, and its clarifiers from any deck */
+function askCardHTML(d,label,clarKey,clarList,removable){
+  var kind=labelKind(label);
   var dkb="a:"+clarKey;   // panel key prefix - stable across rebuilds of the thread
+  var rmCard=removable?'<button class="clar-remove ask-cardremove" type="button" data-askcardrm="'+clarKey+'" title="Take this card back out of the spread">Remove</button>':'';
+  var subq=kind==="question"?'<blockquote class="ask-subq"><span class="ask-subq-l">You asked</span>'+escapeHTML(label)+'</blockquote>':'';
+  if(d.oracle){
+    // an oracle card added to the spread: the picture is the reading
+    var o=oracleDeckById(d.oracle);
+    return '<div class="meaning" data-askcard="'+escapeHTML(clarKey)+'">'
+      + '<h4>'+escapeHTML(o?o.name:"Oracle")+(kind==="position"?' <span class="pos-tag">'+escapeHTML(label)+'</span>':'')+rmCard+'</h4>'
+      + subq
+      + oracleCardHTML(d, dkb+":o", "", "")
+      + '</div>';
+  }
+  var c=d.card, rev=d.reversed, orient=rev?"reversed":"upright";
   var astroLine = c.arcana==="major" ? (c.sigil+" "+c.astro+" "+c.glyph) : (c.suitSigil+" "+c.suit+" · "+c.element+" · "+c.astro);
   var keys=(c.key||[]).map(function(k){return '<span class="kw">'+k+'</span>';}).join("");
   var base = (CONTENT.base && CONTENT.base[c.id]) ? CONTENT.base[c.id] : null;
-  var known = base && base.positions && base.positions[label];
-  // the position line - a known lens uses the deck's own position text; anything freeform
-  // ("Yes", "what my sister thinks") reads through lensFor so it still lands sensibly
-  var posLine, posLabelHTML;
-  if(known){ posLine = known[orient]||known.upright; posLabelHTML='In the '+escapeHTML(label.toLowerCase())+' position:'; }
-  else { var mean=rev?c.rev:c.up; posLine = lensFor(label)+" "+c.name+" - "+(mean.charAt(0).toLowerCase()+mean.slice(1)); posLabelHTML='As '+escapeHTML(label)+':'; }
+  // a position the deck knows ("Present", "The crossing") gets its own position text. Anything
+  // else - no label, a freeform word, a follow-up question - is read straight: the card's
+  // meaning is the answer, so there is no second sentence restating it in other words
+  var known = kind==="position" && base && base.positions && base.positions[label];
+  var posHTML = known ? '<p class="pos-read"><b style="color:var(--gold)">In the '+escapeHTML(label.toLowerCase())+' position:</b> '+(known[orient]||known.upright)+'</p>' : "";
   // deep read (traditional paragraphs + the active deck's layer) - identical to the guided reading
   var dr=deepRead(d, label, "");
   var tradParas=dr.trad.map(function(p){return "<p>"+p+"</p>";}).join("");
@@ -4157,46 +4270,55 @@ function askCardHTML(d,label,clarKey,clarList){
   var AREAS=[["love","♡ Love"],["career","✦ Career"],["money","◈ Money"],["health","✚ Health"],["spirituality","✷ Spirituality"]];
   var ci=cd?AREAS.map(function(x){var t=pick(cd[x[0]]);return t?('<div class="ctx"><span class="ctx-label">'+x[1]+'</span><p>'+t+'</p></div>'):"";}).join(""):"";
   var ctx = ci ? ('<details class="contexts" data-dk="'+dkb+':ctx"><summary>In love, career, money, health &amp; spirituality</summary><div class="ctx-grid">'+ci+'</div></details>') : "";
-  // clarifiers already drawn for this card (from the entry's own pool)
+  // clarifiers already drawn for this card - tarot from this question's own pool, or an oracle card
   var clarCards=(clarList||[]).map(function(cl,cli){
+    var rm='<button class="clar-remove" type="button" data-askclarrm="'+clarKey+':'+cli+'" title="Take this card back out">Remove</button>';
+    var note='An extra card clarifying <b style="color:var(--gold)">'+escapeHTML(kind==="position"?label:c.name)+'</b> - read it as a lens sharpening what that card said.';
+    if(cl.oracle) return oracleCardHTML(cl, dkb+":"+cli, note, rm);
     var cc=DECK[cl.deckIdx];
     var ca = cc.arcana==="major" ? (cc.sigil+" "+cc.astro+" "+cc.glyph) : (cc.suitSigil+" "+cc.suit+" · "+cc.element+" · "+cc.astro);
-    return '<div class="clar-card" data-clarcard="'+dkb+':'+cli+'"><div class="clar-head"><span class="clar-sigil">'+cc.sigil+'</span><span class="clar-name">'+cc.name+'</span><span class="orient">'+(cl.reversed?"Reversed":"Upright")+'</span></div><div class="glyphline">'+ca+'</div><p>'+(cl.reversed?cc.rev:cc.up)+'</p>'+richReadHTML({card:cc,reversed:cl.reversed}, null, dkb+":c"+cli)+'<p class="clar-note">An extra card clarifying <b style="color:var(--gold)">'+escapeHTML(label)+'</b> - read it as a lens sharpening what that card said.</p></div>';
+    return '<div class="clar-card" data-clarcard="'+dkb+':'+cli+'"><div class="clar-head"><span class="clar-sigil">'+cc.sigil+'</span><span class="clar-name">'+cc.name+'</span><span class="orient">'+(cl.reversed?"Reversed":"Upright")+'</span>'+deckTagHTML(cl.deck)+rm+'</div>'
+      + '<div class="clar-body">'+clarArtHTML(cc,cl.reversed,cl.deck)+'<div><div class="glyphline">'+ca+'</div><p>'+(cl.reversed?cc.rev:cc.up)+'</p>'+richReadHTML({card:cc,reversed:cl.reversed}, null, dkb+":c"+cli)+'<p class="clar-note">'+note+'</p></div></div></div>';
   }).join("");
-  var clarBtn='<div class="clarifiers"><button class="btn ghost clar-btn" data-askclar="'+clarKey+'">'+((clarList&&clarList.length)?"+ Draw one more":"✦ Draw a clarifier")+'</button></div>';
+  var clarBtn='<div class="clarifiers"><div class="clar-tools"><button class="btn ghost clar-btn" data-askclar="'+clarKey+'">'+((clarList&&clarList.length)?"+ Draw one more":"✦ Draw a clarifier")+'</button>'+deckPickHTML()+'</div></div>';
   return '<div class="meaning" data-askcard="'+escapeHTML(clarKey)+'">'
-    + '<h4>'+c.name+' <span class="pos-tag">'+escapeHTML(label)+'</span></h4>'
+    + '<h4>'+c.name+(kind==="position"?' <span class="pos-tag">'+escapeHTML(label)+'</span>':'')+deckTagHTML(d.deck)+rmCard+'</h4>'
+    + subq
     + '<div class="glyphline">'+astroLine+'</div>'
     + '<div class="kwrow">'+keys+'</div>'
     + '<span class="orient">'+(rev?"Reversed":"Upright")+'</span>'
     + '<p>'+(rev?c.rev:c.up)+'</p>'
-    + '<p class="pos-read"><b style="color:var(--gold)">'+posLabelHTML+'</b> '+posLine+'</p>'
+    + posHTML
     + deeper + ctx + clarCards + clarBtn
     + '</div>';
 }
 
 function askEntryHTML(entry){
+  // position names sit above the cards only when the reader gave some; a follow-up question
+  // is too long for the board and is quoted with the card's reading instead
+  var anyPos=entry.cards.some(function(cc,i){ return labelKind(entryLabel(entry,i))==="position"; });
   var board=entry.cards.map(function(cc,i){
-    var d={card:DECK[cc.deckIdx],reversed:cc.reversed};
-    return '<div class="slot"><div class="pos">'+escapeHTML(entryLabel(entry,i))+'</div>'+tcardHTML(d,i)+'</div>';
+    var d=askCardObj(cc), L=entryLabel(entry,i), pos=labelKind(L)==="position"?escapeHTML(L):"&nbsp;";
+    return '<div class="slot">'+(anyPos?'<div class="pos">'+pos+'</div>':'')+tcardHTML(d,i)+slotNameHTML(d)+'</div>';
   }).join("");
+  var base=(entry.base==null)?entry.cards.length:entry.base;   // cards added after the pull can be taken back out
   var readings=entry.cards.map(function(cc,i){
-    var d={card:DECK[cc.deckIdx],reversed:cc.reversed};
-    return askCardHTML(d, entryLabel(entry,i), entry.id+":"+i, cc.clar);
+    return askCardHTML(askCardObj(cc), entryLabel(entry,i), entry.id+":"+i, cc.clar, i>=base);
   }).join("");
-  var n=entry.cards.length;
+  var extras=entry.cards.reduce(function(a,cc){ return a+((cc.clar||[]).length); },0);
+  var n=entry.cards.length+extras;   // every card on the table counts, clarifiers included
   // add ANOTHER position/layer to THIS spread - e.g. a 4th month onto a 3-month spread.
   // draws from this question's own pool, so it never repeats a card already in it.
   var addSpread = entry.pool.length
     ? ('<div class="ask-addspread">'
-        + '<input class="ask-addlabel" type="text" placeholder="Name this next card (optional)" value="'+escapeHTML(smartNextLabel(entry))+'">'
-        + '<button class="btn ghost" type="button" data-addspread="'+entry.id+'">✦ Add a card to this spread</button>'
+        + '<textarea class="ask-addlabel autogrow" rows="1" placeholder="Name this card, or ask it a follow-up question (optional)">'+escapeHTML(smartNextLabel(entry))+'</textarea>'
+        + '<div class="clar-tools"><button class="btn ghost" type="button" data-addspread="'+entry.id+'">✦ Add a card to this spread</button>'+deckPickHTML()+'</div>'
         + '</div>')
     : '<p class="hint" style="margin-top:16px;text-align:center">Every card has been drawn for this question.</p>';
   var actions='<div class="ask-actions">'
     + '<div class="ask-journalwrap">'
     +   '<div class="step-label" style="font-size:11px;margin:0 0 2px">✎ Your notes</div>'
-    +   '<textarea class="ask-journal" data-journal="'+entry.id+'" placeholder="What does this stir up? Impressions, what rings true, what you want to remember…">'+escapeHTML(entry.journal||"")+'</textarea>'
+    +   '<textarea class="ask-journal autogrow" data-journal="'+entry.id+'" placeholder="What does this stir up? Impressions, what rings true, what you want to remember…">'+escapeHTML(entry.journal||"")+'</textarea>'
     +   '<div class="hint ask-journalhint">'+(savesUser()
           ?(entry.cloudId?"Notes save to your account.":entry.capped?"Archive full · upgrade to keep more. This question stays on the page and nothing saved is removed.":"Saving to your account…")
           :"Notes stay with this question. Sign in to keep them.")+'</div>'
@@ -4212,7 +4334,7 @@ function askEntryHTML(entry){
   return '<div class="ask-entry" data-entry="'+entry.id+'">'
     + '<button class="ask-del" data-delentry="'+entry.id+'" title="Delete this question">×</button>'
     + '<blockquote class="ask-q">'+escapeHTML(entry.q)+'</blockquote>'
-    + '<div class="ask-meta">'+n+' card'+(n>1?"s":"")+' · '+escapeHTML(entry.time)+'</div>'
+    + '<div class="ask-meta">'+n+' card'+(n>1?"s":"")+(extras?' · '+extras+' extra':'')+' · '+escapeHTML(entry.time)+'</div>'
     + '<div class="board ask-board">'+board+'</div>'
     + '<div class="reading">'+readings+'</div>'
     + addSpread
@@ -4245,6 +4367,7 @@ function renderAskThread(animateId,anchorSel){
     entry._flipped=cards.length;
   });
   dkRestore(dkOpen);                         // reopen the panels the reader had expanded
+  growAll(wrap);                             // notes and follow-up boxes sized to what they hold
   $("askClear").classList.toggle("hidden", askThread.length===0);
   if(animateId){ var el=wrap.querySelector('.ask-entry[data-entry="'+animateId+'"]'); if(el) setTimeout(function(){el.scrollIntoView({behavior:"smooth",block:"start"});},70); }
   else if(restore()){ requestAnimationFrame(function(){ restore(); }); }   // pinned to the anchor - nothing above it moved
@@ -4252,16 +4375,45 @@ function renderAskThread(animateId,anchorSel){
 }
 
 function askDrawClarifier(entryId,cardIdx){
-  var entry=askThread.find(function(e){return e.id===entryId;});
-  if(!entry || !entry.pool.length) return;              // pool empty only after all 78 used in this question
-  var idx=entry.pool.shift();
-  var reversed=state.reversals && Math.random()<0.2;
-  entry.cards[cardIdx].clar.push({deckIdx:idx,reversed});
+  var entry=askThread.find(function(e){return e.id===entryId;}); if(!entry) return;
+  var host=entry.cards[cardIdx]; if(!host) return;
+  // from the deck named in the menu beside the button; tarot comes from this question's own pool
+  var x=drawExtra(function(){ return entry.pool.length?entry.pool.shift():null; }, function(oid){ return askOracleUsed(entry,oid); });
+  if(!x) return;                                        // that deck has nothing left for this question
+  host.clar=host.clar||[]; host.clar.push(x);
   try{ savesUpdateAsk(entry); }catch(e){}
   var key=entryId+":"+cardIdx;
   renderAskThread(null,'[data-askcard="'+key+'"]');   // this card stays put; the new one opens under it
-  var last=entry.cards[cardIdx].clar.length-1;
+  var last=host.clar.length-1;
   setTimeout(function(){ revealIfOffscreen('[data-clarcard="a:'+key+':'+last+'"]'); },80);
+}
+function askOracleUsed(entry,oid){
+  var used=[];
+  entry.cards.forEach(function(cc){ if(cc.oracle===oid) used.push(cc.n); (cc.clar||[]).forEach(function(cl){ if(cl.oracle===oid) used.push(cl.n); }); });
+  return used;
+}
+/* undo: a clarifier, or a card added to the spread after the pull, can be taken back out.
+   Tarot cards go back into this question's pool. */
+function askRemoveClarifier(entryId,cardIdx,clIdx){
+  var entry=askThread.find(function(e){return e.id===entryId;}); if(!entry) return;
+  var host=entry.cards[cardIdx]; if(!host||!host.clar||!host.clar[clIdx]) return;
+  var x=host.clar.splice(clIdx,1)[0];
+  if(x.deckIdx!=null) entry.pool.push(x.deckIdx);
+  try{ savesUpdateAsk(entry); }catch(e){}
+  renderAskThread(null,'[data-askcard="'+entryId+":"+cardIdx+'"]');
+}
+function askRemoveCard(entryId,cardIdx){
+  var entry=askThread.find(function(e){return e.id===entryId;}); if(!entry) return;
+  var base=(entry.base==null)?entry.cards.length:entry.base;
+  if(cardIdx<base||!entry.cards[cardIdx]) return;      // the cards of the pull itself stay
+  var x=entry.cards.splice(cardIdx,1)[0];
+  if(x.deckIdx!=null) entry.pool.push(x.deckIdx);
+  (x.clar||[]).forEach(function(cl){ if(cl.deckIdx!=null) entry.pool.push(cl.deckIdx); });
+  if(entry.labels&&entry.labels.length>cardIdx) entry.labels.splice(cardIdx,1);
+  entry.count=entry.cards.length;
+  if((entry._flipped||0)>entry.cards.length) entry._flipped=entry.cards.length;
+  try{ savesUpdateAsk(entry); }catch(e){}
+  renderAskThread(null,'.ask-entry[data-entry="'+entryId+'"]');
 }
 /* suggest the next position label when extending a spread (Month 3 -> Month 4, Option C -> D, …) */
 function smartNextLabel(entry){
@@ -4271,15 +4423,16 @@ function smartNextLabel(entry){
   var w=/^Week\s+(\d+)/i.exec(last);    if(w) return "Week "+(parseInt(w[1],10)+1);
   var y=/^Year\s+(\d+)/i.exec(last);    if(y) return "Year "+(parseInt(y[1],10)+1);
   var o=/^Option\s+([A-Za-z])/i.exec(last); if(o) return "Option "+String.fromCharCode(o[1].toUpperCase().charCodeAt(0)+1);
-  return labs.length ? "" : ("Card "+(entry.cards.length+1));   // freeform labels → let them name it; unlabelled → next number
+  return "";   // nothing to continue: leave it to the reader (a name, a follow-up question, or nothing)
 }
 /* add one more card/position to an existing spread, from that question's own pool */
 function addToSpread(entryId,label){
-  var entry=askThread.find(function(e){return e.id===entryId;});
-  if(!entry || !entry.pool.length) return;
-  var idx=entry.pool.shift();
-  var reversed=state.reversals && Math.random()<0.2;
-  entry.cards.push({deckIdx:idx,reversed:reversed,clar:[]});
+  var entry=askThread.find(function(e){return e.id===entryId;}); if(!entry) return;
+  var x=drawExtra(function(){ return entry.pool.length?entry.pool.shift():null; }, function(oid){ return askOracleUsed(entry,oid); });
+  if(!x) return;
+  if(entry.base==null) entry.base=entry.cards.length;   // everything from here on can be taken back out
+  x.clar=[];
+  entry.cards.push(x);
   entry.labels=entry.labels||[];
   entry.labels[entry.cards.length-1]=(label&&label.trim())?label.trim():"";
   entry.count=entry.cards.length;
@@ -4296,11 +4449,11 @@ function askPull(){
   for(var i=0;i<askCount;i++){ var idx=pool.shift(); var reversed=state.reversals && Math.random()<0.2; cards.push({deckIdx:idx,reversed:reversed,clar:[]}); }
   var now=new Date();
   var time=now.toLocaleString(undefined,{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"});
-  var newEntry={id:++askId, q:q, count:askCount, labels:labels.slice(0,askCount), pool:pool, cards:cards, time:time, _flipped:0};
+  var newEntry={id:++askId, q:q, count:askCount, base:askCount, labels:labels.slice(0,askCount), pool:pool, cards:cards, time:time, _flipped:0};
   askThread.push(newEntry);
   try{ savesCreateAsk(newEntry); }catch(e){}   /* signed in: this pull saves to the account */
   try{ logReading("ask"); }catch(e){}          /* signed in or not: this reading is counted */
-  $("askQ").value="";
+  $("askQ").value=""; autoGrow($("askQ"));
   renderAskThread(askId);
 }
 
@@ -4418,7 +4571,9 @@ $("askLabelInputs").addEventListener("click",function(e){
 });
 $("askThread").addEventListener("click",function(e){
   var del=e.target.closest("[data-delentry]"); if(del){ var did=+del.dataset.delentry; askThread=askThread.filter(function(x){return x.id!==did;}); renderAskThread(); return; }
-  var addsp=e.target.closest("[data-addspread]"); if(addsp){ var inp=addsp.parentNode.querySelector(".ask-addlabel"); addToSpread(+addsp.dataset.addspread, inp?inp.value:""); return; }
+  var addsp=e.target.closest("[data-addspread]"); if(addsp){ var box=addsp.closest(".ask-addspread"), inp=box?box.querySelector(".ask-addlabel"):null; addToSpread(+addsp.dataset.addspread, inp?inp.value:""); return; }
+  var crm=e.target.closest("[data-askclarrm]"); if(crm){ var pr=crm.dataset.askclarrm.split(":"); askRemoveClarifier(+pr[0],+pr[1],+pr[2]); return; }
+  var krm=e.target.closest("[data-askcardrm]"); if(krm){ var pk=krm.dataset.askcardrm.split(":"); askRemoveCard(+pk[0],+pk[1]); return; }
   if(e.target.closest("#askAnother")){ var qa=$("askQ"); if(qa){ qa.scrollIntoView({behavior:"smooth",block:"center"}); setTimeout(function(){qa.focus();},250); } return; }
   if(e.target.closest("#askFresh")){ startFreshThread(); return; }
   if(e.target.closest("#askFreshTop")){ startFreshThread(); return; }
@@ -4447,6 +4602,7 @@ $("askThread").addEventListener("input",function(e){
 renderAskCount();
 renderAskLabels();
 updatePullLabel();
+growAll();
 
 /* ───────── saved readings + journal, synced to the account (tarot_readings) ─────────
    Signed in, every finished reading saves itself: guided spreads on reveal, ask pulls
@@ -4857,7 +5013,10 @@ document.addEventListener("visibilitychange",function(){
   if(!held) return;
   savesPlan(true).then(savesRetryCapped).catch(function(){});
 });
-function cardRef(d){ return {id:d.card.id,reversed:!!d.reversed}; }
+/* a card as it is stored: a tarot card by id (with its deck when that is not the reading's own),
+   or an oracle card by deck and number */
+function cardRef(d){ return d.oracle?{oracle:d.oracle,n:d.n}:{id:d.card.id,reversed:!!d.reversed,deck:d.deck||undefined}; }
+function extraRef(x){ return x.oracle?{oracle:x.oracle,n:x.n}:{id:DECK[x.deckIdx].id,reversed:!!x.reversed,deck:x.deck||undefined}; }
 function guidedPayload(){
   const s=SPREADS[state.spread]||{};
   const clar={};
@@ -4865,9 +5024,8 @@ function guidedPayload(){
   return {spread:state.spread,positions:s.positions||[],cards:state.drawn.map(cardRef),clarifiers:clar};
 }
 function askPayload(entry){
-  return {q:entry.q,labels:entry.labels||[],cards:entry.cards.map(function(cc){
-    return {id:DECK[cc.deckIdx].id,reversed:!!cc.reversed,
-      clar:(cc.clar||[]).map(function(cl){ return {id:DECK[cl.deckIdx].id,reversed:!!cl.reversed}; })};
+  return {q:entry.q,labels:entry.labels||[],base:(entry.base==null)?entry.cards.length:entry.base,cards:entry.cards.map(function(cc){
+    var ref=extraRef(cc); ref.clar=(cc.clar||[]).map(extraRef); return ref;
   })};
 }
 function updateJournalHint(){
@@ -5092,34 +5250,33 @@ function openSaved(r){
   if(r.kind==="astro"){ awOpenSaved(r); return; }
   if(r.kind==="ask"){
     setMode("ask");
-    const entry={id:++askId,q:p.q||r.title,count:(p.cards||[]).length,labels:p.labels||[],
-      cards:(p.cards||[]).map(function(cc){
-        return {deckIdx:DECK_BY_ID[cc.id],reversed:!!cc.reversed,
-          clar:(cc.clar||[]).map(function(cl){ return {deckIdx:DECK_BY_ID[cl.id],reversed:!!cl.reversed}; })};
-      }),
+    const toCard=function(cc){ if(cc.oracle) return {oracle:cc.oracle,n:cc.n}; const i=DECK_BY_ID[cc.id]; return i==null?null:{deckIdx:i,reversed:!!cc.reversed,deck:cc.deck||undefined}; };
+    const cards=(p.cards||[]).map(function(cc){ const x=toCard(cc); if(!x) return null; x.clar=(cc.clar||[]).map(toCard).filter(Boolean); return x; }).filter(Boolean);
+    const entry={id:++askId,q:p.q||r.title,count:cards.length,base:(p.base==null)?cards.length:p.base,labels:p.labels||[],cards:cards,
       time:new Date(r.created_at).toLocaleString(undefined,{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}),
       _flipped:99, cloudId:r.id, pool:[]};
-    const used={}; entry.cards.forEach(function(cc){ used[cc.deckIdx]=1;(cc.clar||[]).forEach(function(cl){ used[cl.deckIdx]=1; }); });
+    const used={}; entry.cards.forEach(function(cc){ if(cc.deckIdx!=null) used[cc.deckIdx]=1;(cc.clar||[]).forEach(function(cl){ if(cl.deckIdx!=null) used[cl.deckIdx]=1; }); });
     entry.pool=shuffled().filter(function(i){ return !used[i]; });
     askThread.push(entry);
     renderAskThread(entry.id);
   } else {
     setMode("guided");
     if(p.spread && SPREADS[p.spread]) state.spread=p.spread;
-    state.need=(p.cards||[]).length;
-    state.drawn=(p.cards||[]).map(function(cc){ return {card:DECK[DECK_BY_ID[cc.id]],reversed:!!cc.reversed}; });
+    const toDrawn=function(cc){ if(cc.oracle) return {oracle:cc.oracle,n:cc.n}; const i=DECK_BY_ID[cc.id]; return i==null?null:{card:DECK[i],reversed:!!cc.reversed,deck:cc.deck||undefined}; };
+    state.drawn=(p.cards||[]).map(toDrawn).filter(function(d){ return d&&d.card; });
+    state.need=state.drawn.length;
     state.clarifiers={};
     Object.keys(p.clarifiers||{}).forEach(function(k){
-      state.clarifiers[k]=(p.clarifiers[k]||[]).map(function(cl){ return {card:DECK[DECK_BY_ID[cl.id]],reversed:!!cl.reversed}; });
+      const l=(p.clarifiers[k]||[]).map(toDrawn).filter(Boolean); if(l.length) state.clarifiers[k]=l;
     });
     const usedIds={}; state.drawn.forEach(function(d){ usedIds[d.card.id]=1; });
-    Object.keys(state.clarifiers).forEach(function(k){ state.clarifiers[k].forEach(function(d){ usedIds[d.card.id]=1; }); });
+    Object.keys(state.clarifiers).forEach(function(k){ state.clarifiers[k].forEach(function(d){ if(d.card) usedIds[d.card.id]=1; }); });
     order=shuffled().filter(function(i){ return !usedIds[DECK[i].id]; });
     SAVES.id=r.id; SAVES.capped=false;
     SAVES.restoring=true;
     reveal();
     SAVES.restoring=false;
-    $("journalBox").value=r.journal||"";
+    $("journalBox").value=r.journal||""; autoGrow($("journalBox"));
     updateJournalHint();
   }
 }

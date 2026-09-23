@@ -86,11 +86,27 @@ Supabase for auth and saved readings, shared with Stellar.
   Cosmos) were names from the unreleased celestial deck and must not appear under
   Rider-Waite art.
 - **Oracle decks (The Barley Moon).** Not tarot; they live in `ORACLE_DECKS`, art in
-  `cards/barley-inner-wisdom` (35) and `cards/barley-mandala` (36). An account with a
-  `deck_ownership` row for the slug sees "owned" and a Draw a card button (the oracle
-  sheet, `openOracle`); everyone else sees coming soon. There are no `decks` rows for
-  them yet, so nothing sells them; ownership is granted by hand (admin session,
-  `source: gift`).
+  `cards/barley-inner-wisdom` (35) and `cards/barley-mandala` (36). Their `decks` rows (slug =
+  the art folder) dress the local entry in `refreshDecks` (price, on sale, live) and never
+  join the tarot `DECKS` list. Shop row and artist page show Buy at the row's price; the
+  checkout floor is $4.99 (`api/checkout-deck.js`). Both rows were created 23 Sep 2026 at
+  499 cents as `draft`; flip them to `live` in the admin Tarot tab once the client that
+  understands oracle rows is on main. Laura Metcalfe (was Phillips) = artist code `barleymoon`.
+- **Extra cards from any deck.** A menu (`.deck-pick`, `EXTRA_DECK`) beside every "Draw a
+  clarifier" / "Draw another card" / "Add a card" button lists the tarot decks the account can
+  use plus the oracle decks it holds; it only appears when there is a choice. `drawExtra()` is
+  the one way an extra card is drawn. An oracle card is `{oracle, n}` (no orientation, the
+  picture is the reading); a tarot card from another deck carries `deck`. Every extra card
+  has a Remove button; the ask payload carries `base` (the pull size) so only cards added
+  afterwards can be removed. Counts in the reading header include extras. The old oracle
+  pop-up reader is gone.
+- **Ask mode labels.** No label means the card is read straight (no "Card 2" tag, no lens
+  sentence); a label the deck knows gets its position text; a label ending in "?" or longer
+  than five words is a follow-up question and is quoted above the card. Textareas with
+  `.autogrow` size themselves to their text.
+- `cards/rws/cups_06.jpg` was stored upside down until 23 Sep 2026, so every upright Six of
+  Cups looked reversed. If a card ever looks flipped while the reading says upright, check
+  the scan before the code.
 - **Writing voice.** Reading content must read like an astrologer talking across a
   table, not essay prose. The rules and a before/after are in
   `astra-data/deep/DEEP_SPEC.md` under "Sounding like a person, not a model".
