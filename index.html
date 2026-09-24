@@ -3856,7 +3856,7 @@ function awRenderSpread(kind,chart){
    apps. Stellar's own chart caps apply - reached, it points to a Stellar upgrade. Signed
    out, the chart waits as a draft and saves itself once the sign-in lands. ---- */
 const AW_DRAFT_KEY="astra.chartDraft";
-const AW_CHART_CAP={free:2,plus:3,premium:10};   // Stellar's plan limits; Deep Sky (lifetime) is unlimited
+const AW_CHART_CAP={free:1,plus:3,premium:10};   // Stellar's plan limits (free was 2 until September 2026); Deep Sky (lifetime) is unlimited
 let awPlace=null, awGeoTimer=null;
 async function awGeocode(q){
   const out=[];
@@ -3919,6 +3919,8 @@ async function awWriteChart(chart){
   profiles.push(chart);
   const now=new Date().toISOString();
   const w1=await sb.from("stellar_state").upsert({user_id:u.id,key:"stellar.profiles",value:JSON.stringify(profiles),updated_at:now},{onConflict:"user_id,key"});
+  // the server's own chart limit (the stellar_chart_cap trigger) has the last word on a full plan
+  if(w1&&w1.error&&/stellar_chart_cap/.test(String(w1.error.message||"")+" "+String(w1.error.hint||""))){ const err=new Error("cap"); err.cap=lim.cap; err.tier=lim.tier; err.have=profiles.length-1; err.full=true; throw err; }
   if(w1&&w1.error) throw w1.error;
   const w2=await sb.from("stellar_state").upsert({user_id:u.id,key:"stellar.activeId",value:chart.id,updated_at:now},{onConflict:"user_id,key"});
   if(w2&&w2.error) throw w2.error;
@@ -3940,7 +3942,8 @@ async function awSaveChart(ev){
   try{ await awWriteChart(chart); AW.newChart=false; awResetDraws(); try{ localStorage.removeItem(AW_DRAFT_KEY); }catch(e){} awRender(); }
   catch(e){
     if(msg){
-      if(e&&e.message==="cap") msg.innerHTML="Your Stellar plan holds "+e.cap+" chart"+(e.cap===1?"":"s")+" and you have "+e.have+". <a href=\"https://app.stellarastro.app/?upgrade=charts\" target=\"_blank\" rel=\"noopener\" style=\"color:var(--gold)\">Upgrade in Stellar →</a> for more.";
+      /* someone who kept 2 charts when the free plan went to 1 has more than it holds; that is theirs to keep, not an overrun */
+      if(e&&e.message==="cap") msg.innerHTML=((e.full||e.have>e.cap)?"Every chart space on your Stellar plan is in use.":"Your Stellar plan holds "+e.cap+" chart"+(e.cap===1?"":"s")+" and you have "+e.have+".")+" <a href=\"https://app.stellarastro.app/?upgrade=charts\" target=\"_blank\" rel=\"noopener\" style=\"color:var(--gold)\">Upgrade in Stellar →</a> for more.";
       else msg.textContent="That didn't save. Give it another try in a moment.";
     }
   }
