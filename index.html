@@ -670,11 +670,13 @@
   .front-art .card-art.or-face{object-fit:contain;background:#0c0b28}
   /* ── extra cards: the deck menu beside the button, a remove button on each card ── */
   .clar-tools{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
-  .deck-pick{appearance:none;-webkit-appearance:none;max-width:100%;font-family:"Trebuchet MS",sans-serif;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;
-    color:var(--gold-soft);background-color:var(--field-bg);border:1px solid var(--line);border-radius:999px;padding:9px 34px 9px 15px;cursor:pointer;
-    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23c9a24b' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-    background-repeat:no-repeat;background-position:right 14px center;background-size:9px 6px;transition:border-color .2s,color .2s}
-  .deck-pick:hover,.deck-pick:focus{outline:none;border-color:var(--gold);color:var(--gold)}
+  .deck-pick{position:relative;display:inline-flex;flex-direction:column;align-items:flex-start;gap:2px;max-width:100%;padding:3px 4px;line-height:1.2;cursor:pointer}
+  .deck-pick .dp-l{font-family:"Trebuchet MS",sans-serif;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--mist)}
+  .deck-pick .dp-now{font-size:13px;font-style:italic;color:var(--gold-soft);white-space:nowrap;transition:color .2s}
+  .deck-pick .dp-now::after{content:"";display:inline-block;width:9px;height:6px;margin-left:6px;vertical-align:middle;
+    background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23c9a24b' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat center/9px 6px}
+  .deck-pick select{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:16px;border:0;appearance:none;-webkit-appearance:none}
+  .deck-pick:hover .dp-now,.deck-pick:focus-within .dp-now{color:var(--gold)}
   .clar-remove{margin-left:auto;background:none;border:1px solid transparent;color:var(--mist);font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;padding:4px 10px;border-radius:999px;transition:.2s}
   .clar-remove:hover{color:var(--rose);border-color:var(--rose)}
   .meaning h4 .clar-remove{font-size:9px;align-self:center}
@@ -941,6 +943,15 @@
   .ask-addlabel{display:block;width:100%;box-sizing:border-box;min-height:44px;background:var(--field-bg);border:1px solid var(--line);border-radius:10px;color:var(--silver);font-family:inherit;font-size:14px;line-height:1.5;padding:11px 12px}
   .ask-addlabel:focus{outline:none;border-color:var(--gold)}
   .ask-threadfoot{margin-top:28px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+  /* the board names every card: its position, the question it was asked, added or clarifier */
+  .ask-board .slot .pos{display:flex;align-items:flex-end;justify-content:center;line-height:1.25}
+  .ask-board .slot .pos.tag-clar{color:var(--rose)}
+  .ask-board .slot .pos.tag-q,.ask-board .slot .pos.tag-added{color:var(--gold)}
+  .ask-board .slot .slot-q{font-size:12.5px;line-height:1.35;font-style:italic;color:var(--text-strong);text-align:center;max-width:100%;overflow-wrap:anywhere}
+  .ask-board .slot .slot-for{font-family:"Trebuchet MS",sans-serif;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--mist);text-align:center;max-width:100%}
+  @media (max-width:560px){
+    .ask-threadfoot .btn{font-size:11px;letter-spacing:.14em;padding:9px 18px}
+  }
 </style>
 <script>
   /* set the theme before first paint (no flash): saved choice, else light.
@@ -1420,7 +1431,6 @@ try{  /* the arrival, which may already be a deep link to an artist or a deck */
     <div id="awBody"></div>
   </section>
 
-  <p class="upload-note">Card meanings researched with reference to <a href="https://www.thetarotguide.com" target="_blank" rel="noopener" style="color:var(--gold-soft)">The Tarot Guide</a>, reworded in the deck's own voice. For reflection and play.</p>
   <footer>Stellar Tarot · for reflection and play, not prophecy</footer>
 </div>
 
@@ -3287,8 +3297,8 @@ var EXTRA_DECK=null;
 function oracleDeckById(id){ return ORACLE_DECKS.find(function(o){ return o.id===id; })||null; }
 function extraDeckOptions(){
   var opts=[];
-  DECKS.forEach(function(d){ if(deckIsMine(d)) opts.push({v:"t:"+d.id,label:d.name}); });
-  ORACLE_DECKS.forEach(function(o){ if(oracleOwned(o)) opts.push({v:"o:"+o.id,label:o.name+" · oracle"}); });
+  DECKS.forEach(function(d){ if(deckIsMine(d)) opts.push({v:"t:"+d.id,label:d.name,short:d.name}); });
+  ORACLE_DECKS.forEach(function(o){ if(oracleOwned(o)) opts.push({v:"o:"+o.id,label:o.name+" · oracle",short:o.name}); });
   return opts;
 }
 function extraDeckValue(){
@@ -3296,17 +3306,24 @@ function extraDeckValue(){
   if(!opts.some(function(o){ return o.v===cur; })) cur="t:"+state.deck;
   return cur;
 }
+/* a small "Pick a deck / <deck name>" beside the button. The real menu sits invisibly over it,
+   so every phone opens its own picker, and at 16px iOS never zooms the page to reach it */
 function deckPickHTML(){
   var opts=extraDeckOptions(); if(opts.length<2) return "";
-  var cur=extraDeckValue();
-  return '<select class="deck-pick" aria-label="Deck to draw the next card from">'
+  var cur=extraDeckValue(), now=opts.find(function(o){ return o.v===cur; })||opts[0];
+  return '<label class="deck-pick"><span class="dp-l">Pick a deck</span><span class="dp-now">'+escapeHTML(now.short)+'</span>'
+    + '<select aria-label="Deck to draw the next card from">'
     + opts.map(function(o){ return '<option value="'+o.v+'"'+(o.v===cur?' selected':'')+'>'+escapeHTML(o.label)+'</option>'; }).join("")
-    + '</select>';
+    + '</select></label>';
 }
 document.addEventListener("change",function(e){
-  var s=e.target&&e.target.closest&&e.target.closest(".deck-pick"); if(!s) return;
+  var s=e.target; if(!s||s.tagName!=="SELECT"||!s.closest||!s.closest(".deck-pick")) return;
   EXTRA_DECK=s.value;
-  document.querySelectorAll(".deck-pick").forEach(function(x){ if(x!==s) x.value=EXTRA_DECK; });
+  var now=extraDeckOptions().find(function(o){ return o.v===EXTRA_DECK; });
+  document.querySelectorAll(".deck-pick").forEach(function(w){
+    var x=w.querySelector("select"); if(x&&x!==s) x.value=EXTRA_DECK;
+    var t=w.querySelector(".dp-now"); if(t&&now) t.textContent=now.short;
+  });
 });
 /* one extra card from the chosen deck. takeTarot() hands over the next index from the reading's
    own pool (or null when it is spent); usedOracle(id) lists the oracle cards already on the table */
@@ -4244,13 +4261,27 @@ function askCardHTML(d,label,clarKey,clarList,removable){
   var dkb="a:"+clarKey;   // panel key prefix - stable across rebuilds of the thread
   var rmCard=removable?'<button class="clar-remove ask-cardremove" type="button" data-askcardrm="'+clarKey+'" title="Take this card back out of the spread">Remove</button>':'';
   var subq=kind==="question"?'<blockquote class="ask-subq"><span class="ask-subq-l">You asked</span>'+escapeHTML(label)+'</blockquote>':'';
+  var o=d.oracle?oracleDeckById(d.oracle):null;
+  var hostName=kind==="position"?label:(d.oracle?(o?o.name:"Oracle"):d.card.name);
+  // clarifiers already drawn for this card - tarot from this question's own pool, or an oracle card.
+  // every card on the table can take one, an oracle card added to the spread included
+  var clarCards=(clarList||[]).map(function(cl,cli){
+    var rm='<button class="clar-remove" type="button" data-askclarrm="'+clarKey+':'+cli+'" title="Take this card back out">Remove</button>';
+    var note='An extra card clarifying <b style="color:var(--gold)">'+escapeHTML(hostName)+'</b> - read it as a lens sharpening what that card said.';
+    if(cl.oracle) return oracleCardHTML(cl, dkb+":"+cli, note, rm);
+    var cc=DECK[cl.deckIdx];
+    var ca = cc.arcana==="major" ? (cc.sigil+" "+cc.astro+" "+cc.glyph) : (cc.suitSigil+" "+cc.suit+" · "+cc.element+" · "+cc.astro);
+    return '<div class="clar-card" data-clarcard="'+dkb+':'+cli+'"><div class="clar-head"><span class="clar-sigil">'+cc.sigil+'</span><span class="clar-name">'+cc.name+'</span><span class="orient">'+(cl.reversed?"Reversed":"Upright")+'</span>'+deckTagHTML(cl.deck)+rm+'</div>'
+      + '<div class="clar-body">'+clarArtHTML(cc,cl.reversed,cl.deck)+'<div><div class="glyphline">'+ca+'</div><p>'+(cl.reversed?cc.rev:cc.up)+'</p>'+richReadHTML({card:cc,reversed:cl.reversed}, null, dkb+":c"+cli)+'<p class="clar-note">'+note+'</p></div></div></div>';
+  }).join("");
+  var clarBtn='<div class="clarifiers"><div class="clar-tools"><button class="btn ghost clar-btn" data-askclar="'+clarKey+'">'+((clarList&&clarList.length)?"+ Draw one more":"✦ Draw a clarifier")+'</button>'+deckPickHTML()+'</div></div>';
   if(d.oracle){
     // an oracle card added to the spread: the picture is the reading
-    var o=oracleDeckById(d.oracle);
     return '<div class="meaning" data-askcard="'+escapeHTML(clarKey)+'">'
       + '<h4>'+escapeHTML(o?o.name:"Oracle")+(kind==="position"?' <span class="pos-tag">'+escapeHTML(label)+'</span>':'')+rmCard+'</h4>'
       + subq
       + oracleCardHTML(d, dkb+":o", "", "")
+      + clarCards + clarBtn
       + '</div>';
   }
   var c=d.card, rev=d.reversed, orient=rev?"reversed":"upright";
@@ -4273,17 +4304,6 @@ function askCardHTML(d,label,clarKey,clarList,removable){
   var AREAS=[["love","♡ Love"],["career","✦ Career"],["money","◈ Money"],["health","✚ Health"],["spirituality","✷ Spirituality"]];
   var ci=cd?AREAS.map(function(x){var t=pick(cd[x[0]]);return t?('<div class="ctx"><span class="ctx-label">'+x[1]+'</span><p>'+t+'</p></div>'):"";}).join(""):"";
   var ctx = ci ? ('<details class="contexts" data-dk="'+dkb+':ctx"><summary>In love, career, money, health &amp; spirituality</summary><div class="ctx-grid">'+ci+'</div></details>') : "";
-  // clarifiers already drawn for this card - tarot from this question's own pool, or an oracle card
-  var clarCards=(clarList||[]).map(function(cl,cli){
-    var rm='<button class="clar-remove" type="button" data-askclarrm="'+clarKey+':'+cli+'" title="Take this card back out">Remove</button>';
-    var note='An extra card clarifying <b style="color:var(--gold)">'+escapeHTML(kind==="position"?label:c.name)+'</b> - read it as a lens sharpening what that card said.';
-    if(cl.oracle) return oracleCardHTML(cl, dkb+":"+cli, note, rm);
-    var cc=DECK[cl.deckIdx];
-    var ca = cc.arcana==="major" ? (cc.sigil+" "+cc.astro+" "+cc.glyph) : (cc.suitSigil+" "+cc.suit+" · "+cc.element+" · "+cc.astro);
-    return '<div class="clar-card" data-clarcard="'+dkb+':'+cli+'"><div class="clar-head"><span class="clar-sigil">'+cc.sigil+'</span><span class="clar-name">'+cc.name+'</span><span class="orient">'+(cl.reversed?"Reversed":"Upright")+'</span>'+deckTagHTML(cl.deck)+rm+'</div>'
-      + '<div class="clar-body">'+clarArtHTML(cc,cl.reversed,cl.deck)+'<div><div class="glyphline">'+ca+'</div><p>'+(cl.reversed?cc.rev:cc.up)+'</p>'+richReadHTML({card:cc,reversed:cl.reversed}, null, dkb+":c"+cli)+'<p class="clar-note">'+note+'</p></div></div></div>';
-  }).join("");
-  var clarBtn='<div class="clarifiers"><div class="clar-tools"><button class="btn ghost clar-btn" data-askclar="'+clarKey+'">'+((clarList&&clarList.length)?"+ Draw one more":"✦ Draw a clarifier")+'</button>'+deckPickHTML()+'</div></div>';
   return '<div class="meaning" data-askcard="'+escapeHTML(clarKey)+'">'
     + '<h4>'+c.name+(kind==="position"?' <span class="pos-tag">'+escapeHTML(label)+'</span>':'')+deckTagHTML(d.deck)+rmCard+'</h4>'
     + subq
@@ -4296,13 +4316,39 @@ function askCardHTML(d,label,clarKey,clarList,removable){
     + '</div>';
 }
 
+/* every card on the table, in board order: each card of the spread followed by the clarifiers
+   drawn for it. renderAskThread walks the same list to know which faces are already turned. */
+function askBoardItems(entry){
+  var base=(entry.base==null)?entry.cards.length:entry.base, out=[];
+  entry.cards.forEach(function(cc,i){
+    out.push({obj:cc, i:i, added:i>=base});
+    (cc.clar||[]).forEach(function(cl){ out.push({obj:cl, i:i, clarOf:cc}); });
+  });
+  return out;
+}
+/* what the board says about one card: a tag above it (the position, "Question", "Added card",
+   "Clarifier") and, under its name, the question it was asked or the card it clarifies */
+function askSlotLabels(entry,it){
+  if(it.clarOf){
+    var hl=entryLabel(entry,it.i), hd=askCardObj(it.clarOf), ho=hd.oracle?oracleDeckById(hd.oracle):null;
+    var host=labelKind(hl)==="position"?hl:(hd.oracle?(ho?ho.name:"Oracle"):hd.card.name);
+    return {tag:"Clarifier", cls:" tag-clar", under:'<div class="slot-for">for '+escapeHTML(host)+'</div>'};
+  }
+  var L=entryLabel(entry,it.i), kind=labelKind(L);
+  if(kind==="question") return {tag:it.added?"Follow-up question":"Question", cls:" tag-q", under:'<div class="slot-q">“'+escapeHTML(L)+'”</div>'};
+  if(kind==="position") return {tag:(it.added?"Added · ":"")+escapeHTML(L), cls:it.added?" tag-added":"", under:""};
+  return it.added ? {tag:"Added card", cls:" tag-added", under:""} : {tag:"", cls:"", under:""};
+}
+
 function askEntryHTML(entry){
-  // position names sit above the cards only when the reader gave some; a follow-up question
-  // is too long for the board and is quoted with the card's reading instead
-  var anyPos=entry.cards.some(function(cc,i){ return labelKind(entryLabel(entry,i))==="position"; });
-  var board=entry.cards.map(function(cc,i){
-    var d=askCardObj(cc), L=entryLabel(entry,i), pos=labelKind(L)==="position"?escapeHTML(L):"&nbsp;";
-    return '<div class="slot">'+(anyPos?'<div class="pos">'+pos+'</div>':'')+tcardHTML(d,i)+slotNameHTML(d)+'</div>';
+  // the board shows every card drawn for this question. Tags sit above the cards once any card
+  // has something to say: a position, a question, an added card or a clarifier
+  var items=askBoardItems(entry);
+  var labs=items.map(function(it){ return askSlotLabels(entry,it); });
+  var anyTag=labs.some(function(x){ return x.tag; });
+  var board=items.map(function(it,k){
+    var d=askCardObj(it.obj), lb=labs[k];
+    return '<div class="slot'+(it.clarOf?' slot-clar':'')+'">'+(anyTag?'<div class="pos'+lb.cls+'">'+(lb.tag||"&nbsp;")+'</div>':'')+tcardHTML(d,k)+slotNameHTML(d)+lb.under+'</div>';
   }).join("");
   var base=(entry.base==null)?entry.cards.length:entry.base;   // cards added after the pull can be taken back out
   var readings=entry.cards.map(function(cc,i){
@@ -4310,6 +4356,7 @@ function askEntryHTML(entry){
   }).join("");
   var extras=entry.cards.reduce(function(a,cc){ return a+((cc.clar||[]).length); },0);
   var n=entry.cards.length+extras;   // every card on the table counts, clarifiers included
+  var added=Math.max(0,entry.cards.length-base);
   // add ANOTHER position/layer to THIS spread - e.g. a 4th month onto a 3-month spread.
   // draws from this question's own pool, so it never repeats a card already in it.
   var addSpread = entry.pool.length
@@ -4337,7 +4384,7 @@ function askEntryHTML(entry){
   return '<div class="ask-entry" data-entry="'+entry.id+'">'
     + '<button class="ask-del" data-delentry="'+entry.id+'" title="Delete this question">×</button>'
     + '<blockquote class="ask-q">'+escapeHTML(entry.q)+'</blockquote>'
-    + '<div class="ask-meta">'+n+' card'+(n>1?"s":"")+(extras?' · '+extras+' extra':'')+' · '+escapeHTML(entry.time)+'</div>'
+    + '<div class="ask-meta">'+n+' card'+(n>1?"s":"")+(added?' · '+added+' added':'')+(extras?' · '+extras+' clarifier'+(extras>1?"s":""):'')+' · '+escapeHTML(entry.time)+'</div>'
     + '<div class="board ask-board">'+board+'</div>'
     + '<div class="reading">'+readings+'</div>'
     + addSpread
@@ -4355,19 +4402,21 @@ function renderAskThread(animateId,anchorSel){
   var restore=holdAnchor(anchorSel);         // and where the caller wants the page pinned
   wrap.innerHTML=askThread.map(askEntryHTML).join("")
     + (askThread.length ? '<div class="ask-threadfoot">'
-        + '<button class="btn ghost" type="button" id="askAnother">✦ Ask another question in this thread</button>'
+        + '<button class="btn ghost" type="button" id="askAnother">✦ Ask another question</button>'
         + '<button class="btn ghost" type="button" id="askFresh">Start a fresh reading</button>'
         + '</div>' : "");
   askThread.forEach(function(entry){
     var box=wrap.querySelector('.ask-entry[data-entry="'+entry.id+'"] .ask-board');
     if(!box) return;
-    var cards=box.querySelectorAll(".tcard");
-    var already=entry._flipped||0;                        // cards already revealed keep their face; only new ones flip in
+    var cards=box.querySelectorAll(".tcard"), items=askBoardItems(entry), fresh=0;
+    // cards already revealed keep their face; only new ones flip in. Tracked on the card itself,
+    // since a clarifier lands beside its card rather than at the end of the board
     cards.forEach(function(cd,i){
-      if(i<already){ cd.classList.add("flipped"); }
-      else { setTimeout(function(){cd.classList.add("flipped");}, 300+(i-already)*260); }
+      var it=items[i];
+      if(!it||it.obj._shown){ cd.classList.add("flipped"); }
+      else { var wait=300+(fresh++)*260; setTimeout(function(){cd.classList.add("flipped");}, wait); }
+      if(it) it.obj._shown=true;
     });
-    entry._flipped=cards.length;
   });
   dkRestore(dkOpen);                         // reopen the panels the reader had expanded
   growAll(wrap);                             // notes and follow-up boxes sized to what they hold
@@ -4414,7 +4463,6 @@ function askRemoveCard(entryId,cardIdx){
   (x.clar||[]).forEach(function(cl){ if(cl.deckIdx!=null) entry.pool.push(cl.deckIdx); });
   if(entry.labels&&entry.labels.length>cardIdx) entry.labels.splice(cardIdx,1);
   entry.count=entry.cards.length;
-  if((entry._flipped||0)>entry.cards.length) entry._flipped=entry.cards.length;
   try{ savesUpdateAsk(entry); }catch(e){}
   renderAskThread(null,'.ask-entry[data-entry="'+entryId+'"]');
 }
@@ -4452,7 +4500,7 @@ function askPull(){
   for(var i=0;i<askCount;i++){ var idx=pool.shift(); var reversed=state.reversals && Math.random()<0.2; cards.push({deckIdx:idx,reversed:reversed,clar:[]}); }
   var now=new Date();
   var time=now.toLocaleString(undefined,{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"});
-  var newEntry={id:++askId, q:q, count:askCount, base:askCount, labels:labels.slice(0,askCount), pool:pool, cards:cards, time:time, _flipped:0};
+  var newEntry={id:++askId, q:q, count:askCount, base:askCount, labels:labels.slice(0,askCount), pool:pool, cards:cards, time:time};
   askThread.push(newEntry);
   try{ savesCreateAsk(newEntry); }catch(e){}   /* signed in: this pull saves to the account */
   try{ logReading("ask"); }catch(e){}          /* signed in or not: this reading is counted */
@@ -5253,11 +5301,12 @@ function openSaved(r){
   if(r.kind==="astro"){ awOpenSaved(r); return; }
   if(r.kind==="ask"){
     setMode("ask");
-    const toCard=function(cc){ if(cc.oracle) return {oracle:cc.oracle,n:cc.n}; const i=DECK_BY_ID[cc.id]; return i==null?null:{deckIdx:i,reversed:!!cc.reversed,deck:cc.deck||undefined}; };
+    // a saved reading opens face up: every card is marked as already shown
+    const toCard=function(cc){ if(cc.oracle) return {oracle:cc.oracle,n:cc.n,_shown:true}; const i=DECK_BY_ID[cc.id]; return i==null?null:{deckIdx:i,reversed:!!cc.reversed,deck:cc.deck||undefined,_shown:true}; };
     const cards=(p.cards||[]).map(function(cc){ const x=toCard(cc); if(!x) return null; x.clar=(cc.clar||[]).map(toCard).filter(Boolean); return x; }).filter(Boolean);
     const entry={id:++askId,q:p.q||r.title,count:cards.length,base:(p.base==null)?cards.length:p.base,labels:p.labels||[],cards:cards,
       time:new Date(r.created_at).toLocaleString(undefined,{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}),
-      _flipped:99, cloudId:r.id, pool:[]};
+      cloudId:r.id, pool:[]};
     const used={}; entry.cards.forEach(function(cc){ if(cc.deckIdx!=null) used[cc.deckIdx]=1;(cc.clar||[]).forEach(function(cl){ if(cl.deckIdx!=null) used[cl.deckIdx]=1; }); });
     entry.pool=shuffled().filter(function(i){ return !used[i]; });
     askThread.push(entry);
