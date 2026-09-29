@@ -10,6 +10,9 @@
 
   Images are the prepared display resolution files only. Print resolution
   originals never reach this page.
+
+  Only api/preview-gate.js serves this file, behind each artist's password.
+  How a deck gets here: ARTIST-DECKS.md at the top of the repo.
 -->
 <html lang="en">
 <head>
@@ -23,8 +26,11 @@
     --void:#0a0a1f; --void-2:#11102e; --ink:#070612;
     --gold:#e9c46a; --gold-soft:#c9a24b; --silver:#cdd6f4; --mist:#8b8fb5;
     --rose:#d98b9e; --line:rgba(233,196,106,.22);
-    --cw:min(52vw, 286px);           /* card width, everything scales off this */
-    --ch:calc(var(--cw) * 1.3657);   /* 900 / 659 */
+    --ratio:1.3657;                  /* height / width, set per deck by openDeck() */
+    /* card width, everything scales off this. The third term keeps a tall
+       deck (a 1.67 tarot) inside a laptop screen with the header and footer */
+    --cw:min(52vw, 286px, calc((100vh - 300px) / var(--ratio)));
+    --ch:calc(var(--cw) * var(--ratio));
   }
   /* light mode: the same page on parchment. Follows the system unless the
      sun/moon button has been used, which is remembered on this device. */
@@ -115,7 +121,7 @@
   /* ---- menu: the decks on offer, one tile each ---- */
   .menu{margin:auto;padding:12px 20px 40px;display:flex;gap:26px;flex-wrap:wrap;justify-content:center;position:relative;z-index:2}
   .tile{width:min(240px,42vw);text-align:center;cursor:pointer;background:none;border:none;color:inherit;font:inherit;padding:0}
-  .tile img{width:100%;aspect-ratio:659/900;object-fit:cover;border-radius:12px;box-shadow:0 14px 40px var(--shadow);transition:transform .2s;display:block}
+  .tile img{width:100%;aspect-ratio:1/var(--ratio);object-fit:cover;border-radius:12px;box-shadow:0 14px 40px var(--shadow);transition:transform .2s;display:block}
   .tile:hover img,.tile:focus-visible img{transform:translateY(-4px)}
   .tile .t-name{font-size:17px;font-style:italic;color:var(--text-strong);margin-top:14px}
   .tile .t-count{font-family:"SF Mono",ui-monospace,Menlo,monospace;font-size:10.5px;letter-spacing:.2em;color:var(--mist);margin-top:6px}
@@ -129,8 +135,8 @@
   .invalid h2{font-size:20px;font-weight:400;font-style:italic;color:var(--text-strong);margin-bottom:10px}
   .invalid p{font-size:14px;color:var(--mist);line-height:1.6}
 
-  @media (max-width:520px){ :root{ --cw:min(46vw, 205px) } }
-  @media (max-width:380px){ :root{ --cw:min(50vw, 180px) } }
+  @media (max-width:520px){ :root{ --cw:min(46vw, 205px, calc((100vh - 280px) / var(--ratio))) } }
+  @media (max-width:380px){ :root{ --cw:min(50vw, 180px, calc((100vh - 260px) / var(--ratio))) } }
   @media (prefers-reduced-motion: reduce){ .card{transition:none} }
 </style>
 </head>
@@ -168,13 +174,17 @@
 /* ------------------------------------------------------------------
    DECK REGISTRY
 
-   Keyed by an unguessable token, not by the deck slug, so the URL given
-   to one artist reveals nothing about any other deck and cannot be edited
-   into someone else's preview. Add a deck by adding a row here, generating
-   a fresh token, and sending <site>/preview?k=<token>.
+   Keyed by a random token, not by the deck slug. The gate
+   (api/preview-gate.js) hands each artist's page the token for their
+   decks, so what opens is decided by which password was typed.
 
-     slug    folder under /cards
+     slug    the prepared folder: /cards/<slug> when the art is public,
+             or api/_preview/<slug> when it is not (then set `art`)
      count   number of cards in that folder's full/ directory
+     art     optional. Where the gate serves private art from, e.g.
+             "/michaelburkpreviews/art". Omit for art under /cards.
+     back    optional card back URL. Omit to use <slug>/back.jpg.
+     ratio   optional height / width, from manifest.json. Default 1.3657.
      names   optional, index 0 is card 1. Omit for numbered cards.
    ------------------------------------------------------------------ */
 var DECKS = {
@@ -191,6 +201,30 @@ var DECKS = {
     artist: "The Barley Moon",
     count:  36,
     price:  "US$4.99"
+  },
+  "1mco9ebl": {
+    slug:   "anthropologist-tarot",
+    title:  "The Anthropologist Tarot",
+    artist: "Michael Burk",
+    count:  78,
+    ratio:  1.6692,
+    art:    "/michaelburkpreviews/art",
+    back:   "/cards/back-stellar.jpg",     /* the house back until he sends his own */
+    names: [
+      "The Fool", "The Magician", "The High Priestess", "The Empress", "The Emperor", "The Hierophant",
+      "The Lovers", "The Chariot", "Strength", "The Hermit", "The Wheel of Fortune", "Justice",
+      "The Hanged Man", "Death", "Temperance", "The Devil", "The Tower", "The Star",
+      "The Moon", "The Sun", "Judgment", "The World", "Ace of Cups", "Two of Cups",
+      "Three of Cups", "Four of Cups", "Five of Cups", "Six of Cups", "Seven of Cups", "Eight of Cups",
+      "Nine of Cups", "Ten of Cups", "King of Cups", "Queen of Cups", "Knight of Cups", "Page of Cups",
+      "Ace of Pentacles", "Two of Pentacles", "Three of Pentacles", "Four of Pentacles", "Five of Pentacles", "Six of Pentacles",
+      "Seven of Pentacles", "Eight of Pentacles", "Nine of Pentacles", "Ten of Pentacles", "King of Pentacles", "Queen of Pentacles",
+      "Knight of Pentacles", "Page of Pentacles", "Ace of Swords", "Two of Swords", "Three of Swords", "Four of Swords",
+      "Five of Swords", "Six of Swords", "Seven of Swords", "Eight of Swords", "Nine of Swords", "Ten of Swords",
+      "King of Swords", "Queen of Swords", "Knight of Swords", "Page of Swords", "Ace of Wands", "Two of Wands",
+      "Three of Wands", "Four of Wands", "Five of Wands", "Six of Wands", "Seven of Wands", "Eight of Wands",
+      "Nine of Wands", "Ten of Wands", "King of Wands", "Queen of Wands", "Knight of Wands", "Page of Wands"
+    ]
   }
 };
 
@@ -201,7 +235,14 @@ var SETS = {
   "b7rl3ymn": { artist: "The Barley Moon", decks: ["wk3f9qz2","m8vt4xr6"] }
 };
 
-var BASE = "/cards";   /* where the prepared decks live */
+var BASE = "/cards";   /* where the prepared public decks live */
+
+/* card n (1-based) of deck d at size "full" or "thumb". Private art comes
+   through the gate, which takes the number without an extension. */
+function cardSrc(d, size, n){
+  return d.art ? d.art+"/"+d.slug+"/"+size+"/"+n : BASE+"/"+d.slug+"/"+size+"/"+n+".jpg";
+}
+function backSrc(d){ return d.back || BASE+"/"+d.slug+"/back.jpg"; }
 
 /* ---- geometry, indexed by distance from centre ----
    Five cards read face up, the centre plus two each side. Beyond that the
@@ -275,11 +316,11 @@ function build(){
     var fl=document.createElement("div"); fl.className="flip";
     var f=document.createElement("img");
     f.className="face front"; f.draggable=false; f.alt="";
-    f.src=BASE+"/"+deck.slug+"/full/"+i+".jpg";
+    f.src=cardSrc(deck,"full",i);
     f.loading = i<=8 ? "eager" : "lazy";
     var b=document.createElement("img");
     b.className="face back"; b.draggable=false; b.alt="";
-    b.src=BASE+"/"+deck.slug+"/back.jpg";
+    b.src=backSrc(deck);
     fl.appendChild(f); fl.appendChild(b); el.appendChild(fl);
     (function(idx){ el.addEventListener("click",function(){ if(Math.abs(idx-target)>0.5) go(idx); }); })(i-1);
     frag.appendChild(el);
@@ -360,7 +401,7 @@ function showMenu(){
   SET.decks.forEach(function(k){
     var d=DECKS[k]; if(!d) return;
     var b=document.createElement("button"); b.className="tile"; b.type="button";
-    b.innerHTML='<img src="'+BASE+'/'+d.slug+'/full/1.jpg" alt=""><div class="t-name">'+d.title+'</div><div class="t-count">'+d.count+' cards'+(d.price?' · <span class="price">'+d.price+'</span>':'')+'</div>';
+    b.innerHTML='<img src="'+cardSrc(d,"full",1)+'" alt="" style="--ratio:'+(d.ratio||1.3657)+'"><div class="t-name">'+d.title+'</div><div class="t-count">'+d.count+' cards'+(d.price?' · <span class="price">'+d.price+'</span>':'')+'</div>';
     b.addEventListener("click",function(){ openDeck(k); });
     m.appendChild(b);
   });
@@ -369,6 +410,7 @@ function showMenu(){
 }
 function openDeck(k){
   deck=DECKS[k]; pos=0; target=0;
+  document.documentElement.style.setProperty("--ratio", String(deck.ratio||1.3657));
   document.getElementById("menu").hidden=true;
   document.getElementById("deckTitle").textContent=deck.title;
   var sub=document.getElementById("deckArtist");
@@ -377,7 +419,8 @@ function openDeck(k){
   document.getElementById("note").textContent =
     "A private preview of "+deck.title+" as prepared for Stellar Tarot. "+
     "Cards are shown at the resolution the app displays them, not at print resolution. "+
-    "Nothing is public and nothing is for sale until you say so.";
+    "Nothing is public and nothing is for sale until you say so."+
+    (deck.back ? " The card back shown is the Stellar Tarot house back, used until you send your own." : "");
   var sw=document.getElementById("switch");
   if(SET){
     sw.innerHTML="";

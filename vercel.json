@@ -9,7 +9,15 @@
     },
     {
       "source": "/thebarleymoonpreviews",
-      "destination": "/api/preview-gate"
+      "destination": "/api/preview-gate?a=thebarleymoon"
+    },
+    {
+      "source": "/michaelburkpreviews",
+      "destination": "/api/preview-gate?a=michaelburk"
+    },
+    {
+      "source": "/michaelburkpreviews/art/:slug/:size/:n",
+      "destination": "/api/preview-gate?a=michaelburk&slug=:slug&size=:size&n=:n"
     },
     {
       "source": "/:artist([a-z0-9-]+)",
@@ -49,7 +57,7 @@
   ],
   "functions": {
     "api/preview-gate.js": {
-      "includeFiles": "api/_deck-preview.html"
+      "includeFiles": "api/_preview/**"
     }
   }
 }

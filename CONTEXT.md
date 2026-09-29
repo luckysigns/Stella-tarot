@@ -51,6 +51,9 @@ Supabase for auth and saved readings, shared with Stellar.
 | `api/restore.js` | an email → the same token, on any device |
 | `api/check.js` | revalidates a token (signature + expiry), no Stripe call |
 | `scripts/point-payment-links.js` | one-off: points the payment links back at the app |
+| `ARTIST-DECKS.md` | **the runbook for a new artist deck**: prepare, private preview, admin, going live |
+| `scripts/prepare_deck.py` | artist originals → 900 px cards, thumbs, manifest and a contact sheet |
+| `api/preview-gate.js`, `api/_preview/` | each artist's password-protected deck preview (`/<code>previews`) and the unreleased art it serves |
 | `vercel.json` | rewrites and security headers |
 | `deep/<cardId>.json`, `deep/identity/<cardId>.json` | the in-depth astrology readings, fetched by the wing when a card is shown (never inlined) |
 | `astra-data/deep/` | the tooling that writes them (gitignored): `DEEP_SPEC.md`, `facts.js`, `validate.js`, `deep_run.sh`, `publish.sh` |
@@ -92,6 +95,10 @@ Supabase for auth and saved readings, shared with Stellar.
   checkout floor is $4.99 (`api/checkout-deck.js`). Both rows were created 23 Sep 2026 at
   499 cents as `draft`; flip them to `live` in the admin Tarot tab once the client that
   understands oracle rows is on main. Laura Metcalfe (was Phillips) = artist code `barleymoon`.
+- **The Anthropologist Tarot (Michael Burk, `michaelburk`).** 78-card tarot, arrived 28 Sep
+  2026, prepared into `api/_preview/anthropologist-tarot/` and previewed at
+  `/michaelburkpreviews`. Licence not signed yet, so the art is private and the row is draft.
+  The app cannot show an artist's tarot deck yet; see ARTIST-DECKS.md, "Going live".
 - **Extra cards from any deck.** A menu (`.deck-pick`, `EXTRA_DECK`) beside every "Draw a
   clarifier" / "Draw another card" / "Add a card" button lists the tarot decks the account can
   use plus the oracle decks it holds; it only appears when there is a choice. `drawExtra()` is
