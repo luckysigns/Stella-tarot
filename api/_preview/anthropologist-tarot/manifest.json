@@ -1,0 +1,477 @@
+{
+ "slug": "anthropologist-tarot",
+ "count": 78,
+ "kind": "tarot",
+ "back": false,
+ "cards": [
+  {
+   "n": 1,
+   "slot": "major_00_fool",
+   "name": "The Fool",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-01_TheFool.jpg"
+  },
+  {
+   "n": 2,
+   "slot": "major_01_magician",
+   "name": "The Magician",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-02_TheMagician.jpg"
+  },
+  {
+   "n": 3,
+   "slot": "major_02_high_priestess",
+   "name": "The High Priestess",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-03_TheHighPriestess.jpg"
+  },
+  {
+   "n": 4,
+   "slot": "major_03_empress",
+   "name": "The Empress",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-04_TheEmpress.jpg"
+  },
+  {
+   "n": 5,
+   "slot": "major_04_emperor",
+   "name": "The Emperor",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-05_TheEmperor.jpg"
+  },
+  {
+   "n": 6,
+   "slot": "major_05_hierophant",
+   "name": "The Hierophant",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-06_TheHierophant.jpg"
+  },
+  {
+   "n": 7,
+   "slot": "major_06_lovers",
+   "name": "The Lovers",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-07_TheLovers.jpg"
+  },
+  {
+   "n": 8,
+   "slot": "major_07_chariot",
+   "name": "The Chariot",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-08_TheChariot.jpg"
+  },
+  {
+   "n": 9,
+   "slot": "major_08_strength",
+   "name": "Strength",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-09_Strength.jpg"
+  },
+  {
+   "n": 10,
+   "slot": "major_09_hermit",
+   "name": "The Hermit",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-10_TheHermit.jpg"
+  },
+  {
+   "n": 11,
+   "slot": "major_10_wheel_of_fortune",
+   "name": "The Wheel of Fortune",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-11_TheWheelOfFortune.jpg"
+  },
+  {
+   "n": 12,
+   "slot": "major_11_justice",
+   "name": "Justice",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-12_Justice.jpg"
+  },
+  {
+   "n": 13,
+   "slot": "major_12_hanged_man",
+   "name": "The Hanged Man",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-13_TheHangedMan.jpg"
+  },
+  {
+   "n": 14,
+   "slot": "major_13_death",
+   "name": "Death",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-14_Death.jpg"
+  },
+  {
+   "n": 15,
+   "slot": "major_14_temperance",
+   "name": "Temperance",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-15_Temperance.jpg"
+  },
+  {
+   "n": 16,
+   "slot": "major_15_devil",
+   "name": "The Devil",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-16_TheDevil.jpg"
+  },
+  {
+   "n": 17,
+   "slot": "major_16_tower",
+   "name": "The Tower",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-17_TheTower.jpg"
+  },
+  {
+   "n": 18,
+   "slot": "major_17_star",
+   "name": "The Star",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-18_TheStar.jpg"
+  },
+  {
+   "n": 19,
+   "slot": "major_18_moon",
+   "name": "The Moon",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-19_TheMoon.jpg"
+  },
+  {
+   "n": 20,
+   "slot": "major_19_sun",
+   "name": "The Sun",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-20_TheSun.jpg"
+  },
+  {
+   "n": 21,
+   "slot": "major_20_judgement",
+   "name": "Judgment",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-21_Judgment.jpg"
+  },
+  {
+   "n": 22,
+   "slot": "major_21_world",
+   "name": "The World",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-22_TheWorld.jpg"
+  },
+  {
+   "n": 23,
+   "slot": "cups_01",
+   "name": "Ace of Cups",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-23_AceOfCups.jpg"
+  },
+  {
+   "n": 24,
+   "slot": "cups_02",
+   "name": "Two of Cups",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-24_TwoOfCups.jpg"
+  },
+  {
+   "n": 25,
+   "slot": "cups_03",
+   "name": "Three of Cups",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-25_ThreeOfCups.jpg"
+  },
+  {
+   "n": 26,
+   "slot": "cups_04",
+   "name": "Four of Cups",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-26_FourOfCups.jpg"
+  },
+  {
+   "n": 27,
+   "slot": "cups_05",
+   "name": "Five of Cups",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-27_FiveOfCups.jpg"
+  },
+  {
+   "n": 28,
+   "slot": "cups_06",
+   "name": "Six of Cups",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-28_SixOfCups.jpg"
+  },
+  {
+   "n": 29,
+   "slot": "cups_07",
+   "name": "Seven of Cups",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-29_SevenOfCups.jpg"
+  },
+  {
+   "n": 30,
+   "slot": "cups_08",
+   "name": "Eight of Cups",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-30_EightOfCups.jpg"
+  },
+  {
+   "n": 31,
+   "slot": "cups_09",
+   "name": "Nine of Cups",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-31_NineOfCups.jpg"
+  },
+  {
+   "n": 32,
+   "slot": "cups_10",
+   "name": "Ten of Cups",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-32_TenOfCups.jpg"
+  },
+  {
+   "n": 33,
+   "slot": "cups_king",
+   "name": "King of Cups",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-33_KingOfCups.jpg"
+  },
+  {
+   "n": 34,
+   "slot": "cups_queen",
+   "name": "Queen of Cups",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-34_QueenOfCups.jpg"
+  },
+  {
+   "n": 35,
+   "slot": "cups_knight",
+   "name": "Knight of Cups",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-35_KnightOfCups.jpg"
+  },
+  {
+   "n": 36,
+   "slot": "cups_page",
+   "name": "Page of Cups",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-36_PageOfCups.jpg"
+  },
+  {
+   "n": 37,
+   "slot": "pentacles_01",
+   "name": "Ace of Pentacles",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-37_AceOfPentacles.jpg"
+  },
+  {
+   "n": 38,
+   "slot": "pentacles_02",
+   "name": "Two of Pentacles",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-38_TwoOfPentacles.jpg"
+  },
+  {
+   "n": 39,
+   "slot": "pentacles_03",
+   "name": "Three of Pentacles",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-39_ThreeOfPentacles.jpg"
+  },
+  {
+   "n": 40,
+   "slot": "pentacles_04",
+   "name": "Four of Pentacles",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-40_FourOfPentacles.jpg"
+  },
+  {
+   "n": 41,
+   "slot": "pentacles_05",
+   "name": "Five of Pentacles",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-41_FiveOfPentacles.jpg"
+  },
+  {
+   "n": 42,
+   "slot": "pentacles_06",
+   "name": "Six of Pentacles",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-42_SixOfPentacles.jpg"
+  },
+  {
+   "n": 43,
+   "slot": "pentacles_07",
+   "name": "Seven of Pentacles",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-43_SevenOfPentacles.jpg"
+  },
+  {
+   "n": 44,
+   "slot": "pentacles_08",
+   "name": "Eight of Pentacles",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-44_EightOfPentacles.jpg"
+  },
+  {
+   "n": 45,
+   "slot": "pentacles_09",
+   "name": "Nine of Pentacles",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-45_NineOfPentacles.jpg"
+  },
+  {
+   "n": 46,
+   "slot": "pentacles_10",
+   "name": "Ten of Pentacles",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-46_TenOfPentacles.jpg"
+  },
+  {
+   "n": 47,
+   "slot": "pentacles_king",
+   "name": "King of Pentacles",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-47_KingOfPentacles.jpg"
+  },
+  {
+   "n": 48,
+   "slot": "pentacles_queen",
+   "name": "Queen of Pentacles",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-48_QueenOfPentacles.jpg"
+  },
+  {
+   "n": 49,
+   "slot": "pentacles_knight",
+   "name": "Knight of Pentacles",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-49_KnightOfPentacles.jpg"
+  },
+  {
+   "n": 50,
+   "slot": "pentacles_page",
+   "name": "Page of Pentacles",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-50_PageOfPentacles.jpg"
+  },
+  {
+   "n": 51,
+   "slot": "swords_01",
+   "name": "Ace of Swords",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-51_AceOfSwords.jpg"
+  },
+  {
+   "n": 52,
+   "slot": "swords_02",
+   "name": "Two of Swords",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-52_TwoOfSwords.jpg"
+  },
+  {
+   "n": 53,
+   "slot": "swords_03",
+   "name": "Three of Swords",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-53_ThreeOfSwords.jpg"
+  },
+  {
+   "n": 54,
+   "slot": "swords_04",
+   "name": "Four of Swords",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-54_FourOfSwords.jpg"
+  },
+  {
+   "n": 55,
+   "slot": "swords_05",
+   "name": "Five of Swords",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-55_FiveOfSwords.jpg"
+  },
+  {
+   "n": 56,
+   "slot": "swords_06",
+   "name": "Six of Swords",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-56_SixOfSwords.jpg"
+  },
+  {
+   "n": 57,
+   "slot": "swords_07",
+   "name": "Seven of Swords",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-57_SevenOfSwords.jpg"
+  },
+  {
+   "n": 58,
+   "slot": "swords_08",
+   "name": "Eight of Swords",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-58_EightOfSwords.jpg"
+  },
+  {
+   "n": 59,
+   "slot": "swords_09",
+   "name": "Nine of Swords",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-59_NineOfSwords.jpg"
+  },
+  {
+   "n": 60,
+   "slot": "swords_10",
+   "name": "Ten of Swords",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-60_TenOfSwords.jpg"
+  },
+  {
+   "n": 61,
+   "slot": "swords_king",
+   "name": "King of Swords",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-61_KingOfSwords.jpg"
+  },
+  {
+   "n": 62,
+   "slot": "swords_queen",
+   "name": "Queen of Swords",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-62_QueenOfSwords.jpg"
+  },
+  {
+   "n": 63,
+   "slot": "swords_knight",
+   "name": "Knight of Swords",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-63_KnightOfSwords.jpg"
+  },
+  {
+   "n": 64,
+   "slot": "swords_page",
+   "name": "Page of Swords",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-64_PageOfSwords.jpg"
+  },
+  {
+   "n": 65,
+   "slot": "wands_01",
+   "name": "Ace of Wands",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-65_AceOfWands.jpg"
+  },
+  {
+   "n": 66,
+   "slot": "wands_02",
+   "name": "Two of Wands",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-66_TwoOfWands.jpg"
+  },
+  {
+   "n": 67,
+   "slot": "wands_03",
+   "name": "Three of Wands",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-67_ThreeOfWands.jpg"
+  },
+  {
+   "n": 68,
+   "slot": "wands_04",
+   "name": "Four of Wands",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-68_FourOfWands.jpg"
+  },
+  {
+   "n": 69,
+   "slot": "wands_05",
+   "name": "Five of Wands",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-69_FiveOfWands.jpg"
+  },
+  {
+   "n": 70,
+   "slot": "wands_06",
+   "name": "Six of Wands",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-70_SixOfWands.jpg"
+  },
+  {
+   "n": 71,
+   "slot": "wands_07",
+   "name": "Seven of Wands",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-71_SevenOfWands.jpg"
+  },
+  {
+   "n": 72,
+   "slot": "wands_08",
+   "name": "Eight of Wands",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-72_EightOfWands.jpg"
+  },
+  {
+   "n": 73,
+   "slot": "wands_09",
+   "name": "Nine of Wands",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-73_NineOfWands.jpg"
+  },
+  {
+   "n": 74,
+   "slot": "wands_10",
+   "name": "Ten of Wands",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-74_TenOfWands.jpg"
+  },
+  {
+   "n": 75,
+   "slot": "wands_king",
+   "name": "King of Wands",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-75_KingOfWands.jpg"
+  },
+  {
+   "n": 76,
+   "slot": "wands_queen",
+   "name": "Queen of Wands",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-76_QueenOfWands.jpg"
+  },
+  {
+   "n": 77,
+   "slot": "wands_knight",
+   "name": "Knight of Wands",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-77_KnightOfWands.jpg"
+  },
+  {
+   "n": 78,
+   "slot": "wands_page",
+   "name": "Page of Wands",
+   "source": "TheAnthropologistTarot_By_MichaelBurk_Card-78_PageOfWands.jpg"
+  }
+ ],
+ "ratio": 1.6692
+}
