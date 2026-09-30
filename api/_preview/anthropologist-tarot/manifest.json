@@ -2,7 +2,7 @@
  "slug": "anthropologist-tarot",
  "count": 78,
  "kind": "tarot",
- "back": false,
+ "back": true,
  "cards": [
   {
    "n": 1,
@@ -473,5 +473,6 @@
    "source": "TheAnthropologistTarot_By_MichaelBurk_Card-78_PageOfWands.jpg"
   }
  ],
- "ratio": 1.6692
+ "ratio": 1.7302,
+ "bleed_trimmed_in": 0.125
 }

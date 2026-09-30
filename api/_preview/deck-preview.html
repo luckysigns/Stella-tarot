@@ -183,7 +183,10 @@
      count   number of cards in that folder's full/ directory
      art     optional. Where the gate serves private art from, e.g.
              "/michaelburkpreviews/art". Omit for art under /cards.
-     back    optional card back URL. Omit to use <slug>/back.jpg.
+     back    optional card back URL. Omit to use <slug>/back.jpg (or the
+             gate's /back when the art is private).
+     v       optional. Bump when the art is re-prepared, so browsers that
+             cached the old images (a day, through the gate) fetch new ones.
      ratio   optional height / width, from manifest.json. Default 1.3657.
      names   optional, index 0 is card 1. Omit for numbered cards.
    ------------------------------------------------------------------ */
@@ -207,9 +210,10 @@ var DECKS = {
     title:  "The Anthropologist Tarot",
     artist: "Michael Burk",
     count:  78,
-    ratio:  1.6692,
+    price:  "US$8.88",
+    ratio:  1.7302,                        /* bleed trimmed, 30 Sep 2026 */
     art:    "/michaelburkpreviews/art",
-    back:   "/cards/back-stellar.jpg",     /* the house back until he sends his own */
+    v:      2,                             /* re-prepared art: bust the gate's day-long cache */
     names: [
       "The Fool", "The Magician", "The High Priestess", "The Empress", "The Emperor", "The Hierophant",
       "The Lovers", "The Chariot", "Strength", "The Hermit", "The Wheel of Fortune", "Justice",
@@ -240,9 +244,13 @@ var BASE = "/cards";   /* where the prepared public decks live */
 /* card n (1-based) of deck d at size "full" or "thumb". Private art comes
    through the gate, which takes the number without an extension. */
 function cardSrc(d, size, n){
-  return d.art ? d.art+"/"+d.slug+"/"+size+"/"+n : BASE+"/"+d.slug+"/"+size+"/"+n+".jpg";
+  var v = d.v ? "?v="+d.v : "";
+  return d.art ? d.art+"/"+d.slug+"/"+size+"/"+n+v : BASE+"/"+d.slug+"/"+size+"/"+n+".jpg"+v;
 }
-function backSrc(d){ return d.back || BASE+"/"+d.slug+"/back.jpg"; }
+function backSrc(d){
+  if (d.back) return d.back;
+  return d.art ? cardSrc(d, "full", "back") : BASE+"/"+d.slug+"/back.jpg";
+}
 
 /* ---- geometry, indexed by distance from centre ----
    Five cards read face up, the centre plus two each side. Beyond that the

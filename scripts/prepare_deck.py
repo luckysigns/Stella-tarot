@@ -18,6 +18,9 @@ prefix every file shares is taken off. A tarot deck is also matched onto the
 78 canonical slots with CreatorApps/tools/card_slots.py, and the script stops
 rather than guess if any card fails to match or two files claim one slot.
 Pass --oracle for a deck that is not tarot (no slots, any number of cards).
+Pass --bleed 0.125 when the artist sent print files with a bleed round the
+edge: that many inches come off every side (of the back too), measured against
+--trim-height, the printed card's height (4.75 in for a standard tarot card).
 
 Never upscales, strips metadata, and reports any EXIF rotation tag (see load()). The originals are not
 modified and never copied into the repo (licence clause 12.2).
@@ -58,11 +61,12 @@ def split_names(files):
     file shares ('TheAnthropologistTarot_By_MichaelBurk_Card-') is dropped
     first, trimmed back so it never eats the start of the card number."""
     stems = [Path(f).stem for f in files]
-    prefix = os.path.commonprefix(stems) if len(stems) > 1 else ""
+    fronts = [s for s in stems if not is_back(s)]   # 'Deck_BACK' would cut the prefix short
+    prefix = os.path.commonprefix(fronts) if len(fronts) > 1 else ""
     prefix = prefix.rstrip("0123456789")
     out = []
     for s in stems:
-        rest = s[len(prefix):]
+        rest = s[len(prefix):] if s.startswith(prefix) else s
         m = re.match(r"^(\d+)[\s_\-.]*(.*)$", rest)
         n, label = (int(m.group(1)), m.group(2)) if m else (None, rest)
         out.append((n, label_words(label)))
@@ -91,6 +95,15 @@ def load(path, flagged):
     return im.convert("RGB")
 
 
+def trim_bleed(im, bleed, trim_height):
+    """Take the print bleed off every side. The file is the trimmed card plus
+    `bleed` inches all round, so its pixels per inch come from its height."""
+    if not bleed:
+        return im
+    px = round(bleed * im.height / (trim_height + 2 * bleed))
+    return im.crop((px, px, im.width - px, im.height - px))
+
+
 def save(im, path, height, quality):
     w, h = im.size
     if h > height:
@@ -109,6 +122,8 @@ def main():
     ap.add_argument("--height", type=int, default=900)
     ap.add_argument("--thumb", type=int, default=260)
     ap.add_argument("--quality", type=int, default=85)
+    ap.add_argument("--bleed", type=float, default=0, help="inches of print bleed to trim from each side")
+    ap.add_argument("--trim-height", type=float, default=4.75, help="printed card height in inches, for --bleed")
     a = ap.parse_args()
 
     src = Path(a.source).expanduser()
@@ -154,7 +169,7 @@ def main():
                 "back": bool(backs), "cards": []}
     total, sizes, flagged = 0, [], []
     for n, f in enumerate(cards, 1):
-        im = load(src / f, flagged)
+        im = trim_bleed(load(src / f, flagged), a.bleed, a.trim_height)
         sizes.append(im.size)
         (fw, fh), b1 = save(im, out / "full" / f"{n}.jpg", a.height, a.quality)
         _, b2 = save(im, out / "thumb" / f"{n}.jpg", a.thumb, a.quality - 7)
@@ -167,7 +182,7 @@ def main():
             "source": f,
         })
     if backs:
-        im = load(src / backs[0], flagged)
+        im = trim_bleed(load(src / backs[0], flagged), a.bleed, a.trim_height)
         _, b = save(im, out / "back.jpg", a.height, a.quality)
         total += b
 
@@ -175,6 +190,8 @@ def main():
     mid = ratios[len(ratios) // 2]
     odd = [cards[i] for i, (w, h) in enumerate(sizes) if abs(h / w - mid) / mid > 0.02]
     manifest["ratio"] = round(mid, 4)
+    if a.bleed:
+        manifest["bleed_trimmed_in"] = a.bleed
     (out / "manifest.json").write_text(json.dumps(manifest, indent=1) + "\n")
 
     # contact sheet: every card small, in order, to catch an upside-down or wrong scan
@@ -192,6 +209,8 @@ def main():
     print(f"{len(cards)} cards -> {out.relative_to(REPO) if out.is_relative_to(REPO) else out}")
     print(f"  source {sizes[0][0]}x{sizes[0][1]}, full {fw}x{fh}, ratio {mid:.4f} (height / width)")
     print(f"  card back: {backs[0] if backs else 'none sent'}")
+    if a.bleed:
+        print(f"  bleed: {a.bleed} in trimmed from every side")
     print(f"  weight {total / 1e6:.1f} MB (full + thumbs)")
     if odd:
         print("  odd aspect ratio, check these: " + ", ".join(odd))

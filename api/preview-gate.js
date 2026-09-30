@@ -109,11 +109,12 @@ function gallery(A) {
 /* one prepared card, only for a slug on this artist's list */
 function art(res, A, q) {
   const slug = String(q.slug || ""), size = String(q.size || ""), n = String(q.n || "");
-  if (!(A.art || []).includes(slug) || !/^(full|thumb)$/.test(size) || !/^[0-9]{1,3}$/.test(n)) {
+  if (!(A.art || []).includes(slug) || !/^(full|thumb)$/.test(size) || !/^([0-9]{1,3}|back)$/.test(n)) {
     res.statusCode = 404; return res.end();
   }
   let buf;
-  try { buf = fs.readFileSync(path.join(process.cwd(), "api", "_preview", slug, size, n + ".jpg")); }
+  const file = n === "back" ? path.join(slug, "back.jpg") : path.join(slug, size, n + ".jpg");
+  try { buf = fs.readFileSync(path.join(process.cwd(), "api", "_preview", file)); }
   catch (e) { res.statusCode = 404; return res.end(); }
   res.statusCode = 200;
   res.setHeader("Content-Type", "image/jpeg");

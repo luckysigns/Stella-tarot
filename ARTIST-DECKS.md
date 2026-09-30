@@ -11,7 +11,7 @@ steps earlier by hand.
 | Artist | Code | Deck(s) | Slug | Preview | Row status |
 |---|---|---|---|---|---|
 | The Barley Moon (Laura Metcalfe) | `barleymoon` | Inner Wisdom Oracle (35), Mandala Oracle Deck (36) | `barley-inner-wisdom`, `barley-mandala` | `/thebarleymoonpreviews` | live |
-| Michael Burk | `michaelburk` | The Anthropologist Tarot (78) | `anthropologist-tarot` | `/michaelburkpreviews` | draft, licence not signed |
+| Michael Burk | `michaelburk` | The Anthropologist Tarot (78) | `anthropologist-tarot` | `/michaelburkpreviews` | draft at $8.88, licence not signed; his back, bleed trimmed, meanings in `meanings.json`; samples he left to us: Wheel of Fortune (11), Two of Cups (24), Six of Swords (56) |
 
 Update this table whenever an artist is added or a deck changes status.
 
@@ -60,6 +60,17 @@ admin row, the folders, the checkout). It writes `api/_preview/<slug>/`:
 - `back.jpg`: only when the artist sent a back (a file with "back" in its name)
 - `manifest.json`: card number, canonical slot (tarot), name, source file,
   and `ratio` (height / width) for the gallery
+
+**Print files with a bleed.** Artists often export the print file, with a
+bleed (usually 0.125 in) round the trimmed card, and the bleed edge can show
+stray pixels. Add `--bleed 0.125` (and `--trim-height` if the card is not the
+standard 4.75 in tarot height) and the script trims every card and the back.
+Michael's files were 647x1080, i.e. 3 x 5 in at 216 px/in, so 27 px came off
+each side. After re-preparing art the artist has already seen, bump `v` on
+the deck's gallery entry so their browser drops the day-long cached images.
+
+**Card meanings.** If the artist sends their own, keep them beside the manifest
+as `api/_preview/<slug>/meanings.json`, keyed by slot, words exactly as sent.
 
 Card numbers follow the artist's own order: the number in each file name once
 the prefix every file shares is dropped. A tarot deck is also matched onto the
