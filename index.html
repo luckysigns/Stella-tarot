@@ -602,7 +602,7 @@
   .meaning h4{font-size:20px;font-weight:400;color:var(--text-strong);display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
   .meaning h4 .pos-tag{font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
   .meaning .glyphline{color:var(--rose);font-size:14px;margin:4px 0 10px;font-style:italic}
-  .meaning .orient{font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-soft);border:1px solid var(--line);border-radius:999px;padding:3px 10px;display:inline-block;margin-bottom:10px}
+  .meaning .orient,.clar-head .orient{font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-soft);border:1px solid var(--line);border-radius:999px;padding:3px 10px;display:inline-block;margin-bottom:10px}
   .meaning p{color:var(--silver);line-height:1.65;font-size:15px}
   .meaning .pos-read{color:var(--mist);font-size:14px;line-height:1.6;margin-top:8px;font-style:italic}
   /* life-area contexts */
@@ -644,6 +644,7 @@
   .clar-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px}
   .clar-sigil{font-size:22px;color:var(--rose);line-height:1}
   .clar-name{font-size:17px;color:var(--text-strong)}
+  .clar-head .orient{margin-bottom:0;line-height:1.4}  /* a small pill, never the size of the card name */
   .clar-card .glyphline{color:var(--rose);font-size:13px;margin:2px 0 8px;font-style:italic}
   .clar-card p{font-size:14px;line-height:1.6;color:var(--silver)}
   .clar-note{color:var(--mist)!important;font-style:italic;font-size:13px!important;margin-top:8px}
@@ -670,6 +671,8 @@
   .front-art .card-art.or-face{object-fit:contain;background:#0c0b28}
   /* ── extra cards: the deck menu beside the button, a remove button on each card ── */
   .clar-tools{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+  .clarifiers .clar-label{margin:14px 0 10px;max-width:560px}
+  .clar-body p.clar-lead{margin-top:10px}
   .deck-pick{position:relative;display:inline-flex;flex-direction:column;align-items:flex-start;gap:2px;max-width:100%;padding:3px 4px;line-height:1.2;cursor:pointer}
   .deck-pick .dp-l{font-family:"Trebuchet MS",sans-serif;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--mist)}
   .deck-pick .dp-now{font-size:13px;font-style:italic;color:var(--gold-soft);white-space:nowrap;transition:color .2s}
@@ -3258,13 +3261,24 @@ function renderDetail(){
 }
 
 /* ───────── clarifier cards ───────── */
+/* what the reader typed for the next extra card, per block, kept across redraws until it is used */
+const clarLabelDraft={};
+document.addEventListener("input",function(e){
+  var t=e.target; if(t&&t.dataset&&t.dataset.clarLabel) clarLabelDraft[t.dataset.clarLabel]=t.value;
+});
+function clarLabelHTML(label){
+  if(!label) return "";
+  return '<blockquote class="ask-subq"><span class="ask-subq-l">'+(/\?\s*$/.test(label)?"You asked":"Drawn for")+'</span>'+escapeHTML(label)+'</blockquote>';
+}
 function drawClarifier(key){
   // from whichever deck the menu beside the button names: the reading's own tarot deck, another
   // tarot deck this account holds, or an oracle deck (a card to sit with, no orientation)
   const x=drawExtra(()=>order.length?order.shift():null, oracleUsedGuided);
   if(!x) return;                       // that deck has nothing left to turn for this reading
+  const label=String(clarLabelDraft[key]||"").trim().slice(0,300)||undefined;
+  delete clarLabelDraft[key];
   if(!state.clarifiers[key]) state.clarifiers[key]=[];
-  state.clarifiers[key].push(x.oracle?x:{card:DECK[x.deckIdx],reversed:x.reversed,deck:x.deck});
+  state.clarifiers[key].push(x.oracle?{oracle:x.oracle,n:x.n,label:label}:{card:DECK[x.deckIdx],reversed:x.reversed,deck:x.deck,label:label});
   try{ savesUpdateGuided(); }catch(e){}
   // pin the clarifier block where it sits so the redraw does not throw the page around
   const restore=holdAnchor(`[data-clarifier-anchor="${key}"]`);
@@ -3352,11 +3366,12 @@ function clarArtHTML(card,rev,deckId){
   return '<img class="clar-art'+(rev?" rev":"")+'" src="'+src+'" alt="'+escapeHTML(card.name)+'" loading="lazy" onerror="this.remove()">';
 }
 /* an oracle card inside a reading: the picture is the whole of it */
-function oracleCardHTML(x, key, note, removeBtn){
+function oracleCardHTML(x, key, note, removeBtn, labelHTML){
   var o=oracleDeckById(x.oracle); if(!o) return "";
   var src=oracleArt(o.id)+'full/'+x.n+'.jpg';
   return '<div class="clar-card oracle" data-clarcard="'+key+'">'
     + '<div class="clar-head"><span class="clar-sigil">✦</span><span class="clar-name">'+escapeHTML(o.name)+'</span><span class="orient">Oracle</span>'+(removeBtn||"")+'</div>'
+    + (labelHTML||"")
     + '<div class="clar-body"><img class="clar-art or" src="'+src+'" alt="'+escapeHTML(o.name)+' card '+x.n+'" loading="lazy"><div>'
     + '<div class="glyphline">by '+escapeHTML(o.artist)+' · card '+x.n+' of '+o.count+'</div>'
     + '<p>Take it as it is: the words on the card are the reading. Sit with it a moment before you read on.</p>'
@@ -3367,9 +3382,18 @@ function oracleCardHTML(x, key, note, removeBtn){
 function richReadHTML(d, position, dk){
   var _k=function(sfx){ return dk?(' data-dk="'+dk+':'+sfx+'"'):""; };
   var dr = deepRead(d, position, "");
-  var tradParas = dr.trad.map(function(p){return "<p>"+p+"</p>";}).join("");
+  /* one line of meaning reads as empty for an extra card, so the first three sentences
+     of the full reading show straight away and "Go deeper" holds the rest */
+  var trad = dr.trad.slice(), lead = "";
+  if(trad.length){
+    var sents = String(trad[0]).split(/(?<=[.!?])\s+(?=[A-Z"\u201C])/);
+    lead = '<p class="clar-lead">'+sents.slice(0,3).join(" ")+'</p>';
+    var rest = sents.slice(3).join(" ");
+    if(rest) trad[0] = rest; else trad.shift();
+  }
+  var tradParas = trad.map(function(p){return "<p>"+p+"</p>";}).join("");
   var deckLayer = dr.deck ? ('<details class="deeper deck-layer"'+_k("deck")+' style="margin-top:14px"><summary><span class="deeper-open">'+dr.deck.label+'</span><span class="deeper-close">Hide deck reading</span></summary><div class="deeper-body">'+dr.deck.paras.map(function(p){return "<p>"+p+"</p>";}).join("")+'</div></details>') : "";
-  var deeper = '<details class="deeper"'+_k("deeper")+'><summary><span class="deeper-open">Go deeper</span><span class="deeper-close">Show less</span></summary><div class="deeper-body">'+tradParas+deckLayer+'</div></details>';
+  var deeper = (tradParas||deckLayer) ? '<details class="deeper"'+_k("deeper")+'><summary><span class="deeper-open">Go deeper</span><span class="deeper-close">Show less</span></summary><div class="deeper-body">'+tradParas+deckLayer+'</div></details>' : "";
   var cid=d.card.id, co=d.reversed?"reversed":"upright";
   var cd=(CONTENT.base&&CONTENT.base[cid])?CONTENT.base[cid].detail:null;
   var pick=function(a){return (a&&typeof a==="object")?(a[co]||a.upright):(typeof a==="string"?a:"");};
@@ -3383,7 +3407,7 @@ function richReadHTML(d, position, dk){
     var pt=(p&&(p[co]||p.upright))?(p[co]||p.upright):"";
     if(pt) posHTML='<p class="pos-read"><b style="color:var(--gold)">In the '+position.toLowerCase()+' position:</b> '+pt+'</p>';
   }
-  return posHTML + deeper + ctx;
+  return lead + posHTML + deeper + ctx;
 }
 function clarifierHTML(key, forPosition){
   const list=state.clarifiers[key]||[];
@@ -3391,8 +3415,8 @@ function clarifierHTML(key, forPosition){
     const rm=`<button class="clar-remove" type="button" onclick="removeClarifier('${key}',${ci})" title="Take this card back out">Remove</button>`;
     const note=forPosition
       ? `Drawn to clarify <b style="color:var(--gold)">${forPosition.toLowerCase()}</b> - read it as a lens over that card, sharpening or qualifying what it said.`
-      : `An extra card for the reading as a whole - added context beyond the original spread.`;
-    if(d.oracle) return oracleCardHTML(d, `g:${key}:${ci}`, note, rm);
+      : (d.label ? "" : `An extra card for the reading as a whole - added context beyond the original spread.`);
+    if(d.oracle) return oracleCardHTML(d, `g:${key}:${ci}`, note, rm, clarLabelHTML(d.label));
     const c=d.card;
     const astroLine = c.arcana==="major"
       ? `${c.sigil} ${c.astro} ${c.glyph}`
@@ -3405,11 +3429,12 @@ function clarifierHTML(key, forPosition){
           <span class="orient">${d.reversed?"Reversed":"Upright"}</span>
           ${deckTagHTML(d.deck)}${rm}
         </div>
+        ${clarLabelHTML(d.label)}
         <div class="clar-body">${clarArtHTML(c,d.reversed,d.deck)}<div>
         <div class="glyphline">${astroLine}</div>
         <p>${d.reversed?c.rev:c.up}</p>
         ${richReadHTML(d, forPosition, "g:"+key+":c"+ci)}
-        <p class="clar-note">${note}</p>
+        ${note?`<p class="clar-note">${note}</p>`:""}
         </div></div>
       </div>`;
   }).join("");
@@ -3418,6 +3443,7 @@ function clarifierHTML(key, forPosition){
   return `
     <div class="clarifiers" data-clarifier-anchor="${key}">
       ${cards}
+      <textarea class="ask-addlabel autogrow clar-label" data-clar-label="${key}" rows="1" placeholder="${forPosition?"What should this card clarify? (optional)":"What is this card for? Ask a question or name it (optional)"}">${escapeHTML(clarLabelDraft[key]||"")}</textarea>
       <div class="clar-tools"><button class="btn ghost clar-btn" onclick="drawClarifier('${key}')">${list.length?"+ "+more:"✦ "+label}</button>${deckPickHTML()}</div>
     </div>`;
 }
@@ -5069,7 +5095,7 @@ document.addEventListener("visibilitychange",function(){
 });
 /* a card as it is stored: a tarot card by id (with its deck when that is not the reading's own),
    or an oracle card by deck and number */
-function cardRef(d){ return d.oracle?{oracle:d.oracle,n:d.n}:{id:d.card.id,reversed:!!d.reversed,deck:d.deck||undefined}; }
+function cardRef(d){ return d.oracle?{oracle:d.oracle,n:d.n,label:d.label||undefined}:{id:d.card.id,reversed:!!d.reversed,deck:d.deck||undefined,label:d.label||undefined}; }
 function extraRef(x){ return x.oracle?{oracle:x.oracle,n:x.n}:{id:DECK[x.deckIdx].id,reversed:!!x.reversed,deck:x.deck||undefined}; }
 function guidedPayload(){
   const s=SPREADS[state.spread]||{};
@@ -5317,7 +5343,7 @@ function openSaved(r){
   } else {
     setMode("guided");
     if(p.spread && SPREADS[p.spread]) state.spread=p.spread;
-    const toDrawn=function(cc){ if(cc.oracle) return {oracle:cc.oracle,n:cc.n}; const i=DECK_BY_ID[cc.id]; return i==null?null:{card:DECK[i],reversed:!!cc.reversed,deck:cc.deck||undefined}; };
+    const toDrawn=function(cc){ if(cc.oracle) return {oracle:cc.oracle,n:cc.n,label:cc.label||undefined}; const i=DECK_BY_ID[cc.id]; return i==null?null:{card:DECK[i],reversed:!!cc.reversed,deck:cc.deck||undefined,label:cc.label||undefined}; };
     state.drawn=(p.cards||[]).map(toDrawn).filter(function(d){ return d&&d.card; });
     state.need=state.drawn.length;
     state.clarifiers={};
