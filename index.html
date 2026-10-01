@@ -2339,6 +2339,7 @@ const ARTIST_VIEW={code:null,deck:null,name:null,shop:null,bio:null,opened:false
     /* ?view=artist is the artist opening their own page from the /artist dashboard:
        show it, but never count it as a referral click or credit their own browser */
     var own=q.get("view")==="artist"; q.delete("view");
+    if(own) ARTIST_VIEW.viaLink=false;   /* no "you arrived through their link" note on their own page */
     if(!own && !q.get("ref")) q.set("ref",ARTIST_VIEW.code);
     var qs=q.toString();
     history.replaceState(null,"","/"+(qs?"?"+qs:"")+location.hash);
