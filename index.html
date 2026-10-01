@@ -5325,6 +5325,12 @@ function openReadingsModal(){ openReads(); }
 
 function openSaved(r){
   try{ $("pmenu").classList.add("hidden"); $("profileBtn").setAttribute("aria-expanded","false"); }catch(e){}
+  /* a full-page view (account, plans, an artist page, the astrology wing) hides the tarot table,
+     so a reading opened from the profile menu over one of them loaded out of sight */
+  try{ if(document.body.classList.contains("account-open")) closeAccount(); }catch(e){}
+  try{ if(document.body.classList.contains("plans-open")) closePlans(); }catch(e){}
+  try{ if(document.body.classList.contains("ap-open")) closeArtistPage(); }catch(e){}
+  try{ if(r.kind!=="astro" && AW.open) closeAstro(); }catch(e){}
   if(r.deck_slug && DECKS.some(function(x){ return x.id===r.deck_slug&&x.ready; })) state.deck=r.deck_slug;
   const p=r.payload||{};
   if(r.kind==="astro"){ awOpenSaved(r); return; }
@@ -5359,6 +5365,7 @@ function openSaved(r){
     SAVES.restoring=false;
     $("journalBox").value=r.journal||""; autoGrow($("journalBox"));
     updateJournalHint();
+    try{ $("step-read").scrollIntoView({behavior:"smooth",block:"start"}); }catch(e){}
   }
 }
 /* ═══════════ YOUR READINGS · the full archive, as its own page ═══════════
