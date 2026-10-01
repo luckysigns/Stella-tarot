@@ -2336,7 +2336,10 @@ const ARTIST_VIEW={code:null,deck:null,name:null,shop:null,bio:null,opened:false
     if(!m||m[1]==="index") return;
     ARTIST_VIEW.code=m[1]; ARTIST_VIEW.deck=m[2]||null; ARTIST_VIEW.viaLink=true;
     var q=new URLSearchParams(location.search);
-    if(!q.get("ref")) q.set("ref",ARTIST_VIEW.code);
+    /* ?view=artist is the artist opening their own page from the /artist dashboard:
+       show it, but never count it as a referral click or credit their own browser */
+    var own=q.get("view")==="artist"; q.delete("view");
+    if(!own && !q.get("ref")) q.set("ref",ARTIST_VIEW.code);
     var qs=q.toString();
     history.replaceState(null,"","/"+(qs?"?"+qs:"")+location.hash);
   }catch(e){}
