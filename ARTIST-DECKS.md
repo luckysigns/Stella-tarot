@@ -147,6 +147,8 @@ use `form_input` on element refs. Coordinate clicks do not focus its fields.
   becomes `stellarastro.app/?ref=<code>` and `tarot.stellarastro.app/<code>`),
   split 70 / own-ref 80 (programme standard, and clause 16.2 says a rate cannot
   be cut later), and the shop URL for their physical decks.
+  The form sets their Stellar astrology commission to 0%: artists earn deck
+  royalties only, and they sign in at `www.stellarastro.app/artist`.
 - **Add deck:** title, slug (the same slug as step 2), artist, price, cards,
   subtitle, the shop URL for the printed deck, blurb, status **draft**.
 
