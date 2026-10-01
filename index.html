@@ -2462,16 +2462,21 @@ async function refreshDecks(){
       DECKS.length=0; mapped.forEach(m=>DECKS.push(m));
       renderDeckPicker();
       renderDeckSheet();
-      if(ARTIST_VIEW.code&&!ARTIST_VIEW.opened){
-        const mine=DECKS.filter(d=>d.artist_code===ARTIST_VIEW.code);
-        if(mine.length){
-          ARTIST_VIEW.opened=true;
-          const dk=(ARTIST_VIEW.deck&&mine.some(d=>d.id===ARTIST_VIEW.deck))?ARTIST_VIEW.deck:null;
-          showArtistPage(ARTIST_VIEW.code,dk,"replace");
-        }
-      }
-    } else { renderDeckSheet(); }   // only oracle rows came back: the shop still has to show them
+      openArtistFromLink();
+    } else { renderDeckSheet(); openArtistFromLink(); }   // only oracle rows came back: the shop still has to show them
   }catch(e){}
+}
+/* tarot.stellarastro.app/<code>[/<deck>] opens that artist's page once their decks are known.
+   An artist with only oracle decks (The Barley Moon) counts: those never join DECKS. */
+function openArtistFromLink(){
+  if(!ARTIST_VIEW.code||ARTIST_VIEW.opened) return;
+  const code=ARTIST_VIEW.code;
+  const mine=DECKS.filter(d=>d.artist_code===code).map(d=>d.id)
+    .concat(ORACLE_DECKS.filter(o=>o.artist_code===code).map(o=>o.id));
+  if(!mine.length) return;
+  ARTIST_VIEW.opened=true;
+  const dk=(ARTIST_VIEW.deck&&mine.indexOf(ARTIST_VIEW.deck)>=0)?ARTIST_VIEW.deck:null;
+  showArtistPage(code,dk,"replace");
 }
 async function refreshOwned(){
   OWNED.clear();
