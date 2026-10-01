@@ -11,7 +11,7 @@ steps earlier by hand.
 | Artist | Code | Deck(s) | Slug | Preview | Row status |
 |---|---|---|---|---|---|
 | The Barley Moon (Laura Metcalfe) | `barleymoon` | Inner Wisdom Oracle (35), Mandala Oracle Deck (36) | `barley-inner-wisdom`, `barley-mandala` | `/thebarleymoonpreviews` | live |
-| Michael Burk | `michaelburk` | The Anthropologist Tarot (78) | `anthropologist-tarot` | `/michaelburkpreviews` | draft at $8.88, licence not signed; his back, bleed trimmed, meanings in `meanings.json`; samples he left to us: Wheel of Fortune (11), Two of Cups (24), Six of Swords (56) |
+| Michael Burk | `michaelburk` | The Anthropologist Tarot (78) | `anthropologist-tarot` | `/michaelburkpreviews` | draft at $8.88, licence not signed; his back, bleed trimmed, meanings in `meanings.json`; samples he left to us: The World (22), King of Cups (33), Page of Wands (78) |
 
 Update this table whenever an artist is added or a deck changes status.
 
