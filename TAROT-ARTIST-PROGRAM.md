@@ -75,7 +75,7 @@ agreement: nobody's royalty rate can be cut by a later change of terms. That
 protection applies to everyone, which is a cleaner sentence to say out loud and
 leaves nothing to unwind as the programme grows.
 
-**Decided: the artist sets the price, anywhere from $5 to $25.** Indie physical
+**Decided: the artist sets the price, anywhere from $4.99 to $25.** Indie physical
 decks run roughly $35 to $60, so a digital edition should be clearly cheaper but
 not disposable. For reference on why the low end hurts, at $4 Stripe takes about
 42 cents, which is over 10% of the transaction, and you net about 78 cents. At
@@ -253,7 +253,7 @@ answers for on the call.
 
 **Compensation**
 - 70% of the sale price, or 80% on sales from the artist's own referral link
-- Artist sets the price, $5 to $25
+- Artist sets the price, $4.99 to $25
 - Referral is tracked by link, not by a code the buyer types, and no discount is
   needed for it to work
 - Where a third party's link sends a buyer to this artist's deck, the artist
@@ -304,7 +304,7 @@ plus anything future if she wants. You prepare the files. Her name and shop link
 on every card. Her own card meanings included if she wants to supply them.
 
 **Compensation:** 70% of digital sales, 80% when her audience buys through her
-own link, she sets the price between $5 and $25, paid monthly with no minimum and
+own link, she sets the price between $4.99 and $25, paid monthly with no minimum and
 no deductions. Tracking is a link, not a code, so her audience types nothing. The
 tarot app itself is free, so you earn only when she earns. On physical decks the
 programme fee is 5% of sales the app sends her, applied only where a tracking
