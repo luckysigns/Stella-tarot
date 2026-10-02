@@ -342,6 +342,14 @@ deck whose row says `art_source = storage`: no code change per deck.
 
 - **Add it to your own decks** if step 6A.9 was skipped (oracle decks too: the
   same `deck_ownership` row, with the oracle slug).
+- **Readings per deck** need no setup. Every reading logs a row in
+  `reading_events` (deck, kind, time; nothing about the reader): `spread`/`ask`
+  for the deck the reading was done with, `extra` once per reading for a deck an
+  extra card came from (how oracle decks get counted). Artists see it on
+  `/artist` (Readings tile and per-deck column), you see it in admin's Decks
+  table, both via `/api/affiliate?action=deck-readings` on the Stellar project.
+  Extra-card counting started 1 Oct 2026, so oracle decks have no history
+  before that.
 - **Tell the artist.** It is live, **their referral link
   (`tarot.stellarastro.app/?ref=<code>`, the one to share)**, the plain deck and
   artist page links for looking at, the price, that their dashboard
