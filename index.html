@@ -2007,6 +2007,7 @@ function cardArtSrc(card,deckId){
   if(!card||!card.id) return null;
   const id=deckId||state.deck;
   if(deckIsStorage(id)){
+    loadArtistMeanings(id);              // once per deck; the reading re-renders when they land
     const u=storageArt(id,card.id);
     if(u) return u;
     loadDeckArt(id);                     // not signed yet: start it, the table re-skins when it lands
@@ -2072,10 +2073,10 @@ function syncBackArt(){
 }
 async function loadDeckArt(id){
   if(!deckIsStorage(id)) return false;
+  loadArtistMeanings(id);                // the artist's meanings travel with the deck, art cached or not
   const have=DECK_SIGNED[id]; if(have&&have.exp-5*60e3>Date.now()) return true;
   if(DECK_SIGNING[id]) return DECK_SIGNING[id];
   if(DECK_DENIED[id]&&Date.now()-DECK_DENIED[id]<5*60e3) return false;
-  loadArtistMeanings(id);
   DECK_SIGNING[id]=(async function(){
     try{
       const c=window.STELLAR&&window.STELLAR._sb&&window.STELLAR._sb();
