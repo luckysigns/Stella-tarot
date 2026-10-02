@@ -1910,7 +1910,8 @@ const SPREADS = {
    fall back to the bare sigil placeholder; the reader can swap decks in the deck shop */
 let state={spread:null,method:"fan",reversals:true,drawn:[],need:0,clarifiers:{},deck:"base"};
 const $=id=>document.getElementById(id);
-const backSVG=`<svg class="face" viewBox="0 0 100 160" preserveAspectRatio="none"><use href="#astrolabe"/></svg><img class="backimg" src="/cards/back-stellar.jpg" alt="" onerror="this.remove()">`;
+const BACK_DEFAULT="/cards/back-stellar.jpg";
+let backSVG=`<svg class="face" viewBox="0 0 100 160" preserveAspectRatio="none"><use href="#astrolabe"/></svg><img class="backimg" src="${BACK_DEFAULT}" alt="" onerror="this.remove()">`;
 
 /* real card art per deck - Traditional uses the public-domain Rider-Waite-Smith scans.
    Returns an <img> overlay; a missing file removes itself and the sigil face shows. */
@@ -1979,9 +1980,68 @@ document.addEventListener("click",function(e){
 });
 document.addEventListener("keydown",function(e){ if(e.key==="Enter"&&e.target&&e.target.matches&&e.target.matches(".deckrow[data-oracle]")) openOraclePage(e.target.dataset.oracle); });
 function cardArtSrc(card,deckId){
-  const dir=card&&card.id?DECK_ART[deckId||state.deck]:null;
+  const id=deckId||state.deck;
+  if(card&&card.id&&deckIsStorage(id)) return storageArt(id,card.id);
+  const dir=card&&card.id?DECK_ART[id]:null;
   return dir?(dir+card.id+'.jpg'):null;
 }
+/* ═══════════ LICENSED DECK ART ═══════════
+   A deck whose row says art_source "storage" keeps its cards in the private deck-art
+   bucket. Only an account that owns it (or the artist) can read them, through one-hour
+   signed URLs signed in a single batch for the whole deck. The two or three cards the
+   artist approved as a shopfront sit in the public deck-samples bucket. */
+const DECK_SIGNED={};                  // deckId -> {exp, urls:{slot:url}, back:url|null}
+const DECK_SIGNING={};                 // deckId -> the request in flight
+function deckIsStorage(id){ const d=DECKS.find(x=>x.id===id); return !!(d&&d.storage); }
+function storageArt(id,slot){ const s=DECK_SIGNED[id]; return (s&&s.exp>Date.now())?(s.urls[slot]||null):null; }
+function deckSampleSrc(dk,slot){
+  return dk.storage?location.origin+"/sb/storage/v1/object/public/deck-samples/"+dk.id+"/"+slot+".webp":"/cards/rws/"+slot+".jpg";
+}
+function deckBackSrc(id){ const s=DECK_SIGNED[id]; return (s&&s.exp>Date.now()&&s.back)||BACK_DEFAULT; }
+/* every back face on the page, and the template new ones are made from, follow the deck in use */
+function syncBackArt(){
+  const src=deckIsStorage(state.deck)?deckBackSrc(state.deck):BACK_DEFAULT;
+  backSVG=backSVG.replace(/class="backimg" src="[^"]*"/,'class="backimg" src="'+src+'"');
+  document.querySelectorAll("img.backimg").forEach(function(im){ if(im.getAttribute("src")!==src) im.setAttribute("src",src); });
+}
+async function loadDeckArt(id){
+  if(!deckIsStorage(id)) return false;
+  const have=DECK_SIGNED[id]; if(have&&have.exp-5*60e3>Date.now()) return true;
+  if(DECK_SIGNING[id]) return DECK_SIGNING[id];
+  DECK_SIGNING[id]=(async function(){
+    try{
+      const c=window.STELLAR&&window.STELLAR._sb&&window.STELLAR._sb();
+      if(!c||!(window.STELLAR&&window.STELLAR.user)) return false;
+      const ok=await c.rpc("can_read_deck_art",{p_deck_slug:id});
+      if(!ok||ok.data!==true) return false;
+      const man=await c.from("deck_cards").select("slot,storage_path").eq("deck_slug",id);
+      const rows=((man&&man.data)||[]).filter(function(r){ return r.storage_path; });
+      if(!rows.length) return false;
+      const dk=DECKS.find(function(x){ return x.id===id; })||{};
+      const paths=rows.map(function(r){ return r.storage_path; });
+      if(dk.back) paths.push(dk.back);
+      const sig=await c.storage.from("deck-art").createSignedUrls(paths,3600);
+      const byPath={}; ((sig&&sig.data)||[]).forEach(function(x){ if(x&&x.signedUrl&&!x.error) byPath[x.path]=x.signedUrl; });
+      const urls={}; rows.forEach(function(r){ if(byPath[r.storage_path]) urls[r.slot]=byPath[r.storage_path]; });
+      DECK_SIGNED[id]={exp:Date.now()+3600e3,urls:urls,back:dk.back?(byPath[dk.back]||null):null};
+      deckArtArrived(id);
+      return true;
+    }catch(e){ return false; }
+    finally{ delete DECK_SIGNING[id]; }
+  })();
+  return DECK_SIGNING[id];
+}
+/* art came in after the page was drawn: re-skin what is on screen rather than redrawing it */
+function deckArtArrived(id){
+  if(state.deck===id) syncBackArt();
+  try{ reskinTableArt(); }catch(e){}
+  try{ if(typeof refreshLibrary==="function") refreshLibrary(); }catch(e){}
+  try{ if(state.drawn.length && !$("step-read").classList.contains("hidden")) renderDetail(); }catch(e){}
+  try{ if(typeof askThread!=="undefined"&&askThread.length) renderAskThread(); }catch(e){}
+}
+/* one-hour links: re-sign the deck in use before they lapse */
+setInterval(function(){ if(deckIsStorage(state.deck)) loadDeckArt(state.deck); },10*60e3);
+window.addEventListener("stellar:ready",function(){ if(deckIsStorage(state.deck)) loadDeckArt(state.deck); });
 function cardArtIMG(card,deckId){
   const src=cardArtSrc(card,deckId);
   if(!src) return "";
@@ -2041,9 +2101,11 @@ function ensureDeck(){
 }
 function deckThumbs(dk){
   if(!dk.ready||!dk.samples.length) return '<span class="dk-thumb back"></span><span class="dk-thumb back"></span><span class="dk-thumb back"></span>';
-  return dk.samples.map(id=>'<img class="dk-thumb" src="/cards/rws/'+id+'.jpg" alt="" loading="lazy">').join("");
+  return dk.samples.map(id=>'<img class="dk-thumb" src="'+deckSampleSrc(dk,id)+'" alt="" loading="lazy">').join("");
 }
 function renderDeckPicker(){
+  syncBackArt();
+  if(deckIsStorage(state.deck)) loadDeckArt(state.deck);
   ["deckSeg","askDeckSeg"].forEach(id=>{
     const seg=$(id); if(!seg) return;
     const cur=state.deck?deckById(state.deck):null;
@@ -2125,7 +2187,7 @@ function renderArtistPage(){
   const box=$("apContent"),decksEl=$("apDecks");
   if(!box||!AP.code) return;
   const nm=artistDisplayName();
-  const fan='<div class="ah-fan"><img src="/cards/back-stellar.jpg" alt=""><img src="/cards/back-stellar.jpg" alt=""><img src="/cards/back-stellar.jpg" alt=""></div>';
+  let fan='<div class="ah-fan"><img src="/cards/back-stellar.jpg" alt=""><img src="/cards/back-stellar.jpg" alt=""><img src="/cards/back-stellar.jpg" alt=""></div>';
   const note=ARTIST_VIEW.viaLink
     ?'<div class="ah-note">You arrived through '+escA(nm)+"'s link. Every deck you buy here supports them directly.</div>":"";
   const mine=DECKS.filter(d=>d.artist_code===AP.code);
@@ -2152,6 +2214,9 @@ function renderArtistPage(){
     return;
   }
   const singleDk=AP.deck?mine.find(d=>d.id===AP.deck):null;
+  if(singleDk&&singleDk.storage&&singleDk.samples.length){
+    fan='<div class="ah-fan">'+singleDk.samples.slice(0,3).map(function(sl){ return '<img src="'+deckSampleSrc(singleDk,sl)+'" alt="">'; }).join("")+'</div>';
+  }
   if(singleDk){
     const r=RATINGS[singleDk.id];
     let cta="";
@@ -2441,7 +2506,9 @@ async function refreshDecks(){
         /* a deck is usable when it is live AND the app has its art wired up.
            astro stays ready:false locally until its art ships, whatever the row says */
         ready:r.status==="live" && (l?l.ready:true),
-        samples:(l&&l.samples)||[],
+        samples:(r.sample_slots&&r.sample_slots.length)?r.sample_slots:((l&&l.samples)||[]),
+        storage:r.art_source==="storage",
+        back:r.card_back_path||null,
         price_cents:r.price_cents||0,
         /* a deck row can be 'preorder': on sale before its art ships. Buyable, owned, and
            usable the day the row goes live. */
@@ -3571,9 +3638,9 @@ function libFullReading(c){
 /* the library thumbnail for a card, from whichever deck is selected. Same source as the
    table art (DECK_ART); a deck with no art yet just falls back to the sigil. */
 function libArtIMG(c){
-  const dir=(c&&c.id)?DECK_ART[state.deck]:null;
-  if(!dir) return "";
-  return '<img src="'+dir+c.id+'.jpg" alt="" loading="lazy" decoding="async" onerror="this.remove()">';
+  const src=cardArtSrc(c,state.deck);
+  if(!src) return "";
+  return '<img src="'+src+'" alt="" loading="lazy" decoding="async" onerror="this.remove()">';
 }
 function libIsOpen(){ const b=$("libBody"); return !!b && !b.classList.contains("hidden"); }
 /* one library card. In the grid it's a tappable summary; as a feature it's already open,
