@@ -2483,22 +2483,21 @@ const SB_PUB_KEY="sb_publishable_QXHauL9k0IEcPWKH7LsjTg_6mMzzGYy";
 
 /* ───────── artist profile links ─────────
    tarot.stellarastro.app/orla and /orla/deck-slug are rewritten to this
-   page by vercel.json. The path becomes ?ref=orla before the referral
-   attribution block runs (it lives later in the document and reads
-   location.search), plus a deck view filtered to that artist. The
-   protected attribution block itself is untouched. */
+   page by vercel.json and open that artist's page or deck page. A plain page
+   is only a page: it credits nobody. The artist's referral link is the same
+   page with ?ref=orla on it, and only that ?ref is read by the referral
+   attribution block later in the document (decided 1 Oct 2026). */
 const ARTIST_VIEW={code:null,deck:null,name:null,shop:null,bio:null,opened:false,viaLink:false};
 (function(){
   try{
     var m=location.pathname.match(/^\/([a-z0-9][a-z0-9-]{1,30})(?:\/([a-z0-9][a-z0-9_-]{1,60}))?\/?$/);
     if(!m||m[1]==="index") return;
-    ARTIST_VIEW.code=m[1]; ARTIST_VIEW.deck=m[2]||null; ARTIST_VIEW.viaLink=true;
+    ARTIST_VIEW.code=m[1]; ARTIST_VIEW.deck=m[2]||null;
     var q=new URLSearchParams(location.search);
-    /* ?view=artist is the artist opening their own page from the /artist dashboard:
-       show it, but never count it as a referral click or credit their own browser */
+    /* ?view=artist is the artist opening their own page from the /artist dashboard */
     var own=q.get("view")==="artist"; q.delete("view");
-    if(own) ARTIST_VIEW.viaLink=false;   /* no "you arrived through their link" note on their own page */
-    if(!own && !q.get("ref")) q.set("ref",ARTIST_VIEW.code);
+    /* "you arrived through their link" only when it really was their referral link */
+    ARTIST_VIEW.viaLink=!own && String(q.get("ref")||"").toLowerCase()===ARTIST_VIEW.code;
     var qs=q.toString();
     history.replaceState(null,"","/"+(qs?"?"+qs:"")+location.hash);
   }catch(e){}
