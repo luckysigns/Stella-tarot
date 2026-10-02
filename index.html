@@ -1988,11 +1988,26 @@ document.addEventListener("click",function(e){
   if(row&&!e.target.closest("a,button,summary,details,[data-oracledraw]")) openOraclePage(row.dataset.oracle);
 });
 document.addEventListener("keydown",function(e){ if(e.key==="Enter"&&e.target&&e.target.matches&&e.target.matches(".deckrow[data-oracle]")) openOraclePage(e.target.dataset.oracle); });
+/* Every tarot card always wears real art. The deck's own art when it is ready; until then,
+   or if anything fails (art not signed yet, a link expired, no access, a missing file),
+   the public-domain Rider-Waite-Smith card. The bare sigil face is never shown. */
+const RWS_ART="/cards/rws/";
 function cardArtSrc(card,deckId){
+  if(!card||!card.id) return null;
   const id=deckId||state.deck;
-  if(card&&card.id&&deckIsStorage(id)) return storageArt(id,card.id);
-  const dir=card&&card.id?DECK_ART[id]:null;
-  return dir?(dir+card.id+'.jpg'):null;
+  if(deckIsStorage(id)){
+    const u=storageArt(id,card.id);
+    if(u) return u;
+    loadDeckArt(id);                     // not signed yet: start it, the table re-skins when it lands
+    return RWS_ART+card.id+".jpg";
+  }
+  return (DECK_ART[id]||RWS_ART)+card.id+".jpg";
+}
+/* a deck image that fails drops to the RWS card; only a failing RWS card is removed */
+function artFallback(img){
+  const cid=img&&img.getAttribute("data-cardid");
+  if(cid&&img.src.indexOf(RWS_ART+cid+".jpg")<0){ img.src=RWS_ART+cid+".jpg"; return; }
+  img.remove();
 }
 /* ═══════════ LICENSED DECK ART ═══════════
    A deck whose row says art_source "storage" keeps its cards in the private deck-art
@@ -2001,6 +2016,7 @@ function cardArtSrc(card,deckId){
    artist approved as a shopfront sit in the public deck-samples bucket. */
 const DECK_SIGNED={};                  // deckId -> {exp, urls:{slot:url}, back:url|null}
 const DECK_SIGNING={};                 // deckId -> the request in flight
+const DECK_DENIED={};                  // deckId -> when access was last refused (re-checked after 5 min)
 function deckIsStorage(id){ const d=DECKS.find(x=>x.id===id); return !!(d&&d.storage); }
 function storageArt(id,slot){ const s=DECK_SIGNED[id]; return (s&&s.exp>Date.now())?(s.urls[slot]||null):null; }
 function deckSampleSrc(dk,slot){
@@ -2017,12 +2033,14 @@ async function loadDeckArt(id){
   if(!deckIsStorage(id)) return false;
   const have=DECK_SIGNED[id]; if(have&&have.exp-5*60e3>Date.now()) return true;
   if(DECK_SIGNING[id]) return DECK_SIGNING[id];
+  if(DECK_DENIED[id]&&Date.now()-DECK_DENIED[id]<5*60e3) return false;
+  loadArtistMeanings(id);
   DECK_SIGNING[id]=(async function(){
     try{
       const c=window.STELLAR&&window.STELLAR._sb&&window.STELLAR._sb();
       if(!c||!(window.STELLAR&&window.STELLAR.user)) return false;
       const ok=await c.rpc("can_read_deck_art",{p_deck_slug:id});
-      if(!ok||ok.data!==true) return false;
+      if(!ok||ok.data!==true){ DECK_DENIED[id]=Date.now(); return false; }
       const man=await c.from("deck_cards").select("slot,storage_path").eq("deck_slug",id);
       const rows=((man&&man.data)||[]).filter(function(r){ return r.storage_path; });
       if(!rows.length) return false;
@@ -2070,7 +2088,7 @@ window.addEventListener("stellar:ready",function(){ if(deckIsStorage(state.deck)
 function cardArtIMG(card,deckId){
   const src=cardArtSrc(card,deckId);
   if(!src) return "";
-  return '<img class="card-art" src="'+src+'" alt="'+String(card.name).replace(/"/g,"&quot;")+'" loading="lazy" onerror="this.remove()">';
+  return '<img class="card-art" data-cardid="'+card.id+'" src="'+src+'" alt="'+String(card.name).replace(/"/g,"&quot;")+'" loading="lazy" onerror="artFallback(this)">';
 }
 /* build spread chooser */
 const spreadList=$("spreadList");
@@ -3472,7 +3490,7 @@ function deckTagHTML(deckId){
 }
 function clarArtHTML(card,rev,deckId){
   var src=cardArtSrc(card,deckId); if(!src) return "";
-  return '<img class="clar-art'+(rev?" rev":"")+'" src="'+src+'" alt="'+escapeHTML(card.name)+'" loading="lazy" onerror="this.remove()">';
+  return '<img class="clar-art'+(rev?" rev":"")+'" data-cardid="'+card.id+'" src="'+src+'" alt="'+escapeHTML(card.name)+'" loading="lazy" onerror="artFallback(this)">';
 }
 /* an oracle card inside a reading: the picture is the whole of it */
 function oracleCardHTML(x, key, note, removeBtn, labelHTML){
@@ -3674,7 +3692,7 @@ function libFullReading(c){
 function libArtIMG(c){
   const src=cardArtSrc(c,state.deck);
   if(!src) return "";
-  return '<img src="'+src+'" alt="" loading="lazy" decoding="async" onerror="this.remove()">';
+  return '<img data-cardid="'+c.id+'" src="'+src+'" alt="" loading="lazy" decoding="async" onerror="artFallback(this)">';
 }
 function libIsOpen(){ const b=$("libBody"); return !!b && !b.classList.contains("hidden"); }
 /* one library card. In the grid it's a tappable summary; as a feature it's already open,
