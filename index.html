@@ -594,6 +594,11 @@
   .front-art[data-arcana="minor"],.front-art[data-arcana="court"]{background:linear-gradient(165deg,#141733,#0b0b20)}
   /* keyword chips */
   .kwrow{display:flex;flex-wrap:wrap;gap:7px;margin:2px 0 12px}
+  /* the artist's own meanings, first under the card name when their deck is in use */
+  .artist-mean{margin:6px 0 14px;padding:2px 0 2px 14px;border-left:2px solid var(--gold)}
+  .artist-mean .am-l{font-family:"Trebuchet MS",sans-serif;font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-soft);margin-bottom:4px}
+  .artist-mean .am-row{font-size:16px;color:var(--text-strong);line-height:1.45}
+  .artist-mean .am-o{font-family:"Trebuchet MS",sans-serif;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-soft);margin-right:8px}
   .kw{font-family:"Trebuchet MS",sans-serif;font-size:10px;letter-spacing:.1em;text-transform:uppercase;
     color:var(--silver);border:1px solid var(--line);border-radius:999px;padding:4px 11px;background:rgba(233,196,106,.04)}
 
@@ -1952,7 +1957,7 @@ function oracleRowHTML(dk){
   return '<div class="deckrow'+((owned||dk.on_sale)?'':' soon')+'" data-oracle="'+dk.id+'" role="link" tabindex="0">'
     + '<div class="dk-thumbs">'+thumbs+'</div>'
     + '<div class="dk-body">'
-    +   '<div class="dk-name">'+escapeHTML(dk.name)+(owned?' <span class="dk-tag">owned</span>':(dk.on_sale?'':' <span class="dk-tag soon">coming soon</span>'))+'</div>'
+    +   '<div class="dk-name">'+escapeHTML(dk.name)+(owned?' <span class="dk-tag">purchased</span>':(dk.on_sale?'':' <span class="dk-tag soon">coming soon</span>'))+'</div>'
     +   '<div class="dk-sub">'+escapeHTML(dk.sub)+' · by <a href="/'+dk.artist_code+'" data-artistpage="'+dk.artist_code+'">'+escapeHTML(dk.artist)+'</a></div>'
     +   (owned?'<p class="hint" style="margin-top:6px">Yours to turn: pick it from the deck menu beside "Draw a clarifier" or "Add a card" in any reading.</p>':'')
     +   '<details class="dk-more"><summary>Learn more</summary><p>'+escapeHTML(dk.blurb)+' <a href="/'+dk.artist_code+'/'+dk.id+'" data-oraclepage="'+dk.id+'">See the deck →</a></p></details>'
@@ -2039,6 +2044,22 @@ function deckArtArrived(id){
   try{ if(state.drawn.length && !$("step-read").classList.contains("hidden")) renderDetail(); }catch(e){}
   try{ if(typeof askThread!=="undefined"&&askThread.length) renderAskThread(); }catch(e){}
 }
+/* the artist's own card meanings (Michael Burk's guidebook keywords), shown first on every
+   card read with their deck. One small file per deck in /meanings/, fetched when it is used. */
+const ARTIST_MEANINGS={};              // deckId -> {by, cards:{slot:{up:[],rev:[]}}}, or null
+function loadArtistMeanings(id){
+  if(!id||!deckIsStorage(id)||(id in ARTIST_MEANINGS)) return;
+  ARTIST_MEANINGS[id]=null;
+  fetch("/meanings/"+id+".json").then(function(r){ return r.ok?r.json():null; })
+    .then(function(j){ if(j&&j.cards){ ARTIST_MEANINGS[id]=j; deckArtArrived(id); } }).catch(function(){});
+}
+function artistMeaningHTML(card,rev,deckId,both){
+  const m=ARTIST_MEANINGS[deckId||state.deck], e=m&&card&&m.cards[card.id];
+  if(!e) return "";
+  const row=function(label,ks){ return '<div class="am-row">'+(label?'<span class="am-o">'+label+'</span>':'')+ks.map(escapeHTML).join(" · ")+'</div>'; };
+  return '<div class="artist-mean"><div class="am-l">Card meanings by '+escapeHTML(m.by)+'</div>'
+    +(both?row("Upright",e.up)+row("Reversed",e.rev):row("",rev?e.rev:e.up))+'</div>';
+}
 /* one-hour links: re-sign the deck in use before they lapse */
 setInterval(function(){ if(deckIsStorage(state.deck)) loadDeckArt(state.deck); },10*60e3);
 window.addEventListener("stellar:ready",function(){ if(deckIsStorage(state.deck)) loadDeckArt(state.deck); });
@@ -2105,7 +2126,7 @@ function deckThumbs(dk){
 }
 function renderDeckPicker(){
   syncBackArt();
-  if(deckIsStorage(state.deck)) loadDeckArt(state.deck);
+  if(deckIsStorage(state.deck)){ loadDeckArt(state.deck); loadArtistMeanings(state.deck); }
   ["deckSeg","askDeckSeg"].forEach(id=>{
     const seg=$(id); if(!seg) return;
     const cur=state.deck?deckById(state.deck):null;
@@ -2291,8 +2312,8 @@ function deckRowHTML(dk){
     + '<div class="dk-body">'
     +   '<div class="dk-name">'+dk.name
     +     (on?' <span class="dk-tag">in use</span>':'')
-    +     (owned&&paid?' <span class="dk-tag">'+(dk.ready?'owned':'pre-ordered')+'</span>':'')
-    +     (dk.ready?'':' <span class="dk-tag soon">'+(preorder||(owned&&dk.preorder)?'pre-order':'coming soon')+'</span>')+'</div>'
+    +     (owned&&paid?' <span class="dk-tag">'+(dk.ready?'purchased':'pre-ordered')+'</span>':'')
+    +     ((dk.ready||(owned&&paid))?'':' <span class="dk-tag soon">'+(preorder?'pre-order':'coming soon')+'</span>')+'</div>'
     +   '<div class="dk-sub">'+dk.sub+'</div>'
     +   '<div class="dk-meta">'+deckMetaHTML(dk)+'</div>'
     +   '<details class="dk-more"><summary>Learn more</summary><p>'+dk.blurb
@@ -2340,7 +2361,9 @@ function renderDeckListInto(list,mode){
   if(!list) return;
   let rows=DECKS;
   if(mode==="mine") rows=DECKS.filter(deckIsMine);
-  if(mode==="shop") rows=DECKS.filter(d=>!deckIsMine(d));
+  /* the shop lists every deck for sale, bought ones included (tagged "purchased"), the
+     same way it lists every oracle deck; only the free Traditional deck stays out */
+  if(mode==="shop") rows=DECKS.filter(d=>!deckIsMine(d)||(deckIsPaid(d)&&OWNED.has(d.id)));
   if(deckSearchQ&&list.id==="deckShopList") rows=rows.filter(deckMatchesSearch);
   if(list.id==="deckShopList"&&deckSortBy==="popular"){
     rows=rows.slice().sort((a,b)=>(POP[b.id]||0)-(POP[a.id]||0)||((RATINGS[b.id]||{n:0}).n)-((RATINGS[a.id]||{n:0}).n));
@@ -3313,6 +3336,7 @@ function renderDetail(){
     const ctx = _ci ? '<details class="contexts" data-dk="g:'+i+':ctx"><summary>In love, career, money, health &amp; spirituality</summary><div class="ctx-grid">'+_ci+'</div></details>' : (d.card.love?'<details class="contexts" data-dk="g:'+i+':ctx"><summary>In love, career &amp; health</summary><div class="ctx-grid"><div class="ctx"><span class="ctx-label">♡ Love</span><p>'+d.card.love+'</p></div><div class="ctx"><span class="ctx-label">✦ Career</span><p>'+(d.card.career||'')+'</p></div><div class="ctx"><span class="ctx-label">✚ Health</span><p>'+(d.card.health||'')+'</p></div></div></details>':"");
     m.innerHTML=`
       <h4>${d.card.name} <span class="pos-tag">${s.positions[i]}</span></h4>
+      ${artistMeaningHTML(d.card,d.reversed)}
       <div class="glyphline">${astroLine}</div>
       <div class="kwrow">${keys}</div>
       <span class="orient">${d.reversed?"Reversed":"Upright"}</span>
@@ -3507,6 +3531,7 @@ function clarifierHTML(key, forPosition){
         </div>
         ${clarLabelHTML(d.label)}
         <div class="clar-body">${clarArtHTML(c,d.reversed,d.deck)}<div>
+        ${artistMeaningHTML(c,d.reversed,d.deck)}
         <div class="glyphline">${astroLine}</div>
         <p>${d.reversed?c.rev:c.up}</p>
         ${richReadHTML(d, forPosition, "g:"+key+":c"+ci)}
@@ -3630,7 +3655,7 @@ function libFullReading(c){
     if(!v||typeof v==="string"||!v.reversed) return "";
     return '<h6>'+x[1]+' · reversed</h6><p>'+v.reversed+'</p>';
   }).join("");
-  return up
+  return artistMeaningHTML(c,false,state.deck,true) + up
     + '<div class="lc-revwrap"><button class="btn ghost lc-revbtn" type="button">↺ Drew it reversed? Show the reversed reading</button>'
     + '<div class="lc-rev">'+rev+'</div></div>'
     + libDeckLayer(c);
@@ -4377,7 +4402,7 @@ function askCardHTML(d,label,clarKey,clarList,removable){
     var cc=DECK[cl.deckIdx];
     var ca = cc.arcana==="major" ? (cc.sigil+" "+cc.astro+" "+cc.glyph) : (cc.suitSigil+" "+cc.suit+" · "+cc.element+" · "+cc.astro);
     return '<div class="clar-card" data-clarcard="'+dkb+':'+cli+'"><div class="clar-head"><span class="clar-sigil">'+cc.sigil+'</span><span class="clar-name">'+cc.name+'</span><span class="orient">'+(cl.reversed?"Reversed":"Upright")+'</span>'+deckTagHTML(cl.deck)+rm+'</div>'
-      + '<div class="clar-body">'+clarArtHTML(cc,cl.reversed,cl.deck)+'<div><div class="glyphline">'+ca+'</div><p>'+(cl.reversed?cc.rev:cc.up)+'</p>'+richReadHTML({card:cc,reversed:cl.reversed}, null, dkb+":c"+cli)+'<p class="clar-note">'+note+'</p></div></div></div>';
+      + '<div class="clar-body">'+clarArtHTML(cc,cl.reversed,cl.deck)+'<div>'+artistMeaningHTML(cc,cl.reversed,cl.deck)+'<div class="glyphline">'+ca+'</div><p>'+(cl.reversed?cc.rev:cc.up)+'</p>'+richReadHTML({card:cc,reversed:cl.reversed}, null, dkb+":c"+cli)+'<p class="clar-note">'+note+'</p></div></div></div>';
   }).join("");
   var clarBtn='<div class="clarifiers"><div class="clar-tools"><button class="btn ghost clar-btn" data-askclar="'+clarKey+'">'+((clarList&&clarList.length)?"+ Draw one more":"✦ Draw a clarifier")+'</button>'+deckPickHTML()+'</div></div>';
   if(d.oracle){
@@ -4412,6 +4437,7 @@ function askCardHTML(d,label,clarKey,clarList,removable){
   return '<div class="meaning" data-askcard="'+escapeHTML(clarKey)+'">'
     + '<h4>'+c.name+(kind==="position"?' <span class="pos-tag">'+escapeHTML(label)+'</span>':'')+deckTagHTML(d.deck)+rmCard+'</h4>'
     + subq
+    + artistMeaningHTML(c,rev,d.deck)
     + '<div class="glyphline">'+astroLine+'</div>'
     + '<div class="kwrow">'+keys+'</div>'
     + '<span class="orient">'+(rev?"Reversed":"Upright")+'</span>'
