@@ -52,6 +52,28 @@ first (`deck_cards` already supports any slot names).
 
 ---
 
+## Links: the referral link is the only one that tracks
+
+Each artist has exactly one tracking link, and it is the one to give them:
+
+**`https://tarot.stellarastro.app/?ref=<code>`**, e.g. `?ref=michaelburk`
+
+- It lands on their artist page and records the visit as theirs. A buyer who
+  arrived through it earns them the higher royalty (80% rather than 70%).
+- Their plain pages, `tarot.stellarastro.app/<code>` and
+  `/<code>/<deck-slug>`, are just pages. They credit nobody (changed 1 Oct
+  2026; before that a plain visit counted, and Laura was told so on 23 Sep).
+  Use them only for looking at, never as "the link to share".
+- No per-deck referral links: one link per artist.
+- Wherever a link is clickable (emails to the artist, captions, link stickers,
+  their bio) use the `?ref=` link. A page address printed on an image can stay
+  plain, since nobody can click it.
+- The /artist dashboard shows the referral link with Copy, and a View button
+  (`?view=artist`) that opens their page without counting a click. Admin's
+  Add artist copies the referral link.
+- Testing the link logs a real click for that artist. Test with `?ref=lucky`
+  (your own test code) instead.
+
 ## 1. Intake: what to ask the artist for
 
 Send the intake email from the Creatorapps mailbox in Apple Mail (the one sent
@@ -320,7 +342,9 @@ deck whose row says `art_source = storage`: no code change per deck.
 
 - **Add it to your own decks** if step 6A.9 was skipped (oracle decks too: the
   same `deck_ownership` row, with the oracle slug).
-- **Tell the artist.** It is live, the deck link, the price, that their dashboard
+- **Tell the artist.** It is live, **their referral link
+  (`tarot.stellarastro.app/?ref=<code>`, the one to share)**, the plain deck and
+  artist page links for looking at, the price, that their dashboard
   is `www.stellarastro.app/artist` (sign in with their registered email: royalties,
   link clicks, shop clicks, payouts, and View buttons that open their pages
   without counting as clicks), and that signing in there gives them their own
