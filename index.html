@@ -309,7 +309,16 @@
   /* real card art, laid over the sigil face; if the file is missing the sigil shows through */
   .card-art{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;border-radius:inherit}
   /* a card that has art never shows its sigil face, not even while the image loads */
-  .front-art:has(img.card-art) > :not(.card-art){visibility:hidden}
+  .front-art:has(.card-art) > :not(.card-art){visibility:hidden}
+  /* a licensed deck's art still on its way: a quiet spinner on the card, never another deck's art */
+  .art-loading{position:relative;background:linear-gradient(165deg,#16143a,#0c0b22)}
+  .card-art.art-loading{position:absolute}
+  .art-loading::after{content:"";position:absolute;left:50%;top:50%;width:24px;height:24px;margin:-12px 0 0 -12px;border-radius:50%;
+    border:2px solid rgba(233,196,106,.22);border-top-color:#e9c46a;animation:artspin .9s linear infinite}
+  .lc-thumb .art-loading{position:absolute;inset:0}
+  .lc-thumb .art-loading::after{width:14px;height:14px;margin:-7px 0 0 -7px}
+  .lc-thumb:has(.art-loading) .lc-sigil{visibility:hidden}
+  @keyframes artspin{to{transform:rotate(360deg)}}
   /* deck chooser */
   .deck-btn{font-family:"Trebuchet MS",sans-serif;background:none;border:none;cursor:pointer;color:var(--silver);
     display:flex;align-items:center;gap:10px;padding:9px 16px;font-size:12px;letter-spacing:.1em}
@@ -2001,10 +2010,30 @@ function cardArtSrc(card,deckId){
     const u=storageArt(id,card.id);
     if(u) return u;
     loadDeckArt(id);                     // not signed yet: start it, the table re-skins when it lands
-    return RWS_ART+card.id+".jpg";
+    if(artPending(id)) return null;      // the caller shows a loader, not another deck's art
+    return RWS_ART+card.id+".jpg";       // no access, or it failed: the RWS card
   }
   return (DECK_ART[id]||RWS_ART)+card.id+".jpg";
 }
+/* waiting on a licensed deck's art: a loader for up to 12 seconds, then the RWS card
+   (the deck's art still swaps in if it turns up later) */
+const DECK_WAIT={};                      // deckId -> when the first card started waiting
+const DECK_GAVEUP={};                    // deckId -> true once it failed or took too long
+function artPending(id){
+  const sg=DECK_SIGNED[id];
+  if(!deckIsStorage(id)||(sg&&sg.exp>Date.now())) return false;   // signed: nothing to wait for
+  if(DECK_GAVEUP[id]) return false;
+  if(DECK_DENIED[id]&&Date.now()-DECK_DENIED[id]<5*60e3) return false;
+  if(!DECK_WAIT[id]){
+    DECK_WAIT[id]=Date.now();
+    setTimeout(function(){
+      const s=DECK_SIGNED[id];
+      if(!(s&&s.exp>Date.now())){ DECK_GAVEUP[id]=true; deckArtArrived(id); }
+    },12000);
+  }
+  return true;
+}
+function artLoadingHTML(cls){ return '<div class="'+cls+' art-loading" role="img" aria-label="Card art loading"></div>'; }
 /* a deck image that fails drops to the RWS card; only a failing RWS card is removed */
 function artFallback(img){
   const cid=img&&img.getAttribute("data-cardid");
@@ -2019,6 +2048,16 @@ function artFallback(img){
 const DECK_SIGNED={};                  // deckId -> {exp, urls:{slot:url}, back:url|null}
 const DECK_SIGNING={};                 // deckId -> the request in flight
 const DECK_DENIED={};                  // deckId -> when access was last refused (re-checked after 5 min)
+(function(){
+  /* links signed earlier in this tab are reused while they have ten minutes left */
+  try{
+    for(let i=0;i<sessionStorage.length;i++){
+      const k=sessionStorage.key(i); if(!k||k.indexOf("astra.deckart.")!==0) continue;
+      const v=JSON.parse(sessionStorage.getItem(k)||"null");
+      if(v&&v.exp-10*60e3>Date.now()&&v.urls) DECK_SIGNED[k.slice(14)]=v; else sessionStorage.removeItem(k);
+    }
+  }catch(e){}
+})();
 function deckIsStorage(id){ const d=DECKS.find(x=>x.id===id); return !!(d&&d.storage); }
 function storageArt(id,slot){ const s=DECK_SIGNED[id]; return (s&&s.exp>Date.now())?(s.urls[slot]||null):null; }
 function deckSampleSrc(dk,slot){
@@ -2040,12 +2079,15 @@ async function loadDeckArt(id){
   DECK_SIGNING[id]=(async function(){
     try{
       const c=window.STELLAR&&window.STELLAR._sb&&window.STELLAR._sb();
-      if(!c||!(window.STELLAR&&window.STELLAR.user)) return false;
-      const ok=await c.rpc("can_read_deck_art",{p_deck_slug:id});
-      if(!ok||ok.data!==true){ DECK_DENIED[id]=Date.now(); return false; }
-      const man=await c.from("deck_cards").select("slot,storage_path").eq("deck_slug",id);
+      if(!c||!(window.STELLAR&&window.STELLAR.user)) return false;   // not signed in yet: stellar:ready retries
+      const both=await Promise.all([
+        c.rpc("can_read_deck_art",{p_deck_slug:id}),
+        c.from("deck_cards").select("slot,storage_path").eq("deck_slug",id)
+      ]);
+      const ok=both[0], man=both[1];
+      if(!ok||ok.data!==true){ DECK_DENIED[id]=Date.now(); deckArtArrived(id); return false; }
       const rows=((man&&man.data)||[]).filter(function(r){ return r.storage_path; });
-      if(!rows.length) return false;
+      if(!rows.length){ DECK_GAVEUP[id]=true; deckArtArrived(id); return false; }
       const dk=DECKS.find(function(x){ return x.id===id; })||{};
       const paths=rows.map(function(r){ return r.storage_path; });
       if(dk.back) paths.push(dk.back);
@@ -2053,9 +2095,10 @@ async function loadDeckArt(id){
       const byPath={}; ((sig&&sig.data)||[]).forEach(function(x){ if(x&&x.signedUrl&&!x.error) byPath[x.path]=x.signedUrl; });
       const urls={}; rows.forEach(function(r){ if(byPath[r.storage_path]) urls[r.slot]=byPath[r.storage_path]; });
       DECK_SIGNED[id]={exp:Date.now()+3600e3,urls:urls,back:dk.back?(byPath[dk.back]||null):null};
+      try{ sessionStorage.setItem("astra.deckart."+id,JSON.stringify(DECK_SIGNED[id])); }catch(e){}
       deckArtArrived(id);
       return true;
-    }catch(e){ return false; }
+    }catch(e){ DECK_GAVEUP[id]=true; deckArtArrived(id); return false; }
     finally{ delete DECK_SIGNING[id]; }
   })();
   return DECK_SIGNING[id];
@@ -2089,7 +2132,7 @@ setInterval(function(){ if(deckIsStorage(state.deck)) loadDeckArt(state.deck); }
 window.addEventListener("stellar:ready",function(){ if(deckIsStorage(state.deck)) loadDeckArt(state.deck); });
 function cardArtIMG(card,deckId){
   const src=cardArtSrc(card,deckId);
-  if(!src) return "";
+  if(!src) return (card&&card.id&&artPending(deckId||state.deck))?artLoadingHTML("card-art"):"";
   return '<img class="card-art" data-cardid="'+card.id+'" src="'+src+'" alt="'+String(card.name).replace(/"/g,"&quot;")+'" loading="lazy" onerror="artFallback(this)">';
 }
 /* build spread chooser */
@@ -3491,7 +3534,8 @@ function deckTagHTML(deckId){
   var dk=deckById(deckId); return '<span class="clar-deck">'+escapeHTML(dk?dk.name:deckId)+'</span>';
 }
 function clarArtHTML(card,rev,deckId){
-  var src=cardArtSrc(card,deckId); if(!src) return "";
+  var src=cardArtSrc(card,deckId);
+  if(!src) return (card&&card.id&&artPending(deckId||state.deck))?artLoadingHTML("clar-art"+(rev?" rev":"")):"";
   return '<img class="clar-art'+(rev?" rev":"")+'" data-cardid="'+card.id+'" src="'+src+'" alt="'+escapeHTML(card.name)+'" loading="lazy" onerror="artFallback(this)">';
 }
 /* an oracle card inside a reading: the picture is the whole of it */
@@ -3693,7 +3737,7 @@ function libFullReading(c){
    table art (DECK_ART); a deck with no art yet just falls back to the sigil. */
 function libArtIMG(c){
   const src=cardArtSrc(c,state.deck);
-  if(!src) return "";
+  if(!src) return (c&&c.id&&artPending(state.deck))?artLoadingHTML("lib-art"):"";
   return '<img data-cardid="'+c.id+'" src="'+src+'" alt="" loading="lazy" decoding="async" onerror="artFallback(this)">';
 }
 function libIsOpen(){ const b=$("libBody"); return !!b && !b.classList.contains("hidden"); }
@@ -3806,13 +3850,18 @@ function reskinTableArt(){
     const card=DECK.find(function(c){ return c.id===fa.dataset.cardid; });
     if(!card) return;
     const src=cardArtSrc(card), old=fa.querySelector(".card-art");
-    if(!src||(old&&old.getAttribute("src")===src)) return;
-    /* load the new art first and swap it in whole, so the old card never gives way to a blank */
-    const pre=new Image();
-    pre.onload=function(){
+    if(!src){ if(!old&&artPending(state.deck)) fa.insertAdjacentHTML("beforeend",artLoadingHTML("card-art")); return; }
+    if(old&&old.tagName==="IMG"&&old.getAttribute("src")===src) return;
+    /* load the new art first and swap it in whole, so a card never gives way to a blank */
+    const put=function(u){
       const cur=fa.querySelector(".card-art");
-      if(cur) cur.setAttribute("src",src); else fa.insertAdjacentHTML("beforeend",cardArtIMG(card));
+      if(cur&&cur.tagName==="IMG"){ cur.setAttribute("src",u); return; }
+      if(cur) cur.remove();
+      fa.insertAdjacentHTML("beforeend",'<img class="card-art" data-cardid="'+card.id+'" src="'+u+'" alt="'+String(card.name).replace(/"/g,"&quot;")+'" onerror="artFallback(this)">');
     };
+    const pre=new Image();
+    pre.onload=function(){ put(src); };
+    pre.onerror=function(){ if(src.indexOf(RWS_ART)!==0) put(RWS_ART+card.id+".jpg"); };
     pre.src=src;
   });
 }
