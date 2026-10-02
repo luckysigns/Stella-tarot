@@ -347,5 +347,11 @@ deck whose row says `art_source = storage`: no code change per deck.
   re-preparing art.
 - `tarot.stellarastro.app/<code>` only opened the artist page for tarot decks
   until 1 Oct 2026; `openArtistFromLink()` now counts oracle decks too.
+- A tarot card never shows the bare sigil face (1 Oct 2026, Lachlan's rule).
+  `cardArtSrc()` returns the deck's own art when signed, otherwise the RWS card,
+  and starts signing a licensed deck the first time one of its cards is drawn
+  (a saved reading used to open before signing ever began). `artFallback()`
+  drops a failed image to RWS; art swaps in only once loaded; CSS hides the
+  sigil on any card that has an image. Keep all three if you touch card art.
 - Vercel `cleanUrls` is on in the Stellar project: a rewrite destination must
   be `/affiliate`, not `/affiliate.html`.
