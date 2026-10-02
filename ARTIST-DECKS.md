@@ -239,9 +239,11 @@ deck whose row says `art_source = storage`: no code change per deck.
    - the same with the publishable key as bearer at `/authenticated/` → not 200
    - `.../public/deck-samples/<slug>/<sample>.webp` → 200 `image/webp`
    - a non-sample slot under `deck-samples` → not 200
-6. **Test the art in a real reading before going live.** Admin is not an owner,
-   so `can_read_deck_art` says false for you; sign by hand on
-   `tarot.stellarastro.app` in the console, then draw:
+6. **Test the art in a real reading before going live.** Easiest: give your own
+   account the deck first (step 9 below; it works on a draft too), then on
+   `tarot.stellarastro.app` pick it in the deck sheet and draw. If you would
+   rather not own it yet, admin alone is not an owner, so `can_read_deck_art`
+   says false for you; sign by hand in the console instead, then draw:
    ```js
    const c=STELLAR._sb();
    DECKS.push({id:'<slug>',name:'test',sub:'',blurb:'',ready:true,samples:[],storage:true,back:'<slug>/back.webp'});
@@ -265,6 +267,24 @@ deck whose row says `art_source = storage`: no code change per deck.
    token and `{deck_slug:'<slug>'}`; it should return a `checkout.stripe.com` URL.
    Do not complete it. The artist gets their own deck free when they sign in
    with their registered email (`Stellar/supabase/artist-own-decks.sql`).
+9. **Add it to your own decks** (and to anyone else's as a gift). An ownership
+   row is all "owning a deck" means. Admin may write `deck_ownership`; the user
+   id is whoever is signed in on `tarot.stellarastro.app`, so run this there:
+   ```js
+   const c=STELLAR._sb();
+   await c.from('deck_ownership').upsert(
+     {user_id: STELLAR.user.id, deck_slug: '<slug>', source: 'gift'},
+     {onConflict: 'user_id,deck_slug', ignoreDuplicates: true});
+   (await c.rpc('can_read_deck_art', {p_deck_slug: '<slug>'})).data   // true
+   ```
+   For someone else, look up their `user_id` and insert the same row from the
+   admin page. `source` is `purchase` (webhook), `gift` (by hand), `artist`
+   (signup trigger) or `included`. Admin sees every user's rows in that table,
+   so filter by `user_id` when reading it back. Reload the app and the deck
+   shows as owned in the deck sheet with "Use this deck". Done for Lachlan's
+   account (lachlan.sforcina@gmail.com) on 1 Oct 2026, which is also how the
+   owner path was proven: 78 cards and the back signed, art in a reading.
+   Test readings drawn from the console do not save to the account.
 
 ### 6B. Oracle, affirmation or other deck: public folder
 
@@ -284,6 +304,8 @@ deck whose row says `art_source = storage`: no code change per deck.
 
 ## 7. After launch
 
+- **Add it to your own decks** if step 6A.9 was skipped (oracle decks too: the
+  same `deck_ownership` row, with the oracle slug).
 - **Tell the artist.** It is live, the deck link, the price, that their dashboard
   is `www.stellarastro.app/artist` (sign in with their registered email: royalties,
   link clicks, shop clicks, payouts, and View buttons that open their pages
