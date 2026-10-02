@@ -2491,7 +2491,13 @@ const ARTIST_VIEW={code:null,deck:null,name:null,shop:null,bio:null,opened:false
 (function(){
   try{
     var m=location.pathname.match(/^\/([a-z0-9][a-z0-9-]{1,30})(?:\/([a-z0-9][a-z0-9_-]{1,60}))?\/?$/);
-    if(!m||m[1]==="index") return;
+    if(!m||m[1]==="index"){
+      /* an artist's referral link is just tarot.stellarastro.app/?ref=<code>: it lands on
+         their page (once their decks load; a code with no decks just opens the app) */
+      var r=String(new URLSearchParams(location.search).get("ref")||"").toLowerCase().replace(/[^a-z0-9_-]/g,"");
+      if(r&&location.pathname==="/"){ ARTIST_VIEW.code=r; ARTIST_VIEW.viaLink=true; }
+      return;
+    }
     ARTIST_VIEW.code=m[1]; ARTIST_VIEW.deck=m[2]||null;
     var q=new URLSearchParams(location.search);
     /* ?view=artist is the artist opening their own page from the /artist dashboard */
