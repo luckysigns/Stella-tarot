@@ -3529,10 +3529,12 @@ function drawExtra(takeTarot, usedOracle){
     var used=usedOracle(o.id), free=[];
     for(var i=1;i<=o.count;i++){ if(used.indexOf(i)<0) free.push(i); }
     if(!free.length) return null;
+    logExtraDeck(o.id);
     return {oracle:o.id, n:free[Math.floor(Math.random()*free.length)]};
   }
   var idx=takeTarot(); if(idx==null) return null;
   var deckId=v.slice(2);
+  if(deckId&&deckId!==state.deck) logExtraDeck(deckId);
   return {deckIdx:idx, reversed:!!(state.reversals && Math.random()<0.2), deck:(deckId&&deckId!==state.deck)?deckId:undefined};
 }
 function deckTagHTML(deckId){
@@ -5932,12 +5934,25 @@ const COUNT_SHOW_FROM=1000;   // logged from the start, shown once it means some
    places a reading begins and nowhere else, so clarifiers, extra cards and
    reopening a saved reading never inflate it. Fire and forget: a reading must
    never wait on this, or fail because of it. */
+/* decks a card was pulled from as an extra in the current reading, so each counts once */
+let EXTRA_LOGGED=new Set();
 function logReading(kind){
+  EXTRA_LOGGED=new Set([state.deck||"base"]);   // a new reading: its own deck is already counted
   try{
     fetch("/api/readings-count",{method:"POST",
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify({deck:state.deck||"base",kind:kind}),
       keepalive:true}).catch(function(){});
+  }catch(e){}
+}
+/* an extra card from another deck (an oracle deck, or another tarot deck) counts as a
+   reading done with that deck too, once per reading, so its artist sees it */
+function logExtraDeck(deckId){
+  if(!deckId||EXTRA_LOGGED.has(deckId)) return;
+  EXTRA_LOGGED.add(deckId);
+  try{
+    fetch("/api/readings-count",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({deck:deckId,kind:"extra"}),keepalive:true}).catch(function(){});
   }catch(e){}
 }
 

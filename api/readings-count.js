@@ -11,6 +11,10 @@
    stay unreachable from a browser. Nothing personal is stored: a deck slug,
    a kind, a timestamp.
 
+   Kinds: spread | ask (the deck the reading was done with) and extra (a deck a card
+   was drawn from as an extra, once per reading; per-deck counts for artists, never
+   part of the public total).
+
    GET returns { ok, total, spreads, questions, decks:{...}, at }.
 
    Env vars required (Vercel): SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
@@ -70,7 +74,8 @@ module.exports = async function handler(req, res) {
       const body = typeof req.body === "string" ? JSON.parse(req.body) : (req.body || {});
       /* whatever the browser sent, only these shapes reach the table */
       const deck = String(body.deck || "base").toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 40) || "base";
-      const kind = (body.kind === "ask") ? "ask" : "spread";
+      /* extra: a card drawn into a reading from another deck (counted for that deck's artist) */
+      const kind = (body.kind === "ask" || body.kind === "extra") ? body.kind : "spread";
       await logReading(deck, kind);
       CACHE = null;                                   /* next GET counts afresh */
       res.status(200).send(JSON.stringify({ ok: true }));
@@ -98,11 +103,12 @@ module.exports = async function handler(req, res) {
   }
 
   try {
+    /* the public total is readings pulled, so extra-card rows stay out of it */
     const [total, spreads, questions, base] = await Promise.all([
-      countWhere(""),
+      countWhere("kind=in.(spread,ask)"),
       countWhere("kind=eq.spread"),
       countWhere("kind=eq.ask"),
-      countWhere("deck_slug=eq.base")
+      countWhere("deck_slug=eq.base&kind=in.(spread,ask)")
     ]);
 
     const body = {
