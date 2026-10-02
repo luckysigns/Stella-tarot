@@ -1260,6 +1260,10 @@ try{  /* the arrival, which may already be a deep link to an artist or a deck */
         <option value="artist">artist A to Z</option>
         <option value="artist-desc">artist Z to A</option>
       </select>
+      <select id="deckOwnFilter" aria-label="Which decks to show" class="hidden">
+        <option value="all">all decks</option>
+        <option value="unowned">not purchased yet</option>
+      </select>
     </div>
     <div id="deckShopList"></div>
   </section>
@@ -2364,6 +2368,8 @@ function renderDeckListInto(list,mode){
   /* the shop lists every deck for sale, bought ones included (tagged "purchased"), the
      same way it lists every oracle deck; only the free Traditional deck stays out */
   if(mode==="shop") rows=DECKS.filter(d=>!deckIsMine(d)||(deckIsPaid(d)&&OWNED.has(d.id)));
+  const hideOwned=list.id==="deckShopList"&&mode==="shop"&&deckOwnFilter==="unowned";
+  if(hideOwned) rows=rows.filter(d=>!OWNED.has(d.id));
   if(deckSearchQ&&list.id==="deckShopList") rows=rows.filter(deckMatchesSearch);
   if(list.id==="deckShopList"&&deckSortBy==="popular"){
     rows=rows.slice().sort((a,b)=>(POP[b.id]||0)-(POP[a.id]||0)||((RATINGS[b.id]||{n:0}).n)-((RATINGS[a.id]||{n:0}).n));
@@ -2376,12 +2382,12 @@ function renderDeckListInto(list,mode){
     rows=rows.slice().sort((a,b)=>desc*by(a,b));
   }
   /* the shop lists every oracle deck; "my decks" and the picker list the ones this account holds */
-  const oracles=(list.id==="deckShopList"&&mode==="shop")?ORACLE_DECKS.filter(oracleMatchesSearch):ORACLE_DECKS.filter(function(d){ return oracleOwned(d)&&(list.id!=="deckShopList"||oracleMatchesSearch(d)); });
+  const oracles=(list.id==="deckShopList"&&mode==="shop")?ORACLE_DECKS.filter(function(d){ return oracleMatchesSearch(d)&&!(hideOwned&&oracleOwned(d)); }):ORACLE_DECKS.filter(function(d){ return oracleOwned(d)&&(list.id!=="deckShopList"||oracleMatchesSearch(d)); });
   if(!rows.length&&!oracles.length){
     list.innerHTML='<p class="hint">'+(deckSearchQ&&list.id==="deckShopList"
       ?"Nothing matches that search here. Try the other tab, or a different word."
       :(mode==="shop"
-        ?"Nothing new in the shop right now. New decks land here as artists finish them."
+        ?(hideOwned?"You have every deck in the shop. Switch the filter to all decks to see them.":"Nothing new in the shop right now. New decks land here as artists finish them.")
         :"No decks here yet. Visit the shop tab to find one."))+'</p>';
     return;
   }
@@ -2490,7 +2496,7 @@ function shopClick(artistCode,deckSlug,url){
   try{window.open(url,"_blank","noopener");}catch(e){}
 }
 
-let deckShopTab="mine",deckSearchQ="",deckSortBy="popular";
+let deckShopTab="mine",deckSearchQ="",deckSortBy="popular",deckOwnFilter="all";
 function artistNameOf(code){
   if(!code) return "";
   const a=ARTISTS[code];
@@ -2743,6 +2749,8 @@ const _apb=$("apBack");
 if(_apb) _apb.onclick=()=>closeArtistPage();
 const _dso=$("deckSort");
 if(_dso) _dso.onchange=e=>{deckSortBy=e.target.value;renderDeckSheet();};
+const _dof=$("deckOwnFilter");
+if(_dof) _dof.onchange=e=>{deckOwnFilter=e.target.value;renderDeckSheet();};
 const _dsq=$("deckSearch");
 if(_dsq) _dsq.oninput=e=>{deckSearchQ=(e.target.value||"").trim().toLowerCase();renderDeckSheet();};
 const _dst=$("deckShopTabs");
@@ -2750,6 +2758,7 @@ if(_dst) _dst.querySelectorAll("button").forEach(b=>{
   b.onclick=()=>{
     deckShopTab=b.dataset.t;
     _dst.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));
+    if(_dof) _dof.classList.toggle("hidden",deckShopTab!=="shop");   /* "Your decks" are all purchased */
     renderDeckSheet();
   };
 });
