@@ -182,7 +182,7 @@ await sb.from("affiliates").update({artist_bio: "..."}).eq("code", "<code>")
 | Sample cards | tarot: `--samples` in step 6A; oracle: `samples` in `ORACLE_DECKS` |
 | Bio | `affiliates.artist_bio` (the directory, wins on the artist page) |
 | Name as shown, shop link, socials | `ORACLE_ARTISTS.<code>` in `index.html` (`name`, `by`, `shop`, `social`, `bio`); the social pills only come from here. Tarot artists use it too, despite the name |
-| Meanings | `api/_preview/<slug>/meanings.json` |
+| Meanings | `api/_preview/<slug>/meanings.json` while private; at launch, the public `meanings/<slug>.json` (step 6A.4b) |
 
 ## 6. Going live (licence signed)
 
@@ -234,6 +234,20 @@ deck whose row says `art_source = storage`: no code change per deck.
      sample_slots:m.sample_slots, card_count:78, blurb:'...'}).eq('slug','<slug>');
    ```
    Stop the local server when done (`pkill -f cors_server.py`).
+
+   **4b. The artist's own card meanings** (if they sent any). Readers see them
+   first on every card, headed "Card meanings by <artist>", then the app's own
+   reading; the Card Library shows upright and reversed. Write
+   `meanings/<slug>.json` in this repo, keyed by slot, words exactly as sent:
+   ```json
+   {"deck":"<slug>","by":"Michael Burk","source":"...",
+    "cards":{"major_07_chariot":{"up":["Determination","Control","Victory"],
+                                 "rev":["Lack of control","Stagnation","Directionless; aimless"]}}}
+   ```
+   Michael's was built from his PDF (`pypdf` text, "Upright:" / "Reversed:" lines,
+   split on " · ") into `api/_preview/anthropologist-tarot/meanings.json`, then
+   reshaped. Commit and push it; the app fetches it when the deck is in use and
+   shows nothing extra for a deck without one. Mention it in the deck's blurb.
 5. **Check it is private** (all from a shell, no session):
    - `.../sb/storage/v1/object/public/deck-art/<slug>/<slot>.webp` → not 200
    - the same with the publishable key as bearer at `/authenticated/` → not 200
