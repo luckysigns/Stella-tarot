@@ -4208,7 +4208,7 @@ async function awLoadProfiles(){
   if(!profiles.length){ try{ const l=JSON.parse(localStorage.getItem("stellar.profiles")||"[]"); if(Array.isArray(l)) profiles=l; }catch(e){} }
   AW.profiles=profiles.filter(p=>p&&p.id); return AW.profiles;
 }
-function awResetDraws(){ AW.draws={}; AW.notes={}; AW.saveIds={}; AW.opened=null; }
+function awResetDraws(){ AW.draws={}; AW.notes={}; AW.saveIds={}; AW.saveFor={}; AW.opened=null; }
 async function awSetActive(id){
   const S=window.STELLAR, sb=S&&S._sb&&S._sb(), u=S&&S.user; if(!sb||!u) return;
   try{
@@ -4264,7 +4264,7 @@ function awRender(){
     const i=+t.dataset.awnote, kind=AW.tab; AW.notes[kind]=AW.notes[kind]||[]; AW.notes[kind][i]=t.value;
     const st=body.querySelector('[data-awnotest="'+i+'"]');
     const r=await awSave(kind);
-    if(st) st.textContent=r==="saved"?"Saved ✦":r==="stashed"?"Kept · saves when you sign in":"Sign in with Stellar to keep notes";
+    if(st) st.textContent=r==="saved"?"Saved ✦":r==="stashed"?"Kept · saves when you sign in":r==="error"?"Couldn't save just now":"Sign in with Stellar to keep notes";
   }));
   const setStart=m=>{ AW.yearStart=(m+12)%12; awRender(); if(AW.draws.year) awSave("year"); };
   body.querySelectorAll("[data-awstep]").forEach(b=>b.addEventListener("click",()=>setStart(AW.yearStart+(+b.dataset.awstep))));
@@ -4307,16 +4307,25 @@ async function awSave(kind){
   const row={kind:"astro",title:(AW_TITLES[kind]||"Astrology reading")+" · "+awChartLabel(pay.chartName,awLivePlacements()),deck_slug:state.deck||"base",payload:pay};
   const u=savesUser(), c=(typeof savesClient==="function")?savesClient():null;
   if(!u||!c){ try{ stashPending(row); }catch(e){} return "stashed"; }
+  /* every saved reading belongs to the chart it was drawn for: if the chart in use has
+     changed since, a note or a month change saves a new reading rather than rewriting the
+     other chart's one */
+  const chartKey=String((window.STELLAR.chart&&(window.STELLAR.chart.id||window.STELLAR.chart.name))||"")+"|"+JSON.stringify(pay.placements);
+  AW.saveIds=AW.saveIds||{}; AW.saveFor=AW.saveFor||{};
+  if(AW.saveIds[kind]&&AW.saveFor[kind]!==chartKey) delete AW.saveIds[kind];
   try{
-    if(AW.saveIds&&AW.saveIds[kind]){ await c.from("tarot_readings").update({payload:row.payload}).eq("id",AW.saveIds[kind]); }
-    else{
+    if(AW.saveIds[kind]){
+      const up=await c.from("tarot_readings").update({payload:row.payload,title:row.title}).eq("id",AW.saveIds[kind]);
+      if(up&&up.error) throw up.error;
+    }else{
       if(!(await savesRoom())){ capNudge(); return "capped"; }   // the plan is full: nothing written
       const res=await c.from("tarot_readings").insert(Object.assign({user_id:u.id},row)).select("id").single();
-      AW.saveIds=AW.saveIds||{}; if(res&&res.data&&res.data.id){ AW.saveIds[kind]=res.data.id; savesCounted(1); }
+      if(!res||res.error||!res.data||!res.data.id) throw (res&&res.error)||new Error("not saved");
+      AW.saveIds[kind]=res.data.id; AW.saveFor[kind]=chartKey; savesCounted(1);
     }
     try{ renderSaves(); }catch(e){}
     return "saved";
-  }catch(e){ return "none"; }
+  }catch(e){ return "error"; }     // never claim a save that did not happen
 }
 /* the status line under the actions: what the last save did, and for whose chart */
 function awSaveNote(result){
@@ -4327,7 +4336,7 @@ function awSaveNote(result){
     const a=$("awCapLink"); if(a) a.onclick=function(ev){ ev.preventDefault(); openCapSheet(); };
     return;
   }
-  el.textContent=result==="saved"?"Saved to your readings ✦ · for "+who:result==="stashed"?"Kept for "+who+" · it saves to your readings when you sign in":result==="none"?"Sample chart · not saved":"";
+  el.textContent=result==="saved"?"Saved to your readings ✦ · for "+who:result==="stashed"?"Kept for "+who+" · it saves to your readings when you sign in":result==="none"?"Sample chart · not saved":result==="error"?"Couldn't save this reading just now. It stays on the page; tap Save to try again.":"";
 }
 function awOpenSaved(r){
   const p=r.payload||{}; const kind=AW_LABELS[p.view]?p.view:"big3";
