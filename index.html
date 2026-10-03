@@ -310,6 +310,12 @@
   .card-art{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;border-radius:inherit}
   /* a card that has art never shows its sigil face, not even while the image loads */
   .front-art:has(.card-art) > :not(.card-art){visibility:hidden}
+  .front-art:has(img.card-art)::before,.lib-card .lc-thumb:has(img)::before{content:"";position:absolute;left:50%;top:50%;
+    width:20px;height:20px;margin:-10px 0 0 -10px;border-radius:50%;border:2px solid rgba(233,196,106,.22);border-top-color:#e9c46a;
+    animation:artspin .9s linear infinite;z-index:0}
+  .front-art img.card-art,.lib-card .lc-thumb img{z-index:1}
+  .lib-card .lc-thumb:has(img) .lc-sigil{visibility:hidden}
+  .lib-card .lc-thumb:has(img)::before{width:12px;height:12px;margin:-6px 0 0 -6px}
   /* a licensed deck's art still on its way: a quiet spinner on the card, never another deck's art */
   .art-loading{position:relative;background:linear-gradient(165deg,#16143a,#0c0b22)}
   .card-art.art-loading{position:absolute}
@@ -2055,7 +2061,7 @@ const DECK_DENIED={};                  // deckId -> when access was last refused
     for(let i=0;i<sessionStorage.length;i++){
       const k=sessionStorage.key(i); if(!k||k.indexOf("astra.deckart.")!==0) continue;
       const v=JSON.parse(sessionStorage.getItem(k)||"null");
-      if(v&&v.exp-10*60e3>Date.now()&&v.urls) DECK_SIGNED[k.slice(14)]=v; else sessionStorage.removeItem(k);
+      if(v&&v.exp-10*60e3>Date.now()&&v.urls&&v.thumbs) DECK_SIGNED[k.slice(14)]=v; else sessionStorage.removeItem(k);
     }
   }catch(e){}
 })();
@@ -2090,12 +2096,17 @@ async function loadDeckArt(id){
       const rows=((man&&man.data)||[]).filter(function(r){ return r.storage_path; });
       if(!rows.length){ DECK_GAVEUP[id]=true; deckArtArrived(id); return false; }
       const dk=DECKS.find(function(x){ return x.id===id; })||{};
-      const paths=rows.map(function(r){ return r.storage_path; });
+      const thumbOf=function(p){ return p.replace(/\.webp$/,"_thumb.webp"); };
+      const paths=rows.map(function(r){ return r.storage_path; }).concat(rows.map(function(r){ return thumbOf(r.storage_path); }));
       if(dk.back) paths.push(dk.back);
       const sig=await c.storage.from("deck-art").createSignedUrls(paths,3600);
       const byPath={}; ((sig&&sig.data)||[]).forEach(function(x){ if(x&&x.signedUrl&&!x.error) byPath[x.path]=x.signedUrl; });
-      const urls={}; rows.forEach(function(r){ if(byPath[r.storage_path]) urls[r.slot]=byPath[r.storage_path]; });
-      DECK_SIGNED[id]={exp:Date.now()+3600e3,urls:urls,back:dk.back?(byPath[dk.back]||null):null};
+      const urls={}, thumbs={};
+      rows.forEach(function(r){
+        if(byPath[r.storage_path]) urls[r.slot]=byPath[r.storage_path];
+        const t=byPath[thumbOf(r.storage_path)]; if(t) thumbs[r.slot]=t;
+      });
+      DECK_SIGNED[id]={exp:Date.now()+3600e3,urls:urls,thumbs:thumbs,back:dk.back?(byPath[dk.back]||null):null};
       try{ sessionStorage.setItem("astra.deckart."+id,JSON.stringify(DECK_SIGNED[id])); }catch(e){}
       deckArtArrived(id);
       return true;
@@ -2128,6 +2139,40 @@ function artistMeaningHTML(card,rev,deckId,both){
   return '<div class="artist-mean"><div class="am-l">Card meanings by '+escapeHTML(m.by)+'</div>'
     +(both?row("Upright",e.up)+row("Reversed",e.rev):row("",rev?e.rev:e.up))+'</div>';
 }
+/* An open tab keeps running the version it loaded, so a phone tab from yesterday showed
+   yesterday's app. When the tab comes back into view, check whether a new version has gone
+   live (the page's ETag changes on every deploy). Nothing in progress: reload quietly.
+   A reading on screen: offer a refresh instead of throwing it away. */
+(function(){
+  let first=null, lastCheck=Date.now(), shown=false;
+  function tag(){ return fetch("/",{method:"HEAD",cache:"no-store"}).then(function(r){ const t=r.headers.get("etag")||r.headers.get("last-modified")||null; return t?t.replace(/^W\//,""):null; }).catch(function(){ return null; }); }
+  tag().then(function(t){ first=t; });
+  function busy(){
+    try{
+      if(state.drawn&&state.drawn.length) return true;
+      if(typeof askThread!=="undefined"&&askThread.length) return true;
+      if(typeof AW!=="undefined"&&AW.open&&AW.draws&&Object.keys(AW.draws).length) return true;
+      const ae=document.activeElement; if(ae&&/^(INPUT|TEXTAREA)$/.test(ae.tagName)&&ae.value) return true;
+    }catch(e){}
+    return false;
+  }
+  function offer(){
+    if(shown) return; shown=true;
+    const b=document.createElement("button");
+    b.type="button"; b.textContent="Stellar Tarot has been updated · tap to refresh";
+    b.style.cssText="position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:9999;padding:10px 18px;border-radius:999px;border:1px solid #e9c46a;background:#16143a;color:#f4ecd8;font:inherit;font-size:13px;box-shadow:0 10px 30px rgba(0,0,0,.35);cursor:pointer";
+    b.onclick=function(){ location.reload(); };
+    document.body.appendChild(b);
+  }
+  function check(){
+    if(!first||Date.now()-lastCheck<5*60e3) return;
+    lastCheck=Date.now();
+    tag().then(function(t){ if(t&&t!==first){ if(busy()) offer(); else location.reload(); } });
+  }
+  document.addEventListener("visibilitychange",function(){ if(!document.hidden) check(); });
+  window.addEventListener("focus",check);
+  setInterval(function(){ if(!document.hidden) check(); },30*60e3);
+})();
 /* one-hour links: re-sign the deck in use before they lapse */
 setInterval(function(){ if(deckIsStorage(state.deck)) loadDeckArt(state.deck); },10*60e3);
 window.addEventListener("stellar:ready",function(){ if(deckIsStorage(state.deck)) loadDeckArt(state.deck); });
@@ -3744,8 +3789,11 @@ function libFullReading(c){
 /* the library thumbnail for a card, from whichever deck is selected. Same source as the
    table art (DECK_ART); a deck with no art yet just falls back to the sigil. */
 function libArtIMG(c){
-  const src=cardArtSrc(c,state.deck);
+  let src=cardArtSrc(c,state.deck);
   if(!src) return (c&&c.id&&artPending(state.deck))?artLoadingHTML("lib-art"):"";
+  /* a licensed deck has 300 px thumbnails: the library uses those, not the 900 px card */
+  const sg=DECK_SIGNED[state.deck];
+  if(deckIsStorage(state.deck)&&sg&&sg.thumbs&&sg.thumbs[c.id]&&sg.exp>Date.now()) src=sg.thumbs[c.id];
   return '<img data-cardid="'+c.id+'" src="'+src+'" alt="" loading="lazy" decoding="async" onerror="artFallback(this)">';
 }
 function libIsOpen(){ const b=$("libBody"); return !!b && !b.classList.contains("hidden"); }
