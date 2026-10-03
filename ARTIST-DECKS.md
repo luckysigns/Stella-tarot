@@ -388,5 +388,11 @@ deck whose row says `art_source = storage`: no code change per deck.
   sessionStorage (`astra.deckart.<slug>`) so a reload shows the art at once. `artFallback()`
   drops a failed image to RWS; art swaps in only once loaded; CSS hides the
   sigil on any card that has an image. Keep all three if you touch card art.
+- The Card Library uses the signed `_thumb.webp` (300 px) files for licensed decks,
+  so `publish_deck_art.py` must keep making them. Loading art shows a spinner
+  under the image, never the sigil.
+- An open tab now notices a new release when it comes back into view (ETag of
+  `/`, `W/` stripped) and reloads, or offers a refresh if a reading is on screen.
+  Tabs opened before 2 Oct 2026 need one manual reload to get this.
 - Vercel `cleanUrls` is on in the Stellar project: a rewrite destination must
   be `/affiliate`, not `/affiliate.html`.
