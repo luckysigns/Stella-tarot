@@ -3513,6 +3513,21 @@ function drawClarifier(key){
   setTimeout(()=>{ revealIfOffscreen(`[data-clarcard="g:${key}:${last}"]`); },80);
 }
 /* a slip of the finger: take an extra card back out. A tarot card returns to the pool. */
+/* removing a card is easy to do by accident: an Undo bar puts it back, in the same place */
+function offerUndo(label,undo){
+  let bar=$("undoBar");
+  if(!bar){
+    bar=document.createElement("div"); bar.id="undoBar";
+    bar.style.cssText="position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:9998;display:flex;gap:14px;align-items:center;padding:10px 12px 10px 18px;border-radius:999px;border:1px solid var(--line);background:#16143a;color:#f4ecd8;font-size:13.5px;box-shadow:0 10px 30px rgba(0,0,0,.35)";
+    document.body.appendChild(bar);
+  }
+  bar.innerHTML='<span></span><button type="button" style="font:inherit;font-size:12px;letter-spacing:.12em;text-transform:uppercase;padding:7px 14px;border-radius:999px;border:1px solid #e9c46a;background:transparent;color:#e9c46a;cursor:pointer">Undo</button>';
+  bar.firstChild.textContent=label;
+  bar.style.display="flex";
+  clearTimeout(offerUndo._t);
+  bar.lastChild.onclick=function(){ bar.style.display="none"; clearTimeout(offerUndo._t); undo(); };
+  offerUndo._t=setTimeout(function(){ bar.style.display="none"; },10000);
+}
 function removeClarifier(key,idx){
   const list=state.clarifiers[key]||[]; const x=list[idx]; if(!x) return;
   list.splice(idx,1); if(!list.length) delete state.clarifiers[key];
@@ -3522,6 +3537,14 @@ function removeClarifier(key,idx){
   renderDetail(); stamp();
   restore();
   requestAnimationFrame(restore);
+  offerUndo((x.card?x.card.name:"Card")+" removed",function(){
+    if(!state.clarifiers[key]) state.clarifiers[key]=[];
+    state.clarifiers[key].splice(Math.min(idx,state.clarifiers[key].length),0,x);
+    if(x.card){ const i=order.lastIndexOf(DECK_BY_ID[x.card.id]); if(i>=0) order.splice(i,1); }
+    try{ savesUpdateGuided(); }catch(e){}
+    const r2=holdAnchor(`[data-clarifier-anchor="${key}"]`);
+    renderDetail(); stamp(); r2(); requestAnimationFrame(r2);
+  });
 }
 function oracleUsedGuided(oid){
   const used=[];
@@ -4733,6 +4756,12 @@ function askRemoveClarifier(entryId,cardIdx,clIdx){
   if(x.deckIdx!=null) entry.pool.push(x.deckIdx);
   try{ savesUpdateAsk(entry); }catch(e){}
   renderAskThread(null,'[data-askcard="'+entryId+":"+cardIdx+'"]');
+  offerUndo((x.deckIdx!=null&&DECK[x.deckIdx]?DECK[x.deckIdx].name:"Card")+" removed",function(){
+    host.clar.splice(Math.min(clIdx,host.clar.length),0,x);
+    if(x.deckIdx!=null){ var i=entry.pool.lastIndexOf(x.deckIdx); if(i>=0) entry.pool.splice(i,1); }
+    try{ savesUpdateAsk(entry); }catch(e){}
+    renderAskThread(null,'[data-askcard="'+entryId+":"+cardIdx+'"]');
+  });
 }
 function askRemoveCard(entryId,cardIdx){
   var entry=askThread.find(function(e){return e.id===entryId;}); if(!entry) return;
@@ -4741,10 +4770,22 @@ function askRemoveCard(entryId,cardIdx){
   var x=entry.cards.splice(cardIdx,1)[0];
   if(x.deckIdx!=null) entry.pool.push(x.deckIdx);
   (x.clar||[]).forEach(function(cl){ if(cl.deckIdx!=null) entry.pool.push(cl.deckIdx); });
-  if(entry.labels&&entry.labels.length>cardIdx) entry.labels.splice(cardIdx,1);
+  var hadLabel=!!(entry.labels&&entry.labels.length>cardIdx), label=hadLabel?entry.labels[cardIdx]:undefined;
+  if(hadLabel) entry.labels.splice(cardIdx,1);
   entry.count=entry.cards.length;
   try{ savesUpdateAsk(entry); }catch(e){}
   renderAskThread(null,'.ask-entry[data-entry="'+entryId+'"]');
+  offerUndo((x.deckIdx!=null&&DECK[x.deckIdx]?DECK[x.deckIdx].name:"Card")+" removed",function(){
+    var at=Math.min(cardIdx,entry.cards.length);
+    entry.cards.splice(at,0,x);
+    [x.deckIdx].concat((x.clar||[]).map(function(cl){ return cl.deckIdx; })).forEach(function(d){
+      if(d==null) return; var i=entry.pool.lastIndexOf(d); if(i>=0) entry.pool.splice(i,1);
+    });
+    if(hadLabel) entry.labels.splice(at,0,label);
+    entry.count=entry.cards.length;
+    try{ savesUpdateAsk(entry); }catch(e){}
+    renderAskThread(null,'.ask-entry[data-entry="'+entryId+'"]');
+  });
 }
 /* suggest the next position label when extending a spread (Month 3 -> Month 4, Option C -> D, …) */
 function smartNextLabel(entry){
