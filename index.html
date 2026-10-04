@@ -785,6 +785,13 @@
   .lib-card .lc-name{font-size:16px;color:var(--text-strong)}
   .lib-card .lc-sub{font-family:"Trebuchet MS",sans-serif;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-soft);margin-top:2px}
   .lib-card .lc-keys{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px}
+  /* choosing a card yourself: for prayer, intention, or copying a physical spread */
+  .lib-card{position:relative}
+  .lc-add{position:absolute;top:10px;right:10px;width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:var(--field-bg);
+    color:var(--gold);font-size:18px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .lc-add:hover{border-color:var(--gold)}
+  .lib-card.lf .lc-add{display:none}
+  .lc-addrow{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0 4px}
   .lib-card .lc-keys span{font-family:"Trebuchet MS",sans-serif;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--mist);border:1px solid var(--line);border-radius:999px;padding:2px 8px}
   .lib-card .lc-body{font-size:13px;line-height:1.55;color:var(--silver);margin-top:10px;max-height:0;overflow:hidden;transition:max-height .4s ease}
   .lib-card.open .lc-body{max-height:24000px}
@@ -3819,6 +3826,50 @@ function libArtIMG(c){
   if(deckIsStorage(state.deck)&&sg&&sg.thumbs&&sg.thumbs[c.id]&&sg.exp>Date.now()) src=sg.thumbs[c.id];
   return '<img data-cardid="'+c.id+'" src="'+src+'" alt="" loading="lazy" decoding="async" onerror="artFallback(this)">';
 }
+/* Add a card you chose yourself. Into the reading on screen if there is one (a spread's
+   extra cards, or the latest question); otherwise it starts a "cards I chose" reading and
+   each card added after joins it, so a physical spread can be rebuilt card by card. */
+function addChosenCard(cardId,reversed){
+  const deckIdx=DECK_BY_ID[cardId], card=DECK[deckIdx]; if(!card) return;
+  ensureDeck();
+  const guidedOpen=$("step-ask").classList.contains("hidden") && state.drawn.length && !$("step-read").classList.contains("hidden");
+  if(guidedOpen){
+    const inReading=state.drawn.some(d=>d.card.id===cardId)||Object.keys(state.clarifiers).some(k=>(state.clarifiers[k]||[]).some(x=>x.card&&x.card.id===cardId));
+    if(inReading){ toast(card.name+" is already in this reading"); return; }
+    if(!state.clarifiers.general) state.clarifiers.general=[];
+    state.clarifiers.general.push({card:card,reversed:!!reversed});
+    const oi=order.indexOf(deckIdx); if(oi>=0) order.splice(oi,1);
+    try{ savesUpdateGuided(); }catch(e){}
+    renderDetail(); stamp();
+    toast(card.name+(reversed?" reversed":"")+" added to your reading");
+    return;
+  }
+  let entry=askThread.length?askThread[askThread.length-1]:null;
+  if(entry){
+    if(entry.cards.some(x=>x.deckIdx===deckIdx)){ toast(card.name+" is already in this reading"); return; }
+    if(entry.base==null) entry.base=entry.cards.length;
+    entry.cards.push({deckIdx:deckIdx,reversed:!!reversed,clar:[],_shown:true});
+    entry.labels=entry.labels||[]; entry.labels[entry.cards.length-1]="";
+    entry.count=entry.cards.length;
+    const pi=entry.pool.indexOf(deckIdx); if(pi>=0) entry.pool.splice(pi,1);
+    try{ savesUpdateAsk(entry); }catch(e){}
+  }else{
+    const typed=($("askQ").value||"").trim();
+    const now=new Date();
+    entry={id:++askId,q:typed||"Cards I chose",count:1,base:0,labels:[""],
+      pool:shuffled().filter(i=>i!==deckIdx),cards:[{deckIdx:deckIdx,reversed:!!reversed,clar:[],_shown:true}],
+      time:now.toLocaleString(undefined,{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})};
+    askThread.push(entry);
+    if(typed){ $("askQ").value=""; autoGrow($("askQ")); }
+    try{ savesCreateAsk(entry); }catch(e){}
+    try{ logReading("ask"); }catch(e){}
+  }
+  if($("step-ask").classList.contains("hidden")){
+    const y=window.scrollY; setMode("ask"); window.scrollTo(0,y);   // stay in the library to keep choosing
+  }
+  renderAskThread(null,'.ask-entry[data-entry="'+entry.id+'"]');
+  toast(card.name+(reversed?" reversed":"")+" added · "+entry.cards.length+" card"+(entry.cards.length===1?"":"s")+" in this reading");
+}
 function libIsOpen(){ const b=$("libBody"); return !!b && !b.classList.contains("hidden"); }
 /* one library card. In the grid it's a tappable summary; as a feature it's already open,
    centred, and doesn't respond to clicks - the Back button takes you out instead. */
@@ -3832,8 +3883,12 @@ function libCardEl(c,feature){
         <div><div class="lc-name">${c.name}</div><div class="lc-sub">${libSub(c)}</div></div>
       </div>
       <div class="lc-keys">${keys}</div>
+      ${feature?`<div class="lc-addrow"><button type="button" class="btn lc-addup">+ Add to my reading</button><button type="button" class="btn ghost lc-addrev">+ Add it reversed</button></div>`:`<button type="button" class="lc-add" title="Add ${c.name.replace(/"/g,"&quot;")} to my reading" aria-label="Add ${c.name.replace(/"/g,"&quot;")} to my reading">+</button>`}
       <div class="lc-body">${libFullReading(c)}</div>`;
   if(!feature) el.onclick=()=>libOpenCard(c.id);
+  const qa=el.querySelector(".lc-add"); if(qa) qa.onclick=(ev)=>{ ev.stopPropagation(); addChosenCard(c.id,false); };
+  const au=el.querySelector(".lc-addup"); if(au) au.onclick=()=>addChosenCard(c.id,false);
+  const ar=el.querySelector(".lc-addrev"); if(ar) ar.onclick=()=>addChosenCard(c.id,true);
   const rb=el.querySelector(".lc-revbtn");
   if(rb) rb.onclick=(ev)=>{ ev.stopPropagation(); el.classList.toggle("show-rev");
     rb.textContent = el.classList.contains("show-rev") ? "↺ Hide the reversed reading" : "↺ Drew it reversed? Show the reversed reading"; };
