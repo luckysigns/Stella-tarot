@@ -83,6 +83,42 @@
       #f2e8d5;
   }
   :root[data-theme="light"] .stars{display:none}
+  /* ── PDF DOCUMENT ── a reading laid out as a printed page (A4, ~11.5pt text), built off
+     screen from the reading itself, then cut into pages only between lines and blocks */
+  .pdoc{position:absolute;left:0;top:0;width:640px;background:#fbf8f1;font-size:15px;line-height:1.6;
+    --silver:#332f47;--mist:#6d6780;--gold:#b07d1e;--gold-soft:#8a6420;--rose:#b04d66;--line:rgba(120,86,20,.28);
+    --text-strong:#231d3a;--panel-grad:none;--surface:transparent;--surface-2:transparent;--field-bg:transparent;color:#332f47}
+  .pdframe{position:fixed;left:-20000px;top:0;width:640px;overflow:hidden;background:#fbf8f1}
+  .pdoc *{box-shadow:none!important;text-shadow:none!important;animation:none!important;transition:none!important;
+    -webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+  .pdoc .meaning,.pdoc .clar-card,.pdoc .clarifiers,.pdoc .synthesis,.pdoc .panel,.pdoc details,.pdoc .ctx-grid,.pdoc .ctx,
+  .pdoc .general-clar-wrap,.pdoc .ask-entry,.pdoc .journal-print,.pdoc .deeper-body,.pdoc .artist-mean,.pdoc .capture-head{
+    background:none!important;border-radius:0!important;max-width:none!important;margin-left:0!important;margin-right:0!important}
+  .pdoc .meaning,.pdoc .clar-card,.pdoc .clarifiers,.pdoc .synthesis,.pdoc .panel,.pdoc .ctx,.pdoc .general-clar-wrap,
+  .pdoc .ask-entry,.pdoc .journal-print,.pdoc details{border:0!important;padding-left:0!important;padding-right:0!important}
+  .pdoc .meaning{border-top:1px solid var(--line)!important;padding-top:20px!important;margin-top:26px!important}
+  .pdoc .clar-card{border-top:1px dashed var(--line)!important;padding-top:16px!important;margin-top:18px!important}
+  .pdoc details>summary{display:none!important}
+  .pdoc details .deeper-body{display:block!important;padding:2px 0 2px 16px!important;border-left:2px solid var(--line)!important;margin:6px 0 12px!important}
+  .pdoc .journal-print{border-top:1px solid var(--line)!important;padding-top:18px!important;margin-top:26px!important}
+  .pdoc .ctx-grid{display:block!important}
+  .pdoc .ctx{margin:10px 0!important}
+  .pdoc h4{font-size:23px!important;line-height:1.25}
+  .pdoc p{margin:0 0 10px}
+  .pdoc .clar-body{display:block!important}
+  .pdoc .clar-art{float:none!important;width:84px!important;margin:4px 0 12px!important;display:block}
+  .pdoc .pd-head{text-align:center;padding:4px 0 22px;border-bottom:1px solid var(--line);margin-bottom:6px}
+  .pdoc .pd-eyebrow{font-family:"Trebuchet MS",sans-serif;font-size:10.5px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold)}
+  .pdoc .pd-title{font-size:30px;line-height:1.2;color:var(--text-strong);margin:10px 0 6px;font-style:italic}
+  .pdoc .pd-meta{font-size:13px;color:var(--mist)}
+  .pdoc .pd-board{display:flex;flex-wrap:wrap;justify-content:center;gap:16px 14px;margin:22px 0 4px}
+  .pdoc .pd-card{width:98px;text-align:center;font-size:11.5px;line-height:1.35;color:var(--text-strong)}
+  .pdoc .pd-card img{width:98px;aspect-ratio:auto;height:auto;border-radius:6px;display:block;margin:0 auto 6px;border:1px solid rgba(120,86,20,.25)}
+  .pdoc .pd-card img.rev{transform:rotate(180deg)}
+  .pdoc .pd-card .pd-pos{font-family:"Trebuchet MS",sans-serif;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-top:2px}
+  .pdoc .pd-card .pd-rev{font-family:"Trebuchet MS",sans-serif;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--rose)}
+  .pdoc .pd-note{white-space:pre-wrap;border-left:2px solid var(--gold);padding-left:14px;font-style:italic}
+  .pdoc .pd-foot{text-align:center;font-size:12px;color:var(--mist);margin-top:34px;padding-top:14px;border-top:1px solid var(--line)}
   /* the theme toggle, sitting under the profile button top-right */
   .theme-toggle{position:fixed;top:64px;right:14px;z-index:130;width:40px;height:40px;border-radius:50%;
     border:1px solid var(--line);background:var(--surface);color:var(--gold);font-size:18px;line-height:1;cursor:pointer;
@@ -3023,6 +3059,112 @@ $("exportImg").onclick=()=>withBusy($("exportImg"),async()=>{
   a.download=fileStamp()+".png";
   a.click();
 });
+/* ═══════════ PDF AS A DOCUMENT ═══════════
+   The PDF used to be a phone-width screenshot stretched to A4 and sliced, so type was huge
+   and cards and lines were cut. Now the reading is cloned into a 640px "page" with print
+   styles (light paper, book-sized type, the cards as a small spread), measured, and cut
+   only where a line or block starts, never through a line, a card image or just after a
+   heading. Each page is captured on its own, so no canvas is ever huge. */
+const PD={W:640, ptW:595.28, ptH:841.89, margin:46, foot:22};
+PD.scale=(PD.ptW-PD.margin*2)/PD.W;                       // pt per css px
+PD.pageH=Math.floor((PD.ptH-PD.margin*2-PD.foot)/PD.scale); // css px of content per page
+function pdCardFigure(img,name,pos,rev){
+  const f=document.createElement("figure"); f.className="pd-card"; f.style.margin="0";
+  if(img){ const i=document.createElement("img"); i.src=img; if(rev) i.className="rev"; f.appendChild(i); }
+  const n=document.createElement("div"); n.textContent=name||""; f.appendChild(n);
+  if(rev){ const r=document.createElement("div"); r.className="pd-rev"; r.textContent="Reversed"; f.appendChild(r); }
+  if(pos){ const p=document.createElement("div"); p.className="pd-pos"; p.textContent=pos; f.appendChild(p); }
+  return f;
+}
+/* the reading as a document: header, the spread of cards, then the reading text cloned
+   from the page (details opened, buttons and inputs gone, notes as text) */
+function pdBuild(source,meta){
+  const doc=document.createElement("div"); doc.className="pdoc";
+  const head=document.createElement("div"); head.className="pd-head";
+  head.innerHTML='<div class="pd-eyebrow">Stellar Tarot</div><div class="pd-title"></div><div class="pd-meta"></div>';
+  head.querySelector(".pd-title").textContent=meta.title||"Reading";
+  head.querySelector(".pd-meta").textContent=meta.sub||"";
+  doc.appendChild(head);
+  if(meta.cards&&meta.cards.length){
+    const b=document.createElement("div"); b.className="pd-board";
+    meta.cards.forEach(function(c){ b.appendChild(pdCardFigure(c.img,c.name,c.pos,c.rev)); });
+    doc.appendChild(b);
+  }
+  const clone=source.cloneNode(true);
+  if(meta.drop) clone.querySelectorAll(meta.drop).forEach(function(e){ e.remove(); });
+  clone.removeAttribute("id"); clone.querySelectorAll("[id]").forEach(function(e){ e.removeAttribute("id"); });
+  /* typed notes do not survive cloneNode: carry their text across */
+  const srcAreas=source.querySelectorAll("textarea"), cloneAreas=clone.querySelectorAll("textarea");
+  cloneAreas.forEach(function(t,i){
+    const v=((srcAreas[i]&&srcAreas[i].value)||"").trim();
+    if(v&&!t.classList.contains("clar-label")&&!t.classList.contains("ask-addlabel")){
+      const p=document.createElement("p"); p.className="pd-note"; p.textContent=v; t.replaceWith(p);
+    }
+  });
+  clone.querySelectorAll("button,select,input,textarea,.deck-pick,.clar-tools,.clar-remove,.hidden,.capture-foot,.aw-actions,.ask-actions,.ask-addspread,.board,.ask-board,.tcard,.aw-note-st").forEach(function(e){ e.remove(); });
+  clone.querySelectorAll("details").forEach(function(d){ d.open=true; });
+  clone.querySelectorAll("img").forEach(function(im){ im.loading="eager"; });
+  doc.appendChild(clone);
+  return doc;
+}
+/* safe places to start a new page, in px from the top of the document */
+function pdBreaks(doc){
+  const top=doc.getBoundingClientRect().top, ys=new Set([0]);
+  const all=doc.querySelectorAll("*");
+  all.forEach(function(e){ const r=e.getBoundingClientRect(); if(r.height>0) ys.add(Math.round(r.top-top)); });
+  /* every line start inside running text */
+  doc.querySelectorAll("p,li,blockquote,.am-row,.ah-note,.pd-note").forEach(function(e){
+    try{ const rg=document.createRange(); rg.selectNodeContents(e);
+      [].forEach.call(rg.getClientRects(),function(r){ ys.add(Math.round(r.top-top)-2); }); }catch(err){}
+  });
+  /* never through a picture or a card, never straight after a heading */
+  const solid=[].map.call(doc.querySelectorAll("img,.pd-card,.pd-board,.pd-head,.artist-mean,.kwrow,h4"),function(e){ const r=e.getBoundingClientRect(); return [r.top-top,r.bottom-top]; });
+  const heads=[].map.call(doc.querySelectorAll("h1,h2,h3,h4,h5,h6,.pd-eyebrow,.step-label,.ctx-label,.ask-subq-l,.am-l"),function(e){ return e.getBoundingClientRect().bottom-top; });
+  return [...ys].filter(function(y){
+    if(y<=0) return false;
+    if(solid.some(function(s){ return y>s[0]+1&&y<s[1]-1; })) return false;
+    if(heads.some(function(b){ return y>=b-2&&y-b<34; })) return false;
+    return true;
+  }).sort(function(a,b){ return a-b; });
+}
+function pdTarot(card,rev,deckId,pos){
+  return {img:cardArtSrc(card,deckId)||("/cards/rws/"+card.id+".jpg"),name:card.name,rev:!!rev,pos:pos||""};
+}
+function pdDate(d){ return (d||new Date()).toLocaleDateString(undefined,{year:"numeric",month:"long",day:"numeric"}); }
+function pdDeckName(id){ const d=DECKS.find(function(x){ return x.id===(id||state.deck); }); return d?d.name:""; }
+async function pdfFromElement(source,name,meta){
+  const frame=document.createElement("div"); frame.className="pdframe";
+  const doc=pdBuild(source,meta); frame.appendChild(doc); document.body.appendChild(frame);
+  try{
+    await readyForCapture(doc);
+    await new Promise(function(r){ setTimeout(r,150); });
+    const total=doc.scrollHeight, breaks=pdBreaks(doc), pages=[];
+    let start=0;
+    while(start<total-4){
+      const limit=start+PD.pageH;
+      if(limit>=total){ pages.push([start,total]); break; }
+      const ok=breaks.filter(function(y){ return y>start+PD.pageH*0.45&&y<=limit; });
+      const loose=breaks.filter(function(y){ return y>start+40&&y<=limit; });
+      const cut=ok.length?ok[ok.length-1]:(loose.length?loose[loose.length-1]:limit);
+      pages.push([start,cut]); start=cut;
+    }
+    const {jsPDF}=window.jspdf;
+    const pdf=new jsPDF({unit:"pt",format:"a4"});
+    for(let i=0;i<pages.length;i++){
+      const a=pages[i][0], b=pages[i][1];
+      frame.style.height=(b-a)+"px"; doc.style.top=(-a)+"px";
+      await new Promise(function(r){ setTimeout(r,30); });   // not rAF: it never fires in a background tab
+      const canvas=await html2canvas(frame,{backgroundColor:"#fbf8f1",scale:2,useCORS:true,width:PD.W,height:b-a,windowWidth:PD.W});
+      if(i) pdf.addPage();
+      pdf.setFillColor(251,248,241); pdf.rect(0,0,PD.ptW,PD.ptH,"F");
+      pdf.addImage(canvas.toDataURL("image/jpeg",0.92),"JPEG",PD.margin,PD.margin,PD.W*PD.scale,(b-a)*PD.scale);
+      pdf.setFont("helvetica","normal"); pdf.setFontSize(8); pdf.setTextColor(138,125,100);
+      pdf.text("Stellar Tarot  ·  tarot.stellarastro.app",PD.margin,PD.ptH-PD.margin+8);
+      pdf.text((i+1)+" / "+pages.length,PD.ptW-PD.margin,PD.ptH-PD.margin+8,{align:"right"});
+    }
+    pdf.save(name+".pdf");
+  } finally { frame.remove(); }
+}
 function pdfFromCanvas(canvas,name){
   const img=canvas.toDataURL("image/png");
   const {jsPDF}=window.jspdf;
@@ -3092,8 +3234,17 @@ function pdfFromCanvas(canvas,name){
   pdf.save(name+".pdf");
 }
 $("exportPdf").onclick=()=>withBusy($("exportPdf"),async()=>{
-  const canvas=await renderCanvas();
-  pdfFromCanvas(canvas,fileStamp());
+  const undo=prepCapture();
+  try{
+    const s=SPREADS[state.spread]||{name:"Reading",positions:[]};
+    const n=state.drawn.length+extraCount();
+    await pdfFromElement($("capture"),fileStamp(),{
+      title:s.name,
+      sub:[pdDate(),pdDeckName(),n+" card"+(n===1?"":"s")].filter(Boolean).join(" · "),
+      cards:state.drawn.map(function(d,i){ return pdTarot(d.card,d.reversed,d.deck,(s.positions||[])[i]); }),
+      drop:".capture-head"
+    });
+  } finally { undo(); }
 });
 
 /* shuffle helper */
@@ -4504,10 +4655,19 @@ async function awCapture(){
 }
 async function awExport(kind,btn){
   await withBusy(btn,async()=>{
-    const canvas=await awCapture();
     const name="stellar-tarot-"+(AW.tab==="cards"?"your-cards":AW.tab)+"-"+new Date().toISOString().slice(0,10);
-    if(kind==="png"){ const a=document.createElement("a"); a.href=canvas.toDataURL("image/png"); a.download=name+".png"; a.click(); }
-    else pdfFromCanvas(canvas,name);
+    if(kind==="png"){ const canvas=await awCapture(); const a=document.createElement("a"); a.href=canvas.toDataURL("image/png"); a.download=name+".png"; a.click(); return; }
+    await Promise.all(Object.keys(AW_DEEP_WAIT).map(k=>AW_DEEP_WAIT[k]));
+    const P=awPlacements();
+    const who=AW.opened?awChartLabel(AW.opened.name,P):(window.STELLAR&&window.STELLAR.chart)?awChartLabel(awChart().name,P):"Sample chart";
+    const trio=["sun","moon","rising"].filter(k=>P[k]&&P[k].sign).map(k=>P[k].sign+" "+({sun:"Sun",moon:"Moon",rising:"Rising"})[k]).join(" · ");
+    const labels=AW_LABELS[AW.tab]||[];
+    const cards=(AW.draws[AW.tab]||[]).map((d,i)=>pdTarot(DECK[d.deckIdx],d.reversed,null,labels[i]));
+    await pdfFromElement($("astroView"),name,{
+      title:AW.tab==="cards"?"Your Cards":(AW_TITLES[AW.tab]||"Astrology reading"),
+      sub:["for "+who,trio,pdDate()].filter(Boolean).join(" · "),
+      cards:cards, drop:".aw-actions,#awTabs,.aw-top,.aw-note-st,#awLede,.aw-cap-head"
+    });
   });
 }
 function openAstro(){
@@ -5538,13 +5698,24 @@ async function exportAskEntry(id,kind,btn){
     try{
       await readyForCapture(el);
       await new Promise(function(r){setTimeout(r,120);});
-      const canvas=await html2canvas(el,{backgroundColor:exportBG(),scale:2,useCORS:true});
       const name="stellar-tarot-question-"+new Date().toISOString().slice(0,10);
       if(kind==="png"){
+        const canvas=await html2canvas(el,{backgroundColor:exportBG(),scale:2,useCORS:true});
         const a=document.createElement("a");
         a.href=canvas.toDataURL("image/png"); a.download=name+".png"; a.click();
       } else {
-        pdfFromCanvas(canvas,name);
+        const entry=askThread.find(function(e){ return e.id===id; })||{cards:[],labels:[]};
+        const cards=entry.cards.map(function(x,i){
+          const lab=(entry.labels&&entry.labels[i])||"";
+          const pos=lab.length<=28?lab:"";
+          if(x.oracle){ const o=oracleDeckById(x.oracle); return {img:oracleArt(x.oracle)+"full/"+x.n+".jpg",name:o?o.name:"Oracle",pos:pos}; }
+          return pdTarot(DECK[x.deckIdx],x.reversed,x.deck,pos);
+        });
+        await pdfFromElement(el,name,{
+          title:entry.q||"Question",
+          sub:[entry.time,pdDeckName(),cards.length+" card"+(cards.length===1?"":"s")].filter(Boolean).join(" · "),
+          cards:cards, drop:".ask-q,.ask-meta,.ask-del,.cap-foot"
+        });
       }
     } finally {
       undoCards();
