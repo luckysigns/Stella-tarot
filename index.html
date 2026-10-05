@@ -25,13 +25,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Stellar Tarot</title>
-<meta name="description" content="Tarot for reflection and play, not prophecy. All 78 cards read with real depth, saved with your notes.">
+<meta name="description" content="Tarot for reflection and play. All 78 cards read with real depth, saved with your notes.">
 <meta name="theme-color" content="#0b0a20">
 <link rel="canonical" href="https://tarot.stellarastro.app/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Stellar Tarot">
 <meta property="og:title" content="Stellar Tarot">
-<meta property="og:description" content="Tarot for reflection and play, not prophecy. All 78 cards read with real depth, saved with your notes.">
+<meta property="og:description" content="Tarot for reflection and play. All 78 cards read with real depth, saved with your notes.">
 <meta property="og:url" content="https://tarot.stellarastro.app/">
 <meta property="og:image" content="https://tarot.stellarastro.app/og.jpg">
 <meta property="og:image:width" content="1200">
@@ -39,7 +39,7 @@
 <meta property="og:image:alt" content="Stellar Tarot: three card backs under a night sky">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Stellar Tarot">
-<meta name="twitter:description" content="Tarot for reflection and play, not prophecy. All 78 cards read with real depth, saved with your notes.">
+<meta name="twitter:description" content="Tarot for reflection and play. All 78 cards read with real depth, saved with your notes.">
 <meta name="twitter:image" content="https://tarot.stellarastro.app/og.jpg">
 <style>
   :root{
@@ -116,6 +116,8 @@
   .pdoc .pd-card img{width:98px;aspect-ratio:auto;height:auto;border-radius:6px;display:block;margin:0 auto 6px;border:1px solid rgba(120,86,20,.25)}
   .pdoc .pd-card img.rev{transform:rotate(180deg)}
   .pdoc .pd-card .pd-pos{font-family:"Trebuchet MS",sans-serif;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-top:2px}
+  .pdoc .pd-card .pd-q{font-style:italic;font-size:11px;color:var(--text-strong);margin-bottom:6px}
+  .pdoc .pd-board{align-items:flex-end}
   .pdoc .pd-card .pd-rev{font-family:"Trebuchet MS",sans-serif;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--rose)}
   .pdoc .pd-note{white-space:pre-wrap;border-left:2px solid var(--gold);padding-left:14px;font-style:italic}
   .pdoc .pd-foot{text-align:center;font-size:12px;color:var(--mist);margin-top:34px;padding-top:14px;border-top:1px solid var(--line)}
@@ -755,6 +757,7 @@
   }
   /* a follow-up question typed for one card, quoted above its reading */
   .ask-subq{border-left:2px solid var(--line);padding:4px 0 4px 14px;margin:8px 0 12px;font-style:italic;color:var(--text-strong);font-size:15.5px;line-height:1.45}
+  .ask-answer-l{font-family:"Trebuchet MS",sans-serif;font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-soft);margin:4px 0 2px}
   .ask-subq .ask-subq-l{display:block;font-family:"Trebuchet MS",sans-serif;font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-soft);font-style:normal;margin-bottom:3px}
   /* boxes that grow with what is typed */
   textarea.autogrow{resize:none;overflow:hidden;box-sizing:border-box}
@@ -1131,7 +1134,7 @@ try{  /* the arrival, which may already be a deep link to an artist or a deck */
   </div>
   <div class="artist-hero" id="apContent"></div>
   <div id="apDecks"></div>
-  <p class="ap-foot">Stellar Tarot · for reflection and play, not prophecy</p>
+  <p class="ap-foot">Stellar Tarot · for reflection and play</p>
 </div>
 
 <div class="deckmodal hidden" id="reviewsModal">
@@ -1503,7 +1506,7 @@ try{  /* the arrival, which may already be a deep link to an artist or a deck */
     <div id="awBody"></div>
   </section>
 
-  <footer>Stellar Tarot · for reflection and play, not prophecy</footer>
+  <footer>Stellar Tarot · for reflection and play</footer>
 </div>
 
 <script>
@@ -3068,8 +3071,9 @@ $("exportImg").onclick=()=>withBusy($("exportImg"),async()=>{
 const PD={W:640, ptW:595.28, ptH:841.89, margin:46, foot:22};
 PD.scale=(PD.ptW-PD.margin*2)/PD.W;                       // pt per css px
 PD.pageH=Math.floor((PD.ptH-PD.margin*2-PD.foot)/PD.scale); // css px of content per page
-function pdCardFigure(img,name,pos,rev){
+function pdCardFigure(img,name,pos,rev,q){
   const f=document.createElement("figure"); f.className="pd-card"; f.style.margin="0";
+  if(q){ const t=document.createElement("div"); t.className="pd-q"; t.textContent="\u201C"+q+"\u201D"; f.appendChild(t); }
   if(img){ const i=document.createElement("img"); i.src=img; if(rev) i.className="rev"; f.appendChild(i); }
   const n=document.createElement("div"); n.textContent=name||""; f.appendChild(n);
   if(rev){ const r=document.createElement("div"); r.className="pd-rev"; r.textContent="Reversed"; f.appendChild(r); }
@@ -3087,7 +3091,7 @@ function pdBuild(source,meta){
   doc.appendChild(head);
   if(meta.cards&&meta.cards.length){
     const b=document.createElement("div"); b.className="pd-board";
-    meta.cards.forEach(function(c){ b.appendChild(pdCardFigure(c.img,c.name,c.pos,c.rev)); });
+    meta.cards.forEach(function(c){ b.appendChild(pdCardFigure(c.img,c.name,c.pos,c.rev,c.q)); });
     doc.appendChild(b);
   }
   const clone=source.cloneNode(true);
@@ -3109,23 +3113,38 @@ function pdBuild(source,meta){
 }
 /* safe places to start a new page, in px from the top of the document */
 function pdBreaks(doc){
-  const top=doc.getBoundingClientRect().top, ys=new Set([0]);
-  const all=doc.querySelectorAll("*");
-  all.forEach(function(e){ const r=e.getBoundingClientRect(); if(r.height>0) ys.add(Math.round(r.top-top)); });
-  /* every line start inside running text */
-  doc.querySelectorAll("p,li,blockquote,.am-row,.ah-note,.pd-note").forEach(function(e){
+  /* Safe places to start a new page, in px from the top of the document, each marked
+     block (a paragraph or section starts there) or line (inside running text). */
+  const top=doc.getBoundingClientRect().top, out=new Map();
+  const add=function(y,kind){ y=Math.round(y); if(y>0&&(!out.has(y)||kind==="block")) out.set(y,kind); };
+  doc.querySelectorAll("*").forEach(function(e){
+    const cs=getComputedStyle(e); if(cs.display==="inline"||cs.display==="contents") return;   // inline tops are line tops
+    const r=e.getBoundingClientRect(); if(r.height>0) add(r.top-top,"block");
+  });
+  /* running text: a paragraph may split only with two lines either side (no widows,
+     no orphans); a single line never sits alone at the foot or head of a page */
+  const paras=[];
+  doc.querySelectorAll("p,li,blockquote,.am-row,.ah-note,.pd-note,.slot-q").forEach(function(e){
+    const r=e.getBoundingClientRect(); const pt=r.top-top, pb=r.bottom-top;
+    const lines=[];
     try{ const rg=document.createRange(); rg.selectNodeContents(e);
-      [].forEach.call(rg.getClientRects(),function(r){ ys.add(Math.round(r.top-top)-2); }); }catch(err){}
+      [].forEach.call(rg.getClientRects(),function(q){ const y=Math.round(q.top-top); if(!lines.length||Math.abs(lines[lines.length-1]-y)>3) lines.push(y); }); }catch(err){}
+    lines.sort(function(a,b){ return a-b; });
+    const allowed=new Set();
+    for(let k=2;k<=lines.length-2;k++){ allowed.add(lines[k]-2); add(lines[k]-2,"line"); }
+    paras.push([pt,pb,allowed]);
   });
   /* never through a picture or a card, never straight after a heading */
-  const solid=[].map.call(doc.querySelectorAll("img,.pd-card,.pd-board,.pd-head,.artist-mean,.kwrow,h4"),function(e){ const r=e.getBoundingClientRect(); return [r.top-top,r.bottom-top]; });
-  const heads=[].map.call(doc.querySelectorAll("h1,h2,h3,h4,h5,h6,.pd-eyebrow,.step-label,.ctx-label,.ask-subq-l,.am-l"),function(e){ return e.getBoundingClientRect().bottom-top; });
-  return [...ys].filter(function(y){
-    if(y<=0) return false;
-    if(solid.some(function(s){ return y>s[0]+1&&y<s[1]-1; })) return false;
-    if(heads.some(function(b){ return y>=b-2&&y-b<34; })) return false;
-    return true;
-  }).sort(function(a,b){ return a-b; });
+  const solid=[].map.call(doc.querySelectorAll("img,.pd-card,.pd-board,.pd-head,.artist-mean,.kwrow,h4,.ask-subq,.clar-head"),function(e){ const r=e.getBoundingClientRect(); return [r.top-top,r.bottom-top]; });
+  const heads=[].map.call(doc.querySelectorAll("h1,h2,h3,h4,h5,h6,.pd-eyebrow,.step-label,.ctx-label,.ask-subq-l,.ask-answer-l,.am-l,.ask-subq"),function(e){ return e.getBoundingClientRect().bottom-top; });
+  const res=[];
+  out.forEach(function(kind,y){
+    if(solid.some(function(s){ return y>s[0]+1&&y<s[1]-1; })) return;
+    if(heads.some(function(b){ return y>=b-2&&y-b<34; })) return;
+    if(paras.some(function(p){ return y>p[0]+2&&y<p[1]-2&&!p[2].has(y); })) return;   // mid-paragraph, not an allowed line
+    res.push({y:y,kind:kind});
+  });
+  return res.sort(function(a,b){ return a.y-b.y; });
 }
 function pdTarot(card,rev,deckId,pos){
   return {img:cardArtSrc(card,deckId)||("/cards/rws/"+card.id+".jpg"),name:card.name,rev:!!rev,pos:pos||""};
@@ -3143,13 +3162,16 @@ async function pdfFromElement(source,name,meta){
     while(start<total-4){
       const limit=start+PD.pageH;
       if(limit>=total){ pages.push([start,total]); break; }
-      const ok=breaks.filter(function(y){ return y>start+PD.pageH*0.45&&y<=limit; });
-      const loose=breaks.filter(function(y){ return y>start+40&&y<=limit; });
-      const cut=ok.length?ok[ok.length-1]:(loose.length?loose[loose.length-1]:limit);
+      const inPage=breaks.filter(function(b){ return b.y>start+40&&b.y<=limit; });
+      const blocks=inPage.filter(function(b){ return b.kind==="block"&&b.y>start+PD.pageH*0.78; });
+      const ok=inPage.filter(function(b){ return b.y>start+PD.pageH*0.45; });
+      const pick=blocks.length?blocks[blocks.length-1]:(ok.length?ok[ok.length-1]:(inPage.length?inPage[inPage.length-1]:null));
+      const cut=pick?pick.y:limit;
       pages.push([start,cut]); start=cut;
     }
     const {jsPDF}=window.jspdf;
     const pdf=new jsPDF({unit:"pt",format:"a4"});
+    const shots=[];
     for(let i=0;i<pages.length;i++){
       const a=pages[i][0], b=pages[i][1];
       frame.style.height=(b-a)+"px"; doc.style.top=(-a)+"px";
@@ -3157,13 +3179,58 @@ async function pdfFromElement(source,name,meta){
       const canvas=await html2canvas(frame,{backgroundColor:"#fbf8f1",scale:2,useCORS:true,width:PD.W,height:b-a,windowWidth:PD.W});
       if(i) pdf.addPage();
       pdf.setFillColor(251,248,241); pdf.rect(0,0,PD.ptW,PD.ptH,"F");
-      pdf.addImage(canvas.toDataURL("image/jpeg",0.92),"JPEG",PD.margin,PD.margin,PD.W*PD.scale,(b-a)*PD.scale);
+      const jpg=canvas.toDataURL("image/jpeg",0.92); shots.push({src:jpg,h:b-a});
+      pdf.addImage(jpg,"JPEG",PD.margin,PD.margin,PD.W*PD.scale,(b-a)*PD.scale);
       pdf.setFont("helvetica","normal"); pdf.setFontSize(8); pdf.setTextColor(138,125,100);
       pdf.text("Stellar Tarot  ·  tarot.stellarastro.app",PD.margin,PD.ptH-PD.margin+8);
       pdf.text((i+1)+" / "+pages.length,PD.ptW-PD.margin,PD.ptH-PD.margin+8,{align:"right"});
     }
-    pdf.save(name+".pdf");
+    pdPreview(pdf,name,shots,meta.title);
   } finally { frame.remove(); }
+}
+/* The finished PDF opens in our own preview, at the top, with Save and Close always in view.
+   Handing it straight to the phone's PDF viewer dropped readers wherever they had been on
+   the page, with no obvious way to keep the file. */
+function pdPreview(pdf,name,shots,title){
+  const old=$("pdPreview"); if(old) old.remove();
+  const ov=document.createElement("div"); ov.id="pdPreview";
+  ov.style.cssText="position:fixed;inset:0;z-index:10000;background:#2b2840;display:flex;flex-direction:column";
+  ov.innerHTML='<div style="flex:none;display:flex;align-items:center;gap:10px;padding:max(12px,env(safe-area-inset-top)) 14px 12px;background:#16143a;border-bottom:1px solid rgba(233,196,106,.25)">'
+    +'<div style="flex:1;min-width:0;color:#f4ecd8;white-space:nowrap;overflow:hidden"><div style="font-size:15px">Save this PDF?</div><div data-pdsub style="font-size:12px;color:#b9b3cf;overflow:hidden;text-overflow:ellipsis"></div></div>'
+    +'<button type="button" data-pdclose style="font:inherit;font-size:12px;letter-spacing:.12em;text-transform:uppercase;padding:10px 14px;border-radius:999px;border:1px solid rgba(233,196,106,.4);background:transparent;color:#e9c46a;cursor:pointer">Close</button>'
+    +'<button type="button" data-pdsave style="font:inherit;font-size:12px;letter-spacing:.12em;text-transform:uppercase;padding:10px 18px;border-radius:999px;border:0;background:#e9c46a;color:#16143a;font-weight:600;cursor:pointer">⤓ Save PDF</button></div>'
+    +'<div data-pdscroll style="flex:1;overflow:auto;-webkit-overflow-scrolling:touch;padding:16px 12px 40px"></div>';
+  ov.querySelector("[data-pdsub]").textContent=(title||"Your reading")+" · "+shots.length+" page"+(shots.length===1?"":"s")+" · this is how it will look";
+  const sc=ov.querySelector("[data-pdscroll]");
+  shots.forEach(function(sh){
+    const pg=document.createElement("div");
+    pg.style.cssText="max-width:595px;margin:0 auto 14px;background:#fbf8f1;aspect-ratio:595/842;position:relative;box-shadow:0 6px 24px rgba(0,0,0,.35)";
+    const im=new Image(); im.src=sh.src; im.alt="";
+    im.style.cssText="position:absolute;left:"+(PD.margin/PD.ptW*100)+"%;top:"+(PD.margin/PD.ptH*100)+"%;width:"+(PD.W*PD.scale/PD.ptW*100)+"%";
+    pg.appendChild(im); sc.appendChild(pg);
+  });
+  document.body.appendChild(ov);
+  const prevOverflow=document.body.style.overflow; document.body.style.overflow="hidden";
+  sc.scrollTop=0;
+  /* it is its own page: the phone's Back gesture closes it rather than leaving the app */
+  let closed=false;
+  const close=function(fromPop){
+    if(closed) return; closed=true;
+    ov.remove(); document.body.style.overflow=prevOverflow; window.removeEventListener("popstate",onPop);
+    if(!fromPop&&history.state&&history.state.pdfPreview) history.back();
+  };
+  const onPop=function(){ close(true); };
+  try{ history.pushState({pdfPreview:1},""); window.addEventListener("popstate",onPop); }catch(e){}
+  ov.querySelector("[data-pdclose]").onclick=function(){ close(false); };
+  ov.querySelector("[data-pdsave]").onclick=async function(){
+    try{
+      const blob=pdf.output("blob");
+      const file=new File([blob],name+".pdf",{type:"application/pdf"});
+      const touch=window.matchMedia&&matchMedia("(pointer:coarse)").matches;
+      if(touch&&navigator.canShare&&navigator.canShare({files:[file]})){ await navigator.share({files:[file],title:title||"Stellar Tarot reading"}); return; }
+    }catch(e){ if(e&&e.name==="AbortError") return; }
+    pdf.save(name+".pdf");
+  };
 }
 function pdfFromCanvas(canvas,name){
   const img=canvas.toDataURL("image/png");
@@ -3777,8 +3844,8 @@ function oracleCardHTML(x, key, note, removeBtn, labelHTML){
   var o=oracleDeckById(x.oracle); if(!o) return "";
   var src=oracleArt(o.id)+'full/'+x.n+'.jpg';
   return '<div class="clar-card oracle" data-clarcard="'+key+'">'
+    + (labelHTML?labelHTML+'<div class="ask-answer-l">In answer, you drew</div>':"")
     + '<div class="clar-head"><span class="clar-sigil">✦</span><span class="clar-name">'+escapeHTML(o.name)+'</span><span class="orient">Oracle</span>'+(removeBtn||"")+'</div>'
-    + (labelHTML||"")
     + '<div class="clar-body"><img class="clar-art or" src="'+src+'" alt="'+escapeHTML(o.name)+' card '+x.n+'" loading="lazy"><div>'
     + '<div class="glyphline">by '+escapeHTML(o.artist)+' · card '+x.n+' of '+o.count+'</div>'
     + '<p>Take it as it is: the words on the card are the reading. Sit with it a moment before you read on.</p>'
@@ -3830,13 +3897,13 @@ function clarifierHTML(key, forPosition){
       : `${c.suitSigil} ${c.suit} · ${c.element} · ${c.astro}`;
     return `
       <div class="clar-card" data-clarcard="g:${key}:${ci}">
+        ${d.label?clarLabelHTML(d.label)+'<div class="ask-answer-l">In answer, you drew</div>':""}
         <div class="clar-head">
           <span class="clar-sigil">${c.sigil}</span>
           <span class="clar-name">${c.name}</span>
           <span class="orient">${d.reversed?"Reversed":"Upright"}</span>
           ${deckTagHTML(d.deck)}${rm}
         </div>
-        ${clarLabelHTML(d.label)}
         <div class="clar-body">${clarArtHTML(c,d.reversed,d.deck)}<div>
         ${artistMeaningHTML(c,d.reversed,d.deck)}
         <div class="glyphline">${astroLine}</div>
@@ -4777,7 +4844,8 @@ function askCardHTML(d,label,clarKey,clarList,removable){
   var kind=labelKind(label);
   var dkb="a:"+clarKey;   // panel key prefix - stable across rebuilds of the thread
   var rmCard=removable?'<button class="clar-remove ask-cardremove" type="button" data-askcardrm="'+clarKey+'" title="Take this card back out of the spread">Remove</button>':'';
-  var subq=kind==="question"?'<blockquote class="ask-subq"><span class="ask-subq-l">You asked</span>'+escapeHTML(label)+'</blockquote>':'';
+  /* a typed follow-up comes first, then the card drawn in answer: the order it happened in */
+  var subq=kind==="question"?'<blockquote class="ask-subq"><span class="ask-subq-l">You asked</span>'+escapeHTML(label)+'</blockquote><div class="ask-answer-l">In answer, you drew</div>':'';
   var o=d.oracle?oracleDeckById(d.oracle):null;
   var hostName=kind==="position"?label:(d.oracle?(o?o.name:"Oracle"):d.card.name);
   // clarifiers already drawn for this card - tarot from this question's own pool, or an oracle card.
@@ -4795,8 +4863,8 @@ function askCardHTML(d,label,clarKey,clarList,removable){
   if(d.oracle){
     // an oracle card added to the spread: the picture is the reading
     return '<div class="meaning" data-askcard="'+escapeHTML(clarKey)+'">'
-      + '<h4>'+escapeHTML(o?o.name:"Oracle")+(kind==="position"?' <span class="pos-tag">'+escapeHTML(label)+'</span>':'')+rmCard+'</h4>'
       + subq
+      + '<h4>'+escapeHTML(o?o.name:"Oracle")+(kind==="position"?' <span class="pos-tag">'+escapeHTML(label)+'</span>':'')+rmCard+'</h4>'
       + oracleCardHTML(d, dkb+":o", "", "")
       + clarCards + clarBtn
       + '</div>';
@@ -4822,8 +4890,8 @@ function askCardHTML(d,label,clarKey,clarList,removable){
   var ci=cd?AREAS.map(function(x){var t=pick(cd[x[0]]);return t?('<div class="ctx"><span class="ctx-label">'+x[1]+'</span><p>'+t+'</p></div>'):"";}).join(""):"";
   var ctx = ci ? ('<details class="contexts" data-dk="'+dkb+':ctx"><summary>In love, career, money, health &amp; spirituality</summary><div class="ctx-grid">'+ci+'</div></details>') : "";
   return '<div class="meaning" data-askcard="'+escapeHTML(clarKey)+'">'
-    + '<h4>'+c.name+(kind==="position"?' <span class="pos-tag">'+escapeHTML(label)+'</span>':'')+deckTagHTML(d.deck)+rmCard+'</h4>'
     + subq
+    + '<h4>'+c.name+(kind==="position"?' <span class="pos-tag">'+escapeHTML(label)+'</span>':'')+deckTagHTML(d.deck)+rmCard+'</h4>'
     + artistMeaningHTML(c,rev,d.deck)
     + '<div class="glyphline">'+astroLine+'</div>'
     + '<div class="kwrow">'+keys+'</div>'
@@ -4853,7 +4921,7 @@ function askSlotLabels(entry,it){
     return {tag:"Clarifier", cls:" tag-clar", under:'<div class="slot-for">for '+escapeHTML(host)+'</div>'};
   }
   var L=entryLabel(entry,it.i), kind=labelKind(L);
-  if(kind==="question") return {tag:it.added?"Follow-up question":"Question", cls:" tag-q", under:'<div class="slot-q">“'+escapeHTML(L)+'”</div>'};
+  if(kind==="question") return {tag:it.added?"Follow-up question":"Question", cls:" tag-q", before:'<div class="slot-q">“'+escapeHTML(L)+'”</div>', under:""};
   if(kind==="position") return {tag:(it.added?"Added · ":"")+escapeHTML(L), cls:it.added?" tag-added":"", under:""};
   return it.added ? {tag:"Added card", cls:" tag-added", under:""} : {tag:"", cls:"", under:""};
 }
@@ -4866,7 +4934,7 @@ function askEntryHTML(entry){
   var anyTag=labs.some(function(x){ return x.tag; });
   var board=items.map(function(it,k){
     var d=askCardObj(it.obj), lb=labs[k];
-    return '<div class="slot'+(it.clarOf?' slot-clar':'')+'">'+(anyTag?'<div class="pos'+lb.cls+'">'+(lb.tag||"&nbsp;")+'</div>':'')+tcardHTML(d,k)+slotNameHTML(d)+lb.under+'</div>';
+    return '<div class="slot'+(it.clarOf?' slot-clar':'')+'">'+(anyTag?'<div class="pos'+lb.cls+'">'+(lb.tag||"&nbsp;")+'</div>':'')+(lb.before||"")+tcardHTML(d,k)+slotNameHTML(d)+lb.under+'</div>';
   }).join("");
   var base=(entry.base==null)?entry.cards.length:entry.base;   // cards added after the pull can be taken back out
   var readings=entry.cards.map(function(cc,i){
@@ -5706,10 +5774,10 @@ async function exportAskEntry(id,kind,btn){
       } else {
         const entry=askThread.find(function(e){ return e.id===id; })||{cards:[],labels:[]};
         const cards=entry.cards.map(function(x,i){
-          const lab=(entry.labels&&entry.labels[i])||"";
-          const pos=lab.length<=28?lab:"";
-          if(x.oracle){ const o=oracleDeckById(x.oracle); return {img:oracleArt(x.oracle)+"full/"+x.n+".jpg",name:o?o.name:"Oracle",pos:pos}; }
-          return pdTarot(DECK[x.deckIdx],x.reversed,x.deck,pos);
+          const lab=(entry.labels&&entry.labels[i])||"", lk=labelKind(lab);
+          const pos=lk==="position"?lab:"", q=lk==="question"?lab:"";
+          if(x.oracle){ const o=oracleDeckById(x.oracle); return {img:oracleArt(x.oracle)+"full/"+x.n+".jpg",name:o?o.name:"Oracle",pos:pos,q:q}; }
+          return Object.assign(pdTarot(DECK[x.deckIdx],x.reversed,x.deck,pos),{q:q});
         });
         await pdfFromElement(el,name,{
           title:entry.q||"Question",
