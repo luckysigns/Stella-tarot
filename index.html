@@ -88,16 +88,24 @@
   .pdoc{position:absolute;left:0;top:0;width:640px;background:#fbf8f1;font-size:15px;line-height:1.6;
     --silver:#332f47;--mist:#6d6780;--gold:#b07d1e;--gold-soft:#8a6420;--rose:#b04d66;--line:rgba(120,86,20,.28);
     --text-strong:#231d3a;--panel-grad:none;--surface:transparent;--surface-2:transparent;--field-bg:transparent;color:#332f47}
-  .pd-shuffle{position:relative;width:96px;height:150px}
+  /* an overhand shuffle: the top card arcs out to the right, tucks back in under the deck,
+     then the next. Stacking only changes while a card is clear of the deck or hidden under
+     identical backs, so nothing flickers over or under. */
+  .pd-shuffle{position:relative;width:96px;height:150px;margin-right:60px}
   .pd-shuffle span{position:absolute;inset:0;border-radius:9px;background-size:cover;background-position:center;background-color:#0c0b28;
-    border:1px solid rgba(233,196,106,.45);box-shadow:0 8px 24px rgba(0,0,0,.45);animation:pdShuffle 1.6s cubic-bezier(.45,.05,.35,1) infinite;
-    animation-delay:calc(var(--i) * -0.32s)}
+    border:1px solid rgba(233,196,106,.45);box-shadow:0 6px 18px rgba(0,0,0,.4);transform-origin:50% 100%;
+    animation:pdShuffle 3s ease-in-out infinite;animation-delay:calc(var(--i) * -0.6s);will-change:transform}
   @keyframes pdShuffle{
-    0%{transform:translateX(0) rotate(0);z-index:5}
-    25%{transform:translateX(-62px) rotate(-12deg);z-index:5}
-    50%{transform:translateX(62px) rotate(12deg);z-index:1}
-    75%{transform:translateX(0) rotate(2deg);z-index:1}
-    100%{transform:translateX(0) rotate(0);z-index:5}}
+    0%{transform:none;z-index:6}
+    16%{transform:translate(118px,-18px) rotate(14deg);z-index:6}
+    18%{transform:translate(118px,-18px) rotate(14deg);z-index:0}
+    36%{transform:none;z-index:0}
+    37%{transform:none;z-index:1}
+    55%{transform:none;z-index:2}
+    73%{transform:none;z-index:3}
+    91%{transform:none;z-index:4}
+    99%{transform:none;z-index:5}
+    100%{transform:none;z-index:6}}
   @media (prefers-reduced-motion:reduce){.pd-shuffle span{animation-duration:4s}}
   .pdframe{position:fixed;left:-20000px;top:0;width:640px;overflow:hidden;background:#fbf8f1}
   .pdoc *{box-shadow:none!important;text-shadow:none!important;animation:none!important;transition:none!important;
