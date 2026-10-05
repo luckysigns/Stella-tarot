@@ -4961,6 +4961,19 @@ $("askPull").onclick=askPull;
 /* Clearing the page never costs you the reading: signed in, anything not
    yet in the account is written first; signed out, it is stashed so the
    next sign-in picks it up. Then the page is yours again. */
+/* questions about to leave the page: anything not yet in the account is saved first
+   (signed in) or held until sign-in (signed out), so clearing never costs a reading */
+async function keepAsideAsk(entries){
+  const loose=(entries||[]).filter(function(e){ return !e.cloudId; });
+  if(!loose.length) return;
+  try{
+    if(savesUser()){ for(const entry of loose) await savesCreateAsk(entry); renderSaves(); }
+    else stashReadings(loose.map(function(entry){
+      return {kind:"ask",title:(entry.q||"Question").slice(0,300),deck_slug:state.deck||"base",
+        payload:askPayload(entry),journal:(entry.journal||"").trim()||null};
+    }));
+  }catch(e){}
+}
 async function startFreshThread(){
   const keeping=askThread.slice();
   askThread=[]; renderAskThread();
@@ -5691,10 +5704,13 @@ function openSaved(r){
       cloudId:r.id, pool:[]};
     const used={}; entry.cards.forEach(function(cc){ if(cc.deckIdx!=null) used[cc.deckIdx]=1;(cc.clar||[]).forEach(function(cl){ if(cl.deckIdx!=null) used[cl.deckIdx]=1; }); });
     entry.pool=shuffled().filter(function(i){ return !used[i]; });
+    /* one reading per page: an opened reading replaces whatever questions were showing */
+    const leaving=askThread.slice(); askThread=[]; keepAsideAsk(leaving);
     askThread.push(entry);
     renderAskThread(entry.id);
   } else {
     setMode("guided");
+    { const leaving=askThread.slice(); askThread=[]; renderAskThread(); keepAsideAsk(leaving); }   // one reading per page
     if(p.spread && SPREADS[p.spread]) state.spread=p.spread;
     const toDrawn=function(cc){ if(cc.oracle) return {oracle:cc.oracle,n:cc.n,label:cc.label||undefined}; const i=DECK_BY_ID[cc.id]; return i==null?null:{card:DECK[i],reversed:!!cc.reversed,deck:cc.deck||undefined,label:cc.label||undefined}; };
     state.drawn=(p.cards||[]).map(toDrawn).filter(function(d){ return d&&d.card; });
