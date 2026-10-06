@@ -107,6 +107,18 @@
     99%{transform:none;z-index:5}
     100%{transform:none;z-index:6}}
   @media (prefers-reduced-motion:reduce){.pd-shuffle span{animation-duration:4s}}
+  .pdoc.pd-share{padding:40px 44px 30px;width:640px}
+  .pdoc.pd-share .pd-board{align-items:flex-start}
+  .pdoc .pd-sum{margin-top:26px;border-top:1px solid var(--line)}
+  .pdoc .pd-item{padding:14px 0;border-bottom:1px solid var(--line)}
+  .pdoc .pd-item img{width:54px;flex:none;border-radius:4px;border:1px solid rgba(120,86,20,.25);align-self:flex-start}
+  .pdoc .pd-item img.rev{transform:rotate(180deg)}
+  .pdoc .pd-item .pd-iq{font-style:italic;color:var(--text-strong);margin-bottom:4px;font-size:14px}
+  .pdoc .pd-item .pd-iname{font-size:17px;color:var(--text-strong)}
+  .pdoc .pd-item .pd-ipos{font-family:"Trebuchet MS",sans-serif;font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-left:8px}
+  .pdoc .pd-item .pd-irev{font-family:"Trebuchet MS",sans-serif;font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--rose);margin-left:8px}
+  .pdoc .pd-item p{font-size:14px;margin:4px 0 0;line-height:1.5}
+  .pdoc .pd-sharefoot{text-align:center;margin-top:24px;font-family:"Trebuchet MS",sans-serif;font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--gold)}
   .pdframe{position:fixed;left:-20000px;top:0;width:640px;overflow:hidden;background:#fbf8f1}
   .pdoc *{box-shadow:none!important;text-shadow:none!important;animation:none!important;transition:none!important;
     -webkit-backdrop-filter:none!important;backdrop-filter:none!important}
@@ -3075,11 +3087,12 @@ async function withBusy(btn,fn){
   finally{ btn.disabled=false;btn.textContent=label; }
 }
 $("exportImg").onclick=()=>withBusy($("exportImg"),async()=>{
-  const canvas=await renderCanvas();
-  const a=document.createElement("a");
-  a.href=canvas.toDataURL("image/png");
-  a.download=fileStamp()+".png";
-  a.click();
+  const s=SPREADS[state.spread]||{name:"Reading",positions:[]};
+  const cards=state.drawn.map(function(d,i){ return Object.assign(pdTarot(d.card,d.reversed,d.deck,(s.positions||[])[i]),{text:d.reversed?d.card.rev:d.card.up}); });
+  (state.clarifiers.general||[]).forEach(function(x){
+    if(x.card) cards.push(Object.assign(pdTarot(x.card,x.reversed,x.deck,"Extra card"),{q:x.label||"",text:x.reversed?x.card.rev:x.card.up}));
+  });
+  await imageFromMeta(fileStamp(),{title:s.name,sub:[pdDate(),pdDeckName()].filter(Boolean).join(" · "),cards:cards});
 });
 /* ═══════════ PDF AS A DOCUMENT ═══════════
    The PDF used to be a phone-width screenshot stretched to A4 and sliced, so type was huge
@@ -3175,13 +3188,95 @@ function pdTarot(card,rev,deckId,pos){
 }
 function pdDate(d){ return (d||new Date()).toLocaleDateString(undefined,{year:"numeric",month:"long",day:"numeric"}); }
 function pdDeckName(id){ const d=DECKS.find(function(x){ return x.id===(id||state.deck); }); return d?d.name:""; }
+/* ═══════════ SAVE AS IMAGE: a shareable summary card ═══════════
+   Not a screenshot of the whole reading (that opened everything on the page, jumped the
+   reader around and made a huge image): a single card with the title, the spread, and for
+   each card its position or the question asked, plus the heart of its meaning. The full
+   reading is the PDF. Rendered once in a small separate document, never touching the page. */
+function pdShort(t){ const ss=String(t||"").match(/[^.!?]+[.!?]+/g)||[String(t||"")]; return ss.slice(0,2).join(" ").trim(); }
+function pdShareItems(list){
+  /* list: [{card|oracle, rev, pos, q, img, name}] */
+  return list.map(function(x){
+    const it=document.createElement("div"); it.className="pd-item";
+    const t=document.createElement("div");
+    if(x.q){ const q=document.createElement("div"); q.className="pd-iq"; q.textContent="\u201C"+x.q+"\u201D"; t.appendChild(q); }
+    const h=document.createElement("div"); h.className="pd-iname"; h.textContent=x.name||"";
+    if(x.pos){ const sp=document.createElement("span"); sp.className="pd-ipos"; sp.textContent=x.pos; h.appendChild(sp); }
+    if(x.rev){ const sp=document.createElement("span"); sp.className="pd-irev"; sp.textContent="Reversed"; h.appendChild(sp); }
+    t.appendChild(h);
+    if(x.text){ const p=document.createElement("p"); p.textContent=pdShort(x.text); t.appendChild(p); }
+    it.appendChild(t); return it;
+  });
+}
+async function imageFromMeta(name,meta){
+  const stopLoading=pdLoading("Making your image","laying out the cards");
+  await new Promise(function(r){ setTimeout(r,60); });
+  const ifr=document.createElement("iframe");
+  ifr.setAttribute("aria-hidden","true"); ifr.tabIndex=-1;
+  ifr.style.cssText="position:fixed;left:-20000px;top:0;width:"+PD.W+"px;height:1200px;border:0;visibility:hidden";
+  document.body.appendChild(ifr);
+  try{
+    const idoc=ifr.contentDocument;
+    const css=[].map.call(document.querySelectorAll("style"),function(st){ return st.textContent; }).join("\n");
+    idoc.open();
+    idoc.write('<!doctype html><html data-theme="light"><head><meta charset="utf-8"><base href="'+location.origin+'/"><style>'+css.replace(/<\/style/gi,"<\\/style")+'</style></head><body style="margin:0;background:#fbf8f1"></body></html>');
+    idoc.close();
+    const doc=idoc.createElement("div"); doc.className="pdoc pd-share";
+    doc.innerHTML='<div class="pd-head"><div class="pd-eyebrow">Stellar Tarot</div><div class="pd-title"></div><div class="pd-meta"></div></div><div class="pd-board"></div><div class="pd-sum"></div><div class="pd-sharefoot">tarot.stellarastro.app</div>';
+    doc.querySelector(".pd-title").textContent=meta.title||"Reading";
+    doc.querySelector(".pd-meta").textContent=meta.sub||"";
+    const board=doc.querySelector(".pd-board");
+    (meta.cards||[]).forEach(function(c){ board.appendChild(idoc.importNode(pdCardFigure(c.img,c.name,c.pos,c.rev),true)); });
+    const sum=doc.querySelector(".pd-sum");
+    pdShareItems(meta.cards||[]).forEach(function(el){ sum.appendChild(idoc.importNode(el,true)); });
+    idoc.body.appendChild(doc);
+    await readyForCapture(doc);
+    await new Promise(function(r){ setTimeout(r,60); });
+    const canvas=await html2canvas(doc,{backgroundColor:"#fbf8f1",scale:2,useCORS:true,width:PD.W,height:doc.scrollHeight,windowWidth:PD.W});
+    imgPreview(canvas,name,meta.title);
+  } finally { ifr.remove(); stopLoading(); }
+}
+function imgPreview(canvas,name,title){
+  const old=$("pdPreview"); if(old) old.remove();
+  const ov=document.createElement("div"); ov.id="pdPreview";
+  ov.style.cssText="position:fixed;inset:0;z-index:10000;background:#2b2840;display:flex;flex-direction:column";
+  ov.innerHTML='<div style="flex:none;display:flex;align-items:center;gap:10px;padding:max(12px,env(safe-area-inset-top)) 14px 12px;background:#16143a;border-bottom:1px solid rgba(233,196,106,.25)">'
+    +'<div style="flex:1;min-width:0;color:#f4ecd8;white-space:nowrap;overflow:hidden"><div style="font-size:15px">Save this image?</div><div data-pdsub style="font-size:12px;color:#b9b3cf;overflow:hidden;text-overflow:ellipsis"></div></div>'
+    +'<button type="button" data-pdclose style="font:inherit;font-size:12px;letter-spacing:.12em;text-transform:uppercase;padding:10px 14px;border-radius:999px;border:1px solid rgba(233,196,106,.4);background:transparent;color:#e9c46a;cursor:pointer">Close</button>'
+    +'<button type="button" data-pdsave style="font:inherit;font-size:12px;letter-spacing:.12em;text-transform:uppercase;padding:10px 18px;border-radius:999px;border:0;background:#e9c46a;color:#16143a;font-weight:600;cursor:pointer">⤓ Save image</button></div>'
+    +'<div data-pdscroll style="flex:1;overflow:auto;-webkit-overflow-scrolling:touch;padding:16px 12px 40px"></div>';
+  ov.querySelector("[data-pdsub]").textContent=(title||"Your reading")+" · a summary to share; the full reading is in the PDF";
+  const url=canvas.toDataURL("image/png");
+  const im=new Image(); im.src=url; im.alt=""; im.style.cssText="display:block;max-width:560px;width:100%;margin:0 auto;box-shadow:0 6px 24px rgba(0,0,0,.35)";
+  ov.querySelector("[data-pdscroll]").appendChild(im);
+  document.body.appendChild(ov);
+  document.body.style.overflow="hidden"; document.documentElement.style.overflow="hidden";
+  let closed=false;
+  const close=function(fromPop){
+    if(closed) return; closed=true;
+    ov.remove(); document.body.style.overflow=""; document.documentElement.style.overflow=""; window.removeEventListener("popstate",onPop);
+    if(!fromPop&&history.state&&history.state.pdfPreview) history.back();
+  };
+  const onPop=function(){ close(true); };
+  try{ history.pushState({pdfPreview:1},""); window.addEventListener("popstate",onPop); }catch(e){}
+  ov.querySelector("[data-pdclose]").onclick=function(){ close(false); };
+  ov.querySelector("[data-pdsave]").onclick=async function(){
+    try{
+      const blob=await new Promise(function(r){ canvas.toBlob(r,"image/png"); });
+      const file=new File([blob],name+".png",{type:"image/png"});
+      const touch=window.matchMedia&&matchMedia("(pointer:coarse)").matches;
+      if(touch&&navigator.canShare&&navigator.canShare({files:[file]})){ await navigator.share({files:[file],title:title||"Stellar Tarot reading"}); return; }
+    }catch(e){ if(e&&e.name==="AbortError") return; }
+    const a=document.createElement("a"); a.href=url; a.download=name+".png"; a.click();
+  };
+}
 /* while the pages are made: a full-screen sheet with cards being shuffled */
-function pdLoading(){
+function pdLoading(line1,line2){
   const ov=document.createElement("div"); ov.id="pdLoading";
   ov.style.cssText="position:fixed;inset:0;z-index:10001;background:#16143a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:34px;color:#f4ecd8";
   const back=getComputedStyle(document.documentElement)&&(document.querySelector("img.backimg")||{}).src||"/cards/back-stellar.jpg";
   ov.innerHTML='<div class="pd-shuffle">'+[0,1,2,3,4].map(function(i){ return '<span style="--i:'+i+';background-image:url(\''+back+'\')"></span>'; }).join("")+'</div>'
-    +'<div style="text-align:center"><div style="font-size:19px;font-style:italic">Laying out your reading</div><div style="font-size:12.5px;color:#b9b3cf;margin-top:6px;letter-spacing:.06em">shuffling it into pages</div></div>';
+    +'<div style="text-align:center"><div style="font-size:19px;font-style:italic">'+(line1||"Laying out your reading")+'</div><div style="font-size:12.5px;color:#b9b3cf;margin-top:6px;letter-spacing:.06em">'+(line2||"shuffling it into pages")+'</div></div>';
   document.body.appendChild(ov);
   const prev=document.body.style.overflow; document.body.style.overflow="hidden";
   return function(){ ov.remove(); if(!$("pdPreview")) document.body.style.overflow=prev; };
@@ -4788,7 +4883,14 @@ async function awCapture(){
 async function awExport(kind,btn){
   await withBusy(btn,async()=>{
     const name="stellar-tarot-"+(AW.tab==="cards"?"your-cards":AW.tab)+"-"+new Date().toISOString().slice(0,10);
-    if(kind==="png"){ const canvas=await awCapture(); const a=document.createElement("a"); a.href=canvas.toDataURL("image/png"); a.download=name+".png"; a.click(); return; }
+    if(kind==="png"){
+      const P0=awPlacements();
+      const who0=AW.opened?awChartLabel(AW.opened.name,P0):(window.STELLAR&&window.STELLAR.chart)?awChartLabel(awChart().name,P0):"Sample chart";
+      const labs=AW_LABELS[AW.tab]||[];
+      const cards0=(AW.draws[AW.tab]||[]).map((d,i)=>{ const c=DECK[d.deckIdx]; return Object.assign(pdTarot(c,d.reversed,null,labs[i]),{text:d.reversed?c.rev:c.up}); });
+      await imageFromMeta(name,{title:AW.tab==="cards"?"Your Cards":(AW_TITLES[AW.tab]||"Astrology reading"),sub:["for "+who0,pdDate()].join(" · "),cards:cards0});
+      return;
+    }
     await Promise.all(Object.keys(AW_DEEP_WAIT).map(k=>AW_DEEP_WAIT[k]));
     const P=awPlacements();
     const who=AW.opened?awChartLabel(AW.opened.name,P):(window.STELLAR&&window.STELLAR.chart)?awChartLabel(awChart().name,P):"Sample chart";
@@ -5818,6 +5920,21 @@ async function savesUpdateAsk(entry){
 }
 async function exportAskEntry(id,kind,btn){
   const el=$("askThread").querySelector('.ask-entry[data-entry="'+id+'"]'); if(!el) return;
+  if(kind==="png"){
+    await withBusy(btn,async function(){
+      const entry=askThread.find(function(e){ return e.id===id; })||{cards:[],labels:[]};
+      const cards=entry.cards.map(function(x,i){
+        const lab=(entry.labels&&entry.labels[i])||"", lk=labelKind(lab);
+        const pos=lk==="position"?lab:"", q=lk==="question"?lab:"";
+        if(x.oracle){ const o=oracleDeckById(x.oracle); return {img:oracleArt(x.oracle)+"full/"+x.n+".jpg",name:o?o.name:"Oracle",pos:pos,q:q}; }
+        const c=DECK[x.deckIdx];
+        return Object.assign(pdTarot(c,x.reversed,x.deck,pos),{q:q,text:x.reversed?c.rev:c.up});
+      });
+      await imageFromMeta("stellar-tarot-question-"+new Date().toISOString().slice(0,10),{
+        title:entry.q||"Question", sub:[entry.time,pdDeckName()].filter(Boolean).join(" · "), cards:cards});
+    });
+    return;
+  }
   if(kind!=="png"){
     /* the PDF is built from a copy: nothing on the page opens, flips or moves */
     await withBusy(btn,async function(){
