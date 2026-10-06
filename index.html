@@ -3139,10 +3139,10 @@ function pdBuild(source,meta){
 function pdBreaks(doc){
   /* Safe places to start a new page, in px from the top of the document, each marked
      block (a paragraph or section starts there) or line (inside running text). */
-  const top=doc.getBoundingClientRect().top, out=new Map();
+  const top=doc.getBoundingClientRect().top, out=new Map(), win=doc.ownerDocument.defaultView||window;
   const add=function(y,kind){ y=Math.round(y); if(y>0&&(!out.has(y)||kind==="block")) out.set(y,kind); };
   doc.querySelectorAll("*").forEach(function(e){
-    const cs=getComputedStyle(e); if(cs.display==="inline"||cs.display==="contents") return;   // inline tops are line tops
+    const cs=win.getComputedStyle(e); if(cs.display==="inline"||cs.display==="contents") return;   // inline tops are line tops
     const r=e.getBoundingClientRect(); if(r.height>0) add(r.top-top,"block");
   });
   /* running text: a paragraph may split only with two lines either side (no widows,
@@ -3151,7 +3151,7 @@ function pdBreaks(doc){
   doc.querySelectorAll("p,li,blockquote,.am-row,.ah-note,.pd-note,.slot-q").forEach(function(e){
     const r=e.getBoundingClientRect(); const pt=r.top-top, pb=r.bottom-top;
     const lines=[];
-    try{ const rg=document.createRange(); rg.selectNodeContents(e);
+    try{ const rg=doc.ownerDocument.createRange(); rg.selectNodeContents(e);
       [].forEach.call(rg.getClientRects(),function(q){ const y=Math.round(q.top-top); if(!lines.length||Math.abs(lines[lines.length-1]-y)>3) lines.push(y); }); }catch(err){}
     lines.sort(function(a,b){ return a-b; });
     const allowed=new Set();
@@ -3188,8 +3188,21 @@ function pdLoading(){
 }
 async function pdfFromElement(source,name,meta){
   const stopLoading=pdLoading();
-  const frame=document.createElement("div"); frame.className="pdframe";
-  const doc=pdBuild(source,meta); frame.appendChild(doc); document.body.appendChild(frame);
+  await new Promise(function(r){ setTimeout(r,60); });   // let the loader paint before the work starts
+  /* The pages are laid out in a small separate document holding only the reading and the
+     app's styles. html2canvas copies the whole document it captures from, and this app is
+     a very large page, so capturing from the app itself froze the screen for every page. */
+  const ifr=document.createElement("iframe");
+  ifr.setAttribute("aria-hidden","true"); ifr.tabIndex=-1;
+  ifr.style.cssText="position:fixed;left:-20000px;top:0;width:"+PD.W+"px;height:1200px;border:0;visibility:hidden";
+  document.body.appendChild(ifr);
+  const idoc=ifr.contentDocument;
+  const css=[].map.call(document.querySelectorAll("style"),function(st){ return st.textContent; }).join("\n");
+  idoc.open();
+  idoc.write('<!doctype html><html data-theme="light"><head><meta charset="utf-8"><base href="'+location.origin+'/"><style>'+css.replace(/<\/style/gi,"<\\/style")+'</style></head><body style="margin:0;background:#fbf8f1"></body></html>');
+  idoc.close();
+  const frame=idoc.createElement("div"); frame.className="pdframe"; frame.style.left="0";
+  const doc=idoc.importNode(pdBuild(source,meta),true); frame.appendChild(doc); idoc.body.appendChild(frame);
   try{
     await readyForCapture(doc);
     await new Promise(function(r){ setTimeout(r,150); });
@@ -3199,7 +3212,7 @@ async function pdfFromElement(source,name,meta){
       const limit=start+PD.pageH;
       if(limit>=total){ pages.push([start,total]); break; }
       const inPage=breaks.filter(function(b){ return b.y>start+40&&b.y<=limit; });
-      const blocks=inPage.filter(function(b){ return b.kind==="block"&&b.y>start+PD.pageH*0.78; });
+      const blocks=inPage.filter(function(b){ return b.kind==="block"&&b.y>start+PD.pageH*0.9; });
       const ok=inPage.filter(function(b){ return b.y>start+PD.pageH*0.45; });
       const pick=blocks.length?blocks[blocks.length-1]:(ok.length?ok[ok.length-1]:(inPage.length?inPage[inPage.length-1]:null));
       const cut=pick?pick.y:limit;
@@ -3208,22 +3221,40 @@ async function pdfFromElement(source,name,meta){
     const {jsPDF}=window.jspdf;
     const pdf=new jsPDF({unit:"pt",format:"a4"});
     const shots=[];
-    for(let i=0;i<pages.length;i++){
-      const a=pages[i][0], b=pages[i][1];
-      frame.style.height=(b-a)+"px"; doc.style.top=(-a)+"px";
+    /* Render several pages in one pass and cut the result into pages: each html2canvas
+       call has a large fixed cost, so one call per page made a 9 page reading slow. Each
+       pass stays under ~9 megapixels so phones never hit their canvas limit, and phones
+       render at 1.5x (still ~140 dpi on A4) to keep the work down. */
+    const S=(window.matchMedia&&matchMedia("(pointer:coarse)").matches)?1.5:2;
+    const CH=Math.floor(9e6/(PD.W*S*S));
+    const chunks=[]; pages.forEach(function(pg){
+      const last=chunks[chunks.length-1];
+      if(last&&pg[1]-last.start<=CH){ last.end=pg[1]; last.pages.push(pg); }
+      else chunks.push({start:pg[0],end:pg[1],pages:[pg]});
+    });
+    const pageCanvases=[];
+    for(const ch of chunks){
+      frame.style.height=(ch.end-ch.start)+"px"; doc.style.top=(-ch.start)+"px";
       await new Promise(function(r){ setTimeout(r,30); });   // not rAF: it never fires in a background tab
-      const canvas=await html2canvas(frame,{backgroundColor:"#fbf8f1",scale:2,useCORS:true,width:PD.W,height:b-a,windowWidth:PD.W,
-        ignoreElements:function(e){ return e.id==="pdLoading"||e.id==="pdPreview"; }});
+      const big=await html2canvas(frame,{backgroundColor:"#fbf8f1",scale:S,useCORS:true,width:PD.W,height:ch.end-ch.start,windowWidth:PD.W});
+      ch.pages.forEach(function(pg){
+        const c=document.createElement("canvas"); c.width=Math.round(PD.W*S); c.height=Math.round((pg[1]-pg[0])*S);
+        c.getContext("2d").drawImage(big,0,Math.round((pg[0]-ch.start)*S),c.width,c.height,0,0,c.width,c.height);
+        pageCanvases.push({canvas:c,a:pg[0],b:pg[1]});
+      });
+    }
+    for(let i=0;i<pageCanvases.length;i++){
+      const a=pageCanvases[i].a, b=pageCanvases[i].b, canvas=pageCanvases[i].canvas;
       if(i) pdf.addPage();
       pdf.setFillColor(251,248,241); pdf.rect(0,0,PD.ptW,PD.ptH,"F");
-      const jpg=canvas.toDataURL("image/jpeg",0.92); shots.push({src:jpg,h:b-a});
+      const jpg=canvas.toDataURL("image/jpeg",0.9); shots.push({src:jpg,h:b-a});
       pdf.addImage(jpg,"JPEG",PD.margin,PD.margin,PD.W*PD.scale,(b-a)*PD.scale);
       pdf.setFont("helvetica","normal"); pdf.setFontSize(8); pdf.setTextColor(138,125,100);
       pdf.text("Stellar Tarot  ·  tarot.stellarastro.app",PD.margin,PD.ptH-PD.margin+8);
       pdf.text((i+1)+" / "+pages.length,PD.ptW-PD.margin,PD.ptH-PD.margin+8,{align:"right"});
     }
     pdPreview(pdf,name,shots,meta.title);
-  } finally { frame.remove(); stopLoading(); }
+  } finally { ifr.remove(); stopLoading(); }
 }
 /* The finished PDF opens in our own preview, at the top, with Save and Close always in view.
    Handing it straight to the phone's PDF viewer dropped readers wherever they had been on
@@ -3247,13 +3278,13 @@ function pdPreview(pdf,name,shots,title){
     pg.appendChild(im); sc.appendChild(pg);
   });
   document.body.appendChild(ov);
-  const prevOverflow=""; document.body.style.overflow="hidden";
+  const prevOverflow=""; document.body.style.overflow="hidden"; document.documentElement.style.overflow="hidden";
   sc.scrollTop=0;
   /* it is its own page: the phone's Back gesture closes it rather than leaving the app */
   let closed=false;
   const close=function(fromPop){
     if(closed) return; closed=true;
-    ov.remove(); document.body.style.overflow=prevOverflow; window.removeEventListener("popstate",onPop);
+    ov.remove(); document.body.style.overflow=prevOverflow; document.documentElement.style.overflow=""; window.removeEventListener("popstate",onPop);
     if(!fromPop&&history.state&&history.state.pdfPreview) history.back();
   };
   const onPop=function(){ close(true); };
