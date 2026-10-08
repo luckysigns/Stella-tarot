@@ -15,6 +15,7 @@ Moon's two oracle decks went through the oracle path earlier.
 |---|---|---|---|---|---|---|
 | The Barley Moon (Laura Metcalfe) | `barleymoon` | Inner Wisdom Oracle (35), Mandala Oracle (36) | oracle | `barley-inner-wisdom`, `barley-mandala` | `/thebarleymoonpreviews` | live at $4.99 each |
 | Michael Burk | `michaelburk` | The Anthropologist Tarot (78) | tarot | `anthropologist-tarot` | `/michaelburkpreviews` | **live 1 Oct 2026 at $8.88**; his back, bleed trimmed, samples The World, King of Cups, Page of Wands; guidebook keywords in `api/_preview/anthropologist-tarot/meanings.json` |
+| Story Through Stone (Cyndera Quackenbush) | `storythroughstone` | Story Through Stone Reflection Cards (54) | oracle | `story-through-stone` | `/storythroughstonepreviews` | draft at $4.99 placeholder (7 Oct 2026); her back (file 55); TIFFs in CMYK; no card meanings until Nov/Dec by her choice; price, samples, bio and licence status still to come |
 
 Update this table whenever an artist is added or a deck changes status.
 
