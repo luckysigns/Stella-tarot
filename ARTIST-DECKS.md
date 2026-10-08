@@ -15,7 +15,7 @@ Moon's two oracle decks went through the oracle path earlier.
 |---|---|---|---|---|---|---|
 | The Barley Moon (Laura Metcalfe) | `barleymoon` | Inner Wisdom Oracle (35), Mandala Oracle (36) | oracle | `barley-inner-wisdom`, `barley-mandala` | `/thebarleymoonpreviews` | live at $4.99 each |
 | Michael Burk | `michaelburk` | The Anthropologist Tarot (78) | tarot | `anthropologist-tarot` | `/michaelburkpreviews` | **live 1 Oct 2026 at $8.88**; his back, bleed trimmed, samples The World, King of Cups, Page of Wands; guidebook keywords in `api/_preview/anthropologist-tarot/meanings.json` |
-| Story Through Stone (Cyndera Quackenbush) | `storythroughstone` | Story Through Stone Reflection Cards (54) | oracle | `story-through-stone` | `/storythroughstonepreviews` | draft at $4.99 placeholder (7 Oct 2026); her back (file 55); TIFFs in CMYK; no card meanings until Nov/Dec by her choice; price, samples, bio and licence status still to come |
+| Story Through Stone (Cyndera Quackenbush) | `storythroughstone` | Story Through Stone Reflection Cards (54) | oracle | `story-through-stone` | `/storythroughstonepreviews` | draft at $4.99 placeholder (7 Oct 2026); her back (file 55); TIFFs in CMYK; no card meanings until Nov/Dec by her choice; licence signed (Adobe); price, samples and bio still to come |
 
 Update this table whenever an artist is added or a deck changes status.
 
@@ -90,6 +90,11 @@ to Michael on 9 Sep 2026 is the model). Ask for:
 
 Send the licence for signature in parallel. The preview (step 3) can happen
 before it is signed; going live (step 6) cannot.
+
+**Licences are signed through Lachlan's Adobe account**, not by email to
+create@creatorapps.app, so the signed copy never shows up in the Creatorapps
+mailbox. Do not go looking for it or ask the artist to sign again: **if Lachlan
+asks for an artist's preview, that artist has signed.**
 
 Never send partner email by scripting Mail's `save`: it once landed in Sent.
 Write the text in the scratchpad, or open a visible unsent window and say so.
@@ -171,6 +176,12 @@ artist adds no Vercel function (Hobby caps the project at 12).
    `/api/_preview/<slug>/full/1.jpg` is **not** the image.
 7. **Send it.** The link and the password, and the list of what you still need
    from step 1. The cookie lasts 30 days.
+
+The preview pages (the password form and the gallery) open in **light mode** by
+default, like the tarot app, with a sun/moon button for dark; the choice is
+shared between the two pages (`preview.theme` in localStorage). The password
+field has a **Show / Hide** button. Keep both if you touch `form()` in
+`preview-gate.js` or `deck-preview.html`.
 
 ## 4. Admin: the artist and the deck row
 

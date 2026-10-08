@@ -32,8 +32,8 @@
     --cw:min(52vw, 286px, calc((100vh - 300px) / var(--ratio)));
     --ch:calc(var(--cw) * var(--ratio));
   }
-  /* light mode: the same page on parchment. Follows the system unless the
-     sun/moon button has been used, which is remembered on this device. */
+  /* light mode: the same page on parchment. Light is the default, as in the tarot app;
+     the sun/moon button switches, and the choice is remembered on this device. */
   :root[data-theme="light"]{
     --void:#f4efe4; --void-2:#ebe4d3; --ink:#fbf8f1;
     --gold:#8a6a1c; --gold-soft:#a5832f; --silver:#2a2640; --mist:#6b6a80;
@@ -400,7 +400,7 @@ document.addEventListener("dragstart",function(e){ e.preventDefault(); });
   var KEY="preview.theme", root=document.documentElement, btn=document.getElementById("theme");
   function apply(t){ root.setAttribute("data-theme",t); btn.textContent = t==="light" ? "☾" : "☀"; }
   var saved=null; try{ saved=localStorage.getItem(KEY); }catch(e){}
-  apply(saved || (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark"));
+  apply(saved || "light");   /* light by default, like the tarot app; the button choice is remembered */
   btn.addEventListener("click",function(){
     var t = root.getAttribute("data-theme")==="light" ? "dark" : "light";
     apply(t); try{ localStorage.setItem(KEY,t); }catch(e){}

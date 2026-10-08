@@ -81,7 +81,13 @@ function form(A, a, note) {
 <meta name="robots" content="noindex, nofollow"><title>Deck preview</title>
 <style>
   :root{--void:#0a0a1f;--gold:#e9c46a;--gold-soft:#c9a24b;--silver:#cdd6f4;--mist:#8b8fb5;--line:rgba(233,196,106,.22);--ink:#070612}
-  @media (prefers-color-scheme: light){:root{--void:#f4efe4;--gold:#8a6a1c;--gold-soft:#a5832f;--silver:#2a2640;--mist:#6b6a80;--line:rgba(138,106,28,.28);--ink:#fbf8f1}}
+  /* light by default, like the tarot app and the gallery; the button switches (same saved choice) */
+  :root[data-theme="light"]{--void:#f4efe4;--gold:#8a6a1c;--gold-soft:#a5832f;--silver:#2a2640;--mist:#6b6a80;--line:rgba(138,106,28,.28);--ink:#fbf8f1}
+  .theme{position:fixed;top:max(14px,env(safe-area-inset-top));right:14px;width:38px;height:38px;border-radius:50%;padding:0;letter-spacing:0;
+    display:grid;place-items:center;background:var(--ink);border:1px solid var(--line);color:var(--gold);font-size:16px}
+  .pw{position:relative}
+  .pw input{width:100%;padding-right:64px}
+  .pw .show{position:absolute;right:6px;top:50%;transform:translateY(-50%);border:0;padding:8px 10px;font-size:10.5px;letter-spacing:.14em;color:var(--gold-soft)}
   *{box-sizing:border-box;margin:0;padding:0}
   body{min-height:100dvh;display:grid;place-items:center;background:var(--void);color:var(--silver);
     font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;-webkit-font-smoothing:antialiased;padding:24px}
@@ -95,16 +101,26 @@ function form(A, a, note) {
   button{font:inherit;font-size:12px;letter-spacing:.16em;text-transform:uppercase;padding:12px;border-radius:999px;cursor:pointer;
     border:1px solid var(--gold-soft);background:transparent;color:var(--gold)}
   .note{color:#d98b9e;font-size:13px;min-height:1.2em}
-</style></head><body><div class="box">
+</style>
+<script>(function(){var t="light";try{t=localStorage.getItem("preview.theme")||"light";}catch(e){}document.documentElement.setAttribute("data-theme",t);})();</script>
+</head><body><button type="button" class="theme" id="theme" aria-label="Switch light and dark"></button><div class="box">
   <div class="eyebrow">Stellar Tarot</div>
   <h1>${esc(A.heading)}</h1>
   <p>A private preview. Enter the password you were given.</p>
   <form method="post" action="/${a}previews">
-    <input type="password" name="password" autocomplete="current-password" autofocus aria-label="Password" required>
+    <div class="pw"><input type="password" name="password" id="pw" autocomplete="current-password" autofocus aria-label="Password" required><button type="button" class="show" id="show" aria-pressed="false">Show</button></div>
     <button type="submit">Open the preview</button>
     <div class="note">${esc(note || "")}</div>
   </form>
-</div></body></html>`;
+</div>
+<script>(function(){
+  var pw=document.getElementById("pw"), show=document.getElementById("show");
+  show.onclick=function(){ var on=pw.type==="password"; pw.type=on?"text":"password"; show.textContent=on?"Hide":"Show"; show.setAttribute("aria-pressed",on?"true":"false"); pw.focus(); };
+  var root=document.documentElement, b=document.getElementById("theme");
+  function face(){ b.textContent=root.getAttribute("data-theme")==="light"?"\u263E":"\u2600"; }
+  face();
+  b.onclick=function(){ var t=root.getAttribute("data-theme")==="light"?"dark":"light"; root.setAttribute("data-theme",t); try{localStorage.setItem("preview.theme",t);}catch(e){} face(); };
+})();</script></body></html>`;
 }
 
 function gallery(A) {
