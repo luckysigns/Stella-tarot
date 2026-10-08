@@ -12,6 +12,14 @@
       "destination": "/api/preview-gate?a=thebarleymoon"
     },
     {
+      "source": "/storythroughstonepreviews",
+      "destination": "/api/preview-gate?a=storythroughstone"
+    },
+    {
+      "source": "/storythroughstonepreviews/art/:slug/:size/:n",
+      "destination": "/api/preview-gate?a=storythroughstone&slug=:slug&size=:size&n=:n"
+    },
+    {
       "source": "/michaelburkpreviews",
       "destination": "/api/preview-gate?a=michaelburk"
     },

@@ -69,6 +69,11 @@ def split_names(files):
         rest = s[len(prefix):] if s.startswith(prefix) else s
         m = re.match(r"^(\d+)[\s_\-.]*(.*)$", rest)
         n, label = (int(m.group(1)), m.group(2)) if m else (None, rest)
+        if n is None:
+            # "Deck Oct 4 Rich Black-07": the card number is the trailing one (Cyndera's files)
+            t = re.search(r"[\s_\-.](\d+)$", s)
+            if t:
+                n, label = int(t.group(1)), ""
         out.append((n, label_words(label)))
     return out
 
@@ -122,6 +127,7 @@ def main():
     ap.add_argument("--height", type=int, default=900)
     ap.add_argument("--thumb", type=int, default=260)
     ap.add_argument("--quality", type=int, default=85)
+    ap.add_argument("--back", help="file name of the card back, when its name does not say 'back'")
     ap.add_argument("--bleed", type=float, default=0, help="inches of print bleed to trim from each side")
     ap.add_argument("--trim-height", type=float, default=4.75, help="printed card height in inches, for --bleed")
     a = ap.parse_args()
@@ -134,7 +140,9 @@ def main():
         sys.exit("No images in " + str(src))
 
     parsed = dict(zip(files, split_names(files)))
-    backs = [f for f in files if is_back(parsed[f][1])]
+    backs = [a.back] if a.back else [f for f in files if is_back(parsed[f][1])]
+    if a.back and a.back not in files:
+        sys.exit("--back file not found: " + a.back)
     if len(backs) > 1:
         sys.exit("More than one card back: " + ", ".join(backs))
     cards = [f for f in files if f not in backs]

@@ -37,6 +37,13 @@ const ARTISTS = {
     cookie: "mbpreview", seal: "michaelburk-preview",
     open: "1mco9ebl",
     art: ["anthropologist-tarot"]                        /* private art this artist may load */
+  },
+  storythroughstone: {
+    heading: "Story Through Stone preview",
+    env: "PREVIEW_PASSWORD_STORYTHROUGHSTONE",
+    cookie: "stspreview", seal: "storythroughstone-preview",
+    open: "yacipr00",
+    art: ["story-through-stone"]
   }
 };
 
