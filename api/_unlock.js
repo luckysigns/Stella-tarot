@@ -21,8 +21,8 @@ const PROD_SUB = "prod_VEDNZiUEF36Y83";   // Astra Reading Archive (subscription
 const PROD_LIFE = "prod_VEDPEYV3UdFUpJ";  // Astra Lifetime (one-time)
 
 /* Subscription tiers are told apart by amount, in cents. */
-const MINOR_CENTS = 299;
-const MAJOR_CENTS = 999;
+const MINOR_CENTS = 199;   // $1.99 since 8 Oct 2026 (was $2.99)
+const MAJOR_CENTS = 499;   // $4.99 since 8 Oct 2026 (was $9.99); older amounts still map by size below
 
 const TIER_RANK = { free: 0, minor: 1, major: 2, lifetime: 3 };
 const SUB_TTL_DAYS = 35;
