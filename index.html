@@ -5536,12 +5536,12 @@ function savesUser(){ return (window.STELLAR&&window.STELLAR.user)||null; }
 
    ARCH_TIERS is the single place tiers live, the way DECKS holds the decks. */
 const ARCH_TIERS=[
-  {id:"minor",name:"Minor Arcana",cap:100,price:"$2.99 a month",
+  {id:"minor",name:"Minor Arcana",cap:100,price:"$1.99 a month",
    blurb:"Save up to 100 readings with your notes, always there to look back on.",
-   link:"https://buy.stripe.com/28E00cbwn6FEdtT7Dl7kc0a"},
-  {id:"major",name:"Major Arcana",cap:1000,price:"$9.99 a month",
+   link:"https://buy.stripe.com/28EeV60RJbZY0H7cXF7kc0e"},
+  {id:"major",name:"Major Arcana",cap:1000,price:"$4.99 a month",
    blurb:"Save up to 1,000 readings. How your destiny has spoken to you over time, spread by spread, note by note.",
-   link:"https://buy.stripe.com/6oU3co8kbe8675v9Lt7kc0b"},
+   link:"https://buy.stripe.com/bJe4gsfMDaVUexXf5N7kc0f"},
   {id:"lifetime",name:"Lifetime",cap:Infinity,price:"$111.11 once",life:true,badge:"Founding offer · ends 11/11",
    blurb:"Unlimited saved readings, forever. One payment, no subscription, yours to keep.",
    link:"https://buy.stripe.com/5kQbIUfMD8NM89ze1J7kc0c"}
@@ -5739,7 +5739,7 @@ document.addEventListener("click",function(e){
 const SAVE_CAP={free:10,plus:100,premium:1000,lifetime:Infinity};
 const TIER_RANK={free:0,plus:1,premium:2,lifetime:3};
 const PLAN_NAMES={free:"Star Seeker",plus:"Star Gazer",premium:"Star Reader",lifetime:"Deep Sky"};
-const PLAN_PRICE={plus:"$4.99 a month · $49 a year",premium:"$14.99 a month · $99 a year",lifetime:"$150 once · forever"};
+const PLAN_PRICE={plus:"$3.99 a month · $39 a year",premium:"$9.99 a month · $89 a year",lifetime:"$150 once · forever"};
 const PLAN_INCL={
   plus:["100 saved tarot readings","3 saved birth charts in Stellar","Expanded natal readings","Compare charts: synastry and compatibility","Lucky days: last, this and next month"],
   premium:["1,000 saved tarot readings","10 saved birth charts","The full progressed reading","Astrocartography, your lines on a world map","Fixed-star readings","Everything in Star Gazer"],
@@ -5818,7 +5818,7 @@ function openSubSheet(){
       +'<div class="cp-top"><span class="cp-name">'+up.name+'</span><span class="cp-price">'+up.price+'</span></div>'
       +'<p>'+archCount(up)+' with your notes, instead of '+t.cap+'. Stripe swaps the plan today and only charges the difference for the rest of the month.</p>'
       +'<button type="button" class="dk-use fill" data-subflow="update">Upgrade to '+up.name+' ↗︎</button>'+subNoteHTML(up.price)+'</div>';
-    html+='<div class="cap-plan"><div class="cp-top"><span class="cp-name">Bundle with astrology</span><span class="cp-price">from $4.99 a month</span></div>'
+    html+='<div class="cap-plan"><div class="cp-top"><span class="cp-name">Bundle with astrology</span><span class="cp-price">from $3.99 a month</span></div>'
       +'<p class="hint" style="margin:6px 0 10px">Stellar\'s plans include this archive: Star Gazer keeps 100 readings, Star Reader 1,000, Deep Sky unlimited, and they add birth charts, transits and lucky days. One plan for both apps. Pick one in Stellar, then cancel this plan below so you are never paying twice.</p>'
       +'<a class="dk-use" href="'+STELLAR_UPGRADE_URL+'" target="_blank" rel="noopener">See the Stellar plans ↗︎</a></div>';
     html+='<div class="cap-plan"><div class="cp-top"><span class="cp-name">Keep them forever</span><span class="cp-price">'+archTierDef("lifetime").price+'</span></div>'

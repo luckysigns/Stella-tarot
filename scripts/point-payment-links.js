@@ -19,8 +19,8 @@ const REDIRECT = process.env.UNLOCK_REDIRECT_URL
   || "https://tarot.stellarastro.app/?session_id={CHECKOUT_SESSION_ID}";
 
 const LINKS = [
-  { id: "plink_1UDkzb6cHxuVOJjwIpj3l2r3", label: "Minor Arcana ($2.99/mo)" },
-  { id: "plink_1UDl046cHxuVOJjwaeKmMi7D", label: "Major Arcana ($9.99/mo)" },
+  { id: "plink_1UOUpJ6cHxuVOJjwGPlxdXCR", label: "Minor Arcana ($1.99/mo)" },
+  { id: "plink_1UOUq66cHxuVOJjwUal0G42E", label: "Major Arcana ($4.99/mo)" },
   { id: "plink_1UDl0k6cHxuVOJjwJ9qdqB5e", label: "Lifetime ($111 once)" }
 ];
 
