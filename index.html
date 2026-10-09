@@ -478,6 +478,14 @@
   .ac-who{margin:0 0 10px;color:var(--text-strong);font-size:15px;word-break:break-all}
   .ac-actions{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin-top:4px}
   .ac-actions .dk-use{display:inline-block;text-decoration:none}
+  .ac-legal{margin:12px 0 0;font-size:12px;color:var(--mist)}
+  .pm-agree{margin:8px 0 0;font-size:11.5px;line-height:1.5;color:var(--mist);font-style:italic;text-align:left}
+  .buy-note{margin:6px 0 0;font-size:11.5px;line-height:1.5;color:var(--mist);font-style:italic}
+  .ah-actions+.buy-note{text-align:center}
+  .rev-del{margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:12.5px;color:var(--mist);font-style:italic}
+  .rev-del button{background:none;border:none;padding:0;font:inherit;font-style:normal;color:var(--gold-soft);text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+  .rev-del button.rev-del-go{color:var(--rose)}
+  .rev-del button:disabled{opacity:.5;cursor:default}
   #plansView{display:none}
   body.plans-open .wrap > *:not(#plansView){display:none}
   body.plans-open #plansView{display:block}
@@ -1003,6 +1011,9 @@
   .pm-otp-link:disabled{color:var(--mist);cursor:default}
   .hidden{display:none!important}
   footer{text-align:center;color:var(--mist);font-size:12px;margin-top:50px;opacity:.7;letter-spacing:.05em}
+  .legal-links{display:block;margin-top:6px}
+  .legal-links a,.pm-agree a,.ac-legal a,.buy-note a{color:inherit;text-decoration:underline;text-underline-offset:2px}
+  .legal-links a:hover,.pm-agree a:hover,.ac-legal a:hover,.buy-note a:hover{color:var(--gold)}
 
   @media(max-width:560px){
     .fan{height:240px}
@@ -1115,6 +1126,7 @@ try{  /* the arrival, which may already be a deep link to an artist or a deck */
     <form id="pmForm">
       <input type="email" class="pm-email" id="pmEmail" placeholder="you@example.com" autocomplete="email" required>
       <button class="pm-go" id="pmSignIn" type="submit">✷ &nbsp;Email me a sign-in link</button>
+      <p class="pm-agree" id="pmAgree">By continuing you agree to our <a href="https://www.stellarastro.app/terms" target="_blank" rel="noopener">Terms</a> and <a href="https://www.stellarastro.app/privacy" target="_blank" rel="noopener">Privacy Policy</a>.</p>
     </form>
     <div id="pmCode" class="otp-step hidden"></div>
   </div>
@@ -1438,6 +1450,12 @@ try{  /* the arrival, which may already be a deep link to an artist or a deck */
         <p class="hint" style="margin:0 0 10px">Your readings stay saved to the account; sign back in any time with a link.</p>
         <div class="ac-actions"><button class="dk-use" type="button" id="acSignOut">Sign out</button></div>
       </div>
+      <div class="ac-card ac-quiet">
+        <div class="step-label" style="margin:0 0 4px">Your data</div>
+        <p class="hint" style="margin:0 0 10px">One account covers Stellar, Stellar Tarot and Stellar BaZi. Download or delete it from your Stellar account.</p>
+        <div class="ac-actions"><a class="dk-use" id="acData" href="https://app.stellarastro.app/app?account=data" target="_blank" rel="noopener">Download or delete my data ↗︎</a></div>
+        <p class="ac-legal legal-fill"><a href="https://www.stellarastro.app/terms" target="_blank" rel="noopener">Terms</a> · <a href="https://www.stellarastro.app/privacy" target="_blank" rel="noopener">Privacy</a> · <a href="https://www.stellarastro.app/cookies" target="_blank" rel="noopener">Cookies</a></p>
+      </div>
     </div>
   </section>
 
@@ -1547,9 +1565,10 @@ try{  /* the arrival, which may already be a deep link to an artist or a deck */
     <div id="awBody"></div>
   </section>
 
-  <footer>Stellar Tarot · for reflection and play</footer>
+  <footer>Stellar Tarot · for reflection and play<span class="legal-links legal-fill"><a href="https://www.stellarastro.app/terms" target="_blank" rel="noopener">Terms</a> · <a href="https://www.stellarastro.app/privacy" target="_blank" rel="noopener">Privacy</a> · <a href="https://www.stellarastro.app/cookies" target="_blank" rel="noopener">Cookies</a></span></footer>
 </div>
 
+<script src="/terms-gate.js"></script>
 <script>
 /* ───────── 78-CARD STELLAR DECK ─────────
    Each card by general / love / career / money / health / spirituality,
@@ -2072,6 +2091,7 @@ function oracleRowHTML(dk){
     +   '<div class="dk-sub">'+escapeHTML(dk.sub)+' · by <a href="/'+dk.artist_code+'" data-artistpage="'+dk.artist_code+'">'+escapeHTML(dk.artist)+'</a></div>'
     +   (owned?'<p class="hint" style="margin-top:6px">Yours to turn: pick it from the deck menu beside "Draw a clarifier" or "Add a card" in any reading.</p>':'')
     +   '<details class="dk-more"><summary>Learn more</summary><p>'+escapeHTML(dk.blurb)+' <a href="/'+dk.artist_code+'/'+dk.id+'" data-oraclepage="'+dk.id+'">See the deck →</a></p></details>'
+    +   (buyable?onceNoteHTML(deckPriceLabel(dk)):'')
     + '</div>'
     + (buyable?'<button type="button" class="dk-use" data-buydeck="'+dk.id+'">'+(dk.ready?'Buy · ':'Pre-order · ')+deckPriceLabel(dk)+'</button>':'')
     + '</div>';
@@ -2429,7 +2449,7 @@ function renderArtistPage(){
           :singleOr.on_sale?'<button type="button" class="dk-use fill" id="ahBuyOr">'+(singleOr.ready?'Buy this deck · ':'Pre-order · ')+deckPriceLabel(singleOr)+'</button>'
           :'<span class="dk-tag soon">coming soon</span>')
       +  ((singleOr.shop||ARTIST_VIEW.shop)?'<button type="button" class="dk-use" id="ahShop">Printed deck'+(singleOr.price?" · "+escA(singleOr.price):"")+' ↗︎</button>':"")
-      +'</div>'+note
+      +'</div>'+((!oracleOwned(singleOr)&&singleOr.on_sale)?onceNoteHTML(deckPriceLabel(singleOr)):"")+note
       +'<a href="#" class="ah-browse" id="ahAllDecks">See all decks by '+escA(nm)+' →</a>';
     decksEl.innerHTML="";
     const sh=$("ahShop"); if(sh) sh.onclick=()=>shopClick(AP.code,singleOr.id,singleOr.shop||ARTIST_VIEW.shop);
@@ -2456,7 +2476,7 @@ function renderArtistPage(){
       +'<div class="ah-blurb">'+escA(singleDk.blurb||singleDk.sub||"")+"</div>"
       +'<div class="ah-actions">'+cta
       +(singleDk.ready&&singleDk.artist_code?'<button type="button" class="dk-use" id="ahReviews">'+(r&&r.n?"★ "+r.avg.toFixed(1)+" · reviews":"Reviews")+"</button>":"")
-      +"</div>"+note
+      +"</div>"+(singleDk.ready&&deckIsPaid(singleDk)&&!OWNED.has(singleDk.id)?onceNoteHTML(deckPriceLabel(singleDk)):"")+note
       +'<a href="#" class="ah-browse" id="ahAllDecks">See all decks by '+escA(nm)+" →</a>";
     decksEl.innerHTML="";
     const bb=$("ahBuy"); if(bb) bb.onclick=function(){buyDeck(singleDk.id,bb);};
@@ -2522,6 +2542,7 @@ function deckRowHTML(dk){
     +   '<details class="dk-more"><summary>Learn more</summary><p>'+dk.blurb
     +     (dk.shop_url&&dk.artist_code?' <a href="#" class="dk-shop" data-shopdeck="'+dk.id+'">Buy the printed deck ↗︎</a>':'')
     +   '</p></details>'
+    +   (buyable?onceNoteHTML(deckPriceLabel(dk)):'')
     + '</div>'
     + action
     + '</div>';
@@ -2799,6 +2820,7 @@ async function buyDeck(slug,btn){
     openSigninSheet();
     return;
   }
+  if(window.StellarTerms&&!(await StellarTerms.requireAgreement()))return;
   const orig=btn?btn.textContent:"";
   if(btn){ btn.disabled=true; btn.textContent="Opening checkout…"; }
   try{
@@ -2873,13 +2895,15 @@ async function loadReviews(slug){
     const res=await fetch(location.origin+"/sb/rest/v1/deck_reviews?select=rating,body,display_name,created_at,user_id&deck_slug=eq."+encodeURIComponent(slug)+"&order=created_at.desc&limit=50",{headers:{apikey:SB_PUB_KEY}});
     const rows=res.ok?await res.json():[];
     if(!rows.length){ listEl.innerHTML='<p class="hint">No reviews yet. The first one sets the tone.</p>'; return; }
+    const u=window.STELLAR&&window.STELLAR.user;
     listEl.innerHTML=rows.map(r=>
       '<div class="rev-item"><span class="rv-stars">'+starsGlyphs(r.rating)+'</span>'
       +'<div class="rv-who">'+escA(r.display_name||"A reader")+' · '+new Date(r.created_at).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})+'</div>'
       +(r.body?'<p>'+escA(r.body)+'</p>':'')
+      +(u&&r.user_id===u.id?'<div class="rev-del" id="revDel"></div>':'')
       +'</div>').join("");
-    const u=window.STELLAR&&window.STELLAR.user;
     const mine=u&&rows.find(r=>r.user_id===u.id);
+    if(mine) renderRevDel(false);
     if(mine){
       revRating=mine.rating; $("revStars").innerHTML=starRow(revRating);
       wireStars();
@@ -2889,6 +2913,39 @@ async function loadReviews(slug){
       $("revSubmit").textContent="Update your review";
     }
   }catch(e){ listEl.innerHTML='<p class="hint">Could not fetch reviews right now.</p>'; }
+}
+/* the reader's own review can be taken down: one tap asks, the second deletes */
+function renderRevDel(asking){
+  const el=$("revDel"); if(!el) return;
+  if(!asking){
+    el.innerHTML='<button type="button" id="revDelAsk">Delete my review</button>';
+    $("revDelAsk").onclick=()=>renderRevDel(true);
+    return;
+  }
+  el.innerHTML='<span>Delete your review of this deck?</span><button type="button" class="rev-del-go" id="revDelGo">Delete</button><button type="button" id="revDelKeep">Keep</button>';
+  $("revDelKeep").onclick=()=>renderRevDel(false);
+  $("revDelGo").onclick=deleteMyReview;
+}
+async function deleteMyReview(){
+  const go=$("revDelGo"), keep=$("revDelKeep");
+  if(go) go.disabled=true; if(keep) keep.disabled=true;
+  const msg=$("revMsg");
+  try{
+    const c=window.STELLAR._sb();
+    const u=window.STELLAR.user;
+    if(!c||!u) throw new Error("signed out");
+    const{data,error}=await c.from("deck_reviews").delete().eq("deck_slug",revDeck).eq("user_id",u.id).select("deck_slug");
+    if(error) throw error;
+    if(!data||!data.length) throw new Error("nothing deleted");
+    revRating=0; $("revStars").innerHTML=starRow(0); wireStars();
+    $("revBody").value="";
+    $("revSubmit").textContent="Post your review";
+    msg.classList.remove("hidden"); msg.textContent="Your review is deleted.";
+    loadReviews(revDeck); refreshDeckMeta();
+  }catch(err){
+    msg.classList.remove("hidden"); msg.textContent="Could not delete that. Try again in a moment.";
+    if(go) go.disabled=false; if(keep) keep.disabled=false;
+  }
 }
 function wireStars(){
   $("revStars").querySelectorAll("[data-star]").forEach(b=>{
@@ -5508,6 +5565,10 @@ const ARCH_RETURN=(function(){
 /* the headline number for a tier, said in words a reader can scan */
 function archCount(t){ return t.cap===Infinity?"Unlimited":t.cap.toLocaleString()+" readings"; }
 function archTierDef(id){ for(let i=0;i<ARCH_TIERS.length;i++){ if(ARCH_TIERS[i].id===id) return ARCH_TIERS[i]; } return null; }
+/* the small print beside a buy button. Prices come from ARCH_TIERS, PLAN_PRICE or the decks rows, never typed here. */
+const TERMS_URL="https://www.stellarastro.app/terms";
+function subNoteHTML(price){ return '<p class="buy-note">'+price+'. It renews automatically until you cancel, and you can cancel any time in Manage plan. <a href="'+TERMS_URL+'" target="_blank" rel="noopener">Terms</a></p>'; }
+function onceNoteHTML(price){ return '<p class="buy-note">'+String(price).replace(/\s+once\b.*$/,"")+', one payment.</p>'; }
 function archTier(){ return ENT.tier||"free"; }
 function archCap(){ const t=archTierDef(archTier()); return t?t.cap:0; }
 function archName(){ const t=archTierDef(archTier()); return t?t.name:""; }
@@ -5641,8 +5702,9 @@ function renderArchive(){
         +'<div class="at-top"><span class="at-name">'+t.name+'<span class="at-count">'+archCount(t)+'</span></span>'
       +'<span class="at-price">'+t.price+'</span></div>'
         +'<p>'+t.blurb+'</p>'
-        +'<a class="dk-use'+(t.life?" fill":"")+'" href="'+t.link+'" target="_blank" rel="noopener">'
-        +(t.life?"Keep them forever ↗︎":"Choose "+t.name+" ↗︎")+'</a></div>';
+        +'<a class="dk-use'+(t.life?" fill":"")+'" href="'+t.link+'" target="_blank" rel="noopener" data-stripe>'
+        +(t.life?"Keep them forever ↗︎":"Choose "+t.name+" ↗︎")+'</a>'
+        +(t.life?onceNoteHTML(t.price):subNoteHTML(t.price))+'</div>';
     }).join("");
     html+='<div class="arch-grid">'+cards+'</div>';
   }
@@ -5663,7 +5725,8 @@ function renderStellarPlans(){
       +'<span class="at-price">'+PLAN_PRICE[t]+'</span></div>'
       +'<ul>'+PLAN_INCL[t].map(function(x){ return '<li>'+x+'</li>'; }).join("")+'</ul>'
       +(own?'<p class="arch-note">Manage it in Stellar.</p>'
-           :'<a class="dk-use'+(life?" fill":"")+'" href="'+STELLAR_UPGRADE_URL+'" target="_blank" rel="noopener">Get '+PLAN_NAMES[t]+' in Stellar ↗︎</a>')
+           :'<a class="dk-use'+(life?" fill":"")+'" href="'+STELLAR_UPGRADE_URL+'" target="_blank" rel="noopener">Get '+PLAN_NAMES[t]+' in Stellar ↗︎</a>'
+             +(life?onceNoteHTML(PLAN_PRICE[t]):subNoteHTML(PLAN_PRICE[t])))
       +'</div>';
   }).join("");
 }
@@ -5754,13 +5817,13 @@ function openSubSheet(){
     if(up) html+='<div class="cap-plan hi sub-hero"><span class="arch-badge">Upgrade</span>'
       +'<div class="cp-top"><span class="cp-name">'+up.name+'</span><span class="cp-price">'+up.price+'</span></div>'
       +'<p>'+archCount(up)+' with your notes, instead of '+t.cap+'. Stripe swaps the plan today and only charges the difference for the rest of the month.</p>'
-      +'<button type="button" class="dk-use fill" data-subflow="update">Upgrade to '+up.name+' ↗︎</button></div>';
+      +'<button type="button" class="dk-use fill" data-subflow="update">Upgrade to '+up.name+' ↗︎</button>'+subNoteHTML(up.price)+'</div>';
     html+='<div class="cap-plan"><div class="cp-top"><span class="cp-name">Bundle with astrology</span><span class="cp-price">from $4.99 a month</span></div>'
       +'<p class="hint" style="margin:6px 0 10px">Stellar\'s plans include this archive: Star Gazer keeps 100 readings, Star Reader 1,000, Deep Sky unlimited, and they add birth charts, transits and lucky days. One plan for both apps. Pick one in Stellar, then cancel this plan below so you are never paying twice.</p>'
       +'<a class="dk-use" href="'+STELLAR_UPGRADE_URL+'" target="_blank" rel="noopener">See the Stellar plans ↗︎</a></div>';
-    html+='<div class="cap-plan"><div class="cp-top"><span class="cp-name">Keep them forever</span><span class="cp-price">$111.11 once</span></div>'
+    html+='<div class="cap-plan"><div class="cp-top"><span class="cp-name">Keep them forever</span><span class="cp-price">'+archTierDef("lifetime").price+'</span></div>'
       +'<p class="hint" style="margin:6px 0 10px">Lifetime, no renewals. Buy it, then cancel the monthly plan below; your readings stay put.</p>'
-      +'<a class="dk-use" href="'+archTierDef("lifetime").link+'" target="_blank" rel="noopener">Keep them forever ↗︎</a></div>';
+      +'<a class="dk-use" href="'+archTierDef("lifetime").link+'" target="_blank" rel="noopener" data-stripe>Keep them forever ↗︎</a>'+onceNoteHTML(archTierDef("lifetime").price)+'</div>';
     html+='<div class="sub-quiet"><button type="button" class="dk-use" data-subflow="portal">Card and receipts</button>'
       +'<button type="button" class="dk-use sub-cancel" data-subflow="cancel">Cancel my subscription</button></div>'
       +'<p class="hint" style="text-align:center;margin:8px 0 0">Cancelling keeps the plan to the end of the paid month. The readings stay; you just cannot add past the free ten.</p>';
@@ -5783,10 +5846,10 @@ function openStellarSubSheet(){
     if(up) html+='<div class="cap-plan hi sub-hero"><span class="arch-badge">Upgrade</span>'
       +'<div class="cp-top"><span class="cp-name">'+PLAN_NAMES[up]+'</span><span class="cp-price">'+PLAN_PRICE[up]+'</span></div>'
       +'<p>'+PLAN_INCL[up].slice(0,4).join(" · ")+'. Stripe swaps the plan today and only charges the difference for the rest of the period.</p>'
-      +'<button type="button" class="dk-use fill" data-subflow="update">Upgrade to '+PLAN_NAMES[up]+' ↗︎</button></div>';
+      +'<button type="button" class="dk-use fill" data-subflow="update">Upgrade to '+PLAN_NAMES[up]+' ↗︎</button>'+subNoteHTML(PLAN_PRICE[up])+'</div>';
     html+='<div class="cap-plan'+(up?"":" hi sub-hero")+'">'+(up?"":'<span class="arch-badge">Upgrade</span>')+'<div class="cp-top"><span class="cp-name">'+PLAN_NAMES.lifetime+'</span><span class="cp-price">'+PLAN_PRICE.lifetime+'</span></div>'
       +'<p class="hint" style="margin:6px 0 10px">'+PLAN_INCL.lifetime.slice(0,3).join(" · ")+'. Bought in Stellar; your monthly plan ends with it.</p>'
-      +'<a class="dk-use'+(up?"":" fill")+'" href="'+STELLAR_UPGRADE_URL+'" target="_blank" rel="noopener">Get '+PLAN_NAMES.lifetime+' in Stellar ↗︎</a></div>';
+      +'<a class="dk-use'+(up?"":" fill")+'" href="'+STELLAR_UPGRADE_URL+'" target="_blank" rel="noopener">Get '+PLAN_NAMES.lifetime+' in Stellar ↗︎</a>'+onceNoteHTML(PLAN_PRICE.lifetime)+'</div>';
     html+='<div class="sub-quiet"><button type="button" class="dk-use" data-subflow="portal">Card and receipts</button>'
       +'<button type="button" class="dk-use sub-cancel" data-subflow="cancel">Cancel my subscription</button></div>'
       +'<p class="hint" style="text-align:center;margin:8px 0 0">Cancelling keeps the plan to the end of the paid period, in both apps. Your charts and readings stay.</p>';
@@ -5799,6 +5862,12 @@ function openStellarSubSheet(){
   m.classList.remove("hidden");
 }
 function closeSubSheet(){ const m=$("subModal"); if(m) m.classList.add("hidden"); }
+/* a Stripe Payment Link: agree to the terms first, then open it */
+document.addEventListener("click",function(e){
+  const a=e.target.closest&&e.target.closest("a[data-stripe]"); if(!a) return;
+  const url=a.href;
+  if(window.StellarTerms&&StellarTerms.guard(()=>{if(!window.open(url,"_blank"))location.href=url;})) e.preventDefault();
+});
 document.addEventListener("click",function(e){
   const b=e.target.closest&&e.target.closest("[data-subflow]");
   if(b){ archPortal(b.dataset.subflow==="portal"?"":b.dataset.subflow, b); return; }
@@ -5806,6 +5875,7 @@ document.addEventListener("click",function(e){
   if(e.target.id==="subModal") closeSubSheet();
 });
 async function archPortal(flow,btn){
+  if(flow==="update"&&window.StellarTerms&&!(await StellarTerms.requireAgreement()))return;
   if(btn) btn.disabled=true;
   let j=null;
   if(subKind()==="stellar"){
@@ -5833,7 +5903,8 @@ function openCapSheet(){
   $("capPlans").innerHTML=order.map(function(t,i){
     return '<div class="cap-plan'+(i===0?' hi':'')+'"><div class="cp-top"><span class="cp-name">'+PLAN_NAMES[t]+'</span><span class="cp-price">'+PLAN_PRICE[t]+'</span></div>'
       +'<ul>'+PLAN_INCL[t].map(function(x){ return '<li>'+x+'</li>'; }).join("")+'</ul>'
-      +'<a class="dk-use'+(i===0?' fill':'')+'" href="'+STELLAR_UPGRADE_URL+'" target="_blank" rel="noopener">Get '+PLAN_NAMES[t]+' in Stellar ↗︎</a></div>';
+      +'<a class="dk-use'+(i===0?' fill':'')+'" href="'+STELLAR_UPGRADE_URL+'" target="_blank" rel="noopener">Get '+PLAN_NAMES[t]+' in Stellar ↗︎</a>'
+      +(t==="lifetime"?onceNoteHTML(PLAN_PRICE[t]):subNoteHTML(PLAN_PRICE[t]))+'</div>';
   }).join("");
   const f=$("capFoot");
   if(f) f.innerHTML='Or keep more readings right here with <a data-archlink>a reading archive plan</a>. Plans also live in Stellar, the astrology app this account shares; one bought there unlocks here the moment you come back. Or <a id="capTidy">delete a few older readings</a> to make room.';
@@ -6981,11 +7052,38 @@ archRevalidate();
     } catch (e) { /* expired or used token: continue signed out */ }
   }
 
+  /* the terms pop-up (terms-gate.js): asked once per terms version, after any sign-in or restored session */
+  var termsReady = false, termsUid = null;
+  function initTerms() {
+    if (termsReady || !sb || !window.StellarTerms) return;
+    termsReady = true;
+    try {
+      window.StellarTerms.init({
+        sb: function () { return sb; },
+        user: function () { return user; },
+        app: "tarot",
+        /* the app's own sign-out, so the menu resets the way it does from the button */
+        signOut: function () { var b = document.getElementById("pmSignOut"); if (b && !b.disabled) { b.click(); return Promise.resolve(); } return api.signOut(); }
+      });
+      var links = window.StellarTerms.footerLinksHTML();
+      [].forEach.call(document.querySelectorAll(".legal-fill"), function (el) { el.innerHTML = links; });
+    } catch (e) {}
+  }
+  function checkTerms() {
+    if (!user) { termsUid = null; return; }
+    if (user.id === termsUid || !window.StellarTerms) return;
+    termsUid = user.id;
+    initTerms();
+    try { window.StellarTerms.check(user); } catch (e) {}
+  }
+
   async function boot() {
     if (!sb) initClient();
+    initTerms();
     try { await consumeHandoff(); } catch (e) {}
     try { if (sb) { var s = await sb.auth.getSession(); user = (s && s.data && s.data.session && s.data.session.user) || null; } } catch (e) { user = null; }
     api.user = user;
+    checkTerms();
     var chart = null; try { chart = await getActiveChart(); } catch (e) {}
     api.chart = chart;
     api.identity = chart ? identityFor(chart) : null;
@@ -6995,6 +7093,7 @@ archRevalidate();
   }
   window.STELLAR = api;
   initClient();
+  initTerms();
   try { if (sb) sb.auth.onAuthStateChange(function () { boot(); }); } catch (e) {}
   if (document.readyState === "loading") { document.addEventListener("DOMContentLoaded", function () { boot(); }); } else { setTimeout(boot, 0); }
 })();
@@ -7027,7 +7126,18 @@ archRevalidate();
     } catch (e) {}
     return null;
   }
-  function markBound() { try { localStorage.setItem(DONE, "1"); } catch (e) {} }
+  /* DONE holds the time it was bound (older browsers hold "1"); both keys go after DAYS */
+  function markBound() { try { localStorage.setItem(DONE, String(Date.now())); } catch (e) {} }
+  function expireOld() {
+    try {
+      var b = localStorage.getItem(DONE);
+      if (b === "1") localStorage.setItem(DONE, String(Date.now()));   /* legacy flag: its 60 days start now */
+      else if (b && !(Date.now() - Number(b) < DAYS * 864e5)) localStorage.removeItem(DONE);
+      var r = JSON.parse(localStorage.getItem(KEY) || "null");
+      if (r && !(r.code && Date.now() - r.at < DAYS * 864e5)) localStorage.removeItem(KEY);
+    } catch (e) {}
+  }
+  expireOld();
 
   function flushClick() {
     if (!pendingClick) return;
