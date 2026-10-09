@@ -992,6 +992,15 @@
     .lib-card.lf .lc-thumb{width:96px;height:144px}
     .lib-card.lf .lc-name{font-size:22px}
   }
+  /* sign in with a code */
+  .otp-step .otp-lead{font-size:13px;line-height:1.55;color:var(--silver);margin:0 0 6px}
+  .otp-step .otp-to{font-size:11.5px;color:var(--mist);margin:0 0 10px;word-break:break-all}
+  .otp-step .otp-code{font-size:26px;letter-spacing:.38em;text-align:center;font-family:ui-monospace,Menlo,monospace;border-radius:14px;padding:10px 8px 10px 18px}
+  .otp-step .otp-msg{font-size:12.5px;margin-top:10px;min-height:1.2em;color:var(--mist)}
+  .otp-step .otp-msg.otp-bad{color:#e3a0a8}
+  .otp-step .otp-links{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:12px}
+  .pm-otp-link{background:none;border:0;padding:0;font-family:"Trebuchet MS",sans-serif;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-soft);cursor:pointer}
+  .pm-otp-link:disabled{color:var(--mist);cursor:default}
   .hidden{display:none!important}
   footer{text-align:center;color:var(--mist);font-size:12px;margin-top:50px;opacity:.7;letter-spacing:.05em}
 
@@ -1107,6 +1116,7 @@ try{  /* the arrival, which may already be a deep link to an artist or a deck */
       <input type="email" class="pm-email" id="pmEmail" placeholder="you@example.com" autocomplete="email" required>
       <button class="pm-go" id="pmSignIn" type="submit">✷ &nbsp;Email me a sign-in link</button>
     </form>
+    <div id="pmCode" class="otp-step hidden"></div>
   </div>
   <div id="pmSignedIn" class="hidden">
     <p class="pm-soon" style="text-align:left;margin:0 0 4px">Signed in as</p>
@@ -6601,6 +6611,115 @@ archRevalidate();
   /* real sign-in, backed by the STELLAR bridge (magic link via signInWithOtp).
      Astrology/chart linking is intentionally NOT surfaced yet; only the session. */
   var IDLE_NOTE="You're not signed in. Sign in with Stellar and your account carries across both apps.";
+  /* ---- SIGN IN WITH A CODE ----
+     The same email that carries the sign-in link carries a one-time code (Supabase puts
+     {{ .Token }} in the template). After the link is sent, the form becomes a code field,
+     for people who read their email on another device. The code goes only to verifyOtp and
+     is never logged or stored. The email is held in memory for this screen only. Opening the
+     link on this device still works: the screen notices the new session and carries on. */
+  var OTP_LEN = 6, OTP_TTL_MS = 10 * 60 * 1000, OTP_RESEND_S = 60;
+  var OTP_MSG = {
+    wrong: "That code doesn't match. Check the latest email and try again.",
+    expired: "That code has expired. Send a new one.",
+    many: "Too many tries. Wait a minute, then send a new code.",
+    short: "Enter all " + OTP_LEN + " digits of the code.",
+    sendFail: "We couldn't send a new code just now. Try again in a minute."
+  };
+  function otpClean(v) { return String(v || "").replace(/\D/g, "").slice(0, OTP_LEN); }
+  // Supabase answers a wrong and an expired code the same way, so the clock since the last send decides
+  function otpErrKind(e, sentAt) {
+    var st = e && e.status, m = String((e && e.message) || "").toLowerCase(), c = String((e && e.code) || "");
+    if (st === 429 || /rate limit|too many/.test(m) || c.indexOf("rate_limit") >= 0) return "many";
+    if (Date.now() - sentAt > OTP_TTL_MS) return "expired";
+    return "wrong";
+  }
+  /* host: the element the step replaces the form inside. o: { email, verify(code) -> Promise,
+     resend() -> Promise, different(), signedIn(), onSession(cb) -> unsubscribe, cls: {input, btn, link, msg} } */
+  function mountOtpStep(host, o) {
+    var cls = o.cls || {};
+    var sentAt = Date.now(), busy = false, timer = null, unsub = null, done = false;
+    host.innerHTML =
+      '<p class="otp-lead">Check your email. Tap the link in it, or type the code here if you’re on a different device.</p>' +
+      '<p class="otp-to">Sent to <b></b></p>' +
+      '<input class="otp-code ' + (cls.input || "") + '" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="' + OTP_LEN + '" pattern="[0-9]*" placeholder="' + Array(OTP_LEN + 1).join("0") + '" aria-label="Sign-in code">' +
+      '<button type="button" class="otp-go ' + (cls.btn || "") + '">Sign in</button>' +
+      '<div class="otp-msg ' + (cls.msg || "") + '" role="status" aria-live="polite"></div>' +
+      '<div class="otp-links"><button type="button" class="otp-resend ' + (cls.link || "") + '" disabled></button>' +
+      '<button type="button" class="otp-diff ' + (cls.link || "") + '">Use a different email</button></div>';
+    var q = function (s) { return host.querySelector(s); };
+    q(".otp-to b").textContent = o.email;
+    var inp = q(".otp-code"), go = q(".otp-go"), msg = q(".otp-msg"), rs = q(".otp-resend");
+    var say = function (t, bad) { msg.textContent = t || ""; msg.classList.toggle("otp-bad", !!bad); };
+    var tick = function (left) {
+      clearInterval(timer);
+      var paint = function () { rs.disabled = left > 0; rs.textContent = left > 0 ? "Send a new code (" + left + "s)" : "Send a new code"; };
+      paint();
+      timer = setInterval(function () { left--; paint(); if (left <= 0) clearInterval(timer); }, 1000);
+    };
+    var finish = function () { if (done) return; done = true; clearInterval(timer); if (unsub) try { unsub(); } catch (e) {} };
+    var submit = function () {
+      if (busy || done) return;
+      var code = otpClean(inp.value);
+      if (code.length !== OTP_LEN) { say(OTP_MSG.short, true); inp.focus(); return; }
+      busy = true; go.disabled = true; say("Signing you in…");
+      Promise.resolve().then(function () { return o.verify(code); }).then(function (r) {
+        if (r && r.error) throw r.error;
+        say("Signed in."); finish(); o.signedIn();
+      }).catch(function (e) {
+        say(OTP_MSG[otpErrKind(e, sentAt)], true); inp.select();
+      }).then(function () { busy = false; go.disabled = false; });
+    };
+    inp.addEventListener("input", function () {
+      var c = otpClean(inp.value); if (inp.value !== c) inp.value = c;
+      if (c.length === OTP_LEN) submit();
+    });
+    // a pasted "123 456" or "Your code is 123456" keeps only the digits
+    inp.addEventListener("paste", function (e) {
+      var t = (e.clipboardData || window.clipboardData); t = t ? t.getData("text") : "";
+      if (!t) return; e.preventDefault(); inp.value = otpClean(t); if (inp.value.length === OTP_LEN) submit();
+    });
+    inp.addEventListener("keydown", function (e) { if (e.key === "Enter") submit(); });
+    go.addEventListener("click", submit);
+    rs.addEventListener("click", function () {
+      if (rs.disabled) return;
+      rs.disabled = true; say("Sending a new code…");
+      Promise.resolve().then(function () { return o.resend(); }).then(function (r) {
+        if (r && r.error) throw r.error;
+        sentAt = Date.now(); inp.value = ""; say("A new code is on its way. Use the newest email."); tick(OTP_RESEND_S);
+      }).catch(function (e) {
+        say((e && e.status === 429) ? OTP_MSG.many : OTP_MSG.sendFail, true); tick(OTP_RESEND_S);
+      });
+    });
+    q(".otp-diff").addEventListener("click", function () { finish(); o.different(); });
+    // the link opened on this device signs this tab in too: carry on without the code
+    try { unsub = o.onSession ? o.onSession(function () { if (!done) { finish(); o.signedIn(); } }) : null; } catch (e) {}
+    tick(OTP_RESEND_S);
+    try { inp.focus({ preventScroll: true }); } catch (e) {}
+    return finish;
+  }
+
+  var _pmCodeStop=null;
+  function pmBackToEmail(){
+    if(_pmCodeStop) try{ _pmCodeStop(); }catch(e){}
+    _pmCodeStop=null;
+    var c=$("pmCode"); c.classList.add("hidden"); c.innerHTML="";
+    $("pmForm").classList.remove("hidden"); $("pmNote").classList.remove("hidden");
+  }
+  function pmShowCode(email){
+    var c=$("pmCode");
+    $("pmForm").classList.add("hidden"); $("pmNote").classList.add("hidden"); c.classList.remove("hidden");
+    _pmCodeStop=mountOtpStep(c,{
+      email:email,
+      verify:function(code){ return window.STELLAR.verifyCode(email,code); },
+      resend:function(){ return window.STELLAR.signIn(email); },
+      different:function(){ pmBackToEmail(); $("pmEmail").value=""; $("pmNote").textContent=IDLE_NOTE; try{ $("pmEmail").focus(); }catch(e){} },
+      /* the bridge's own auth listener re-boots and renderAuth shows the signed-in side; the
+         form is put back for the next time someone signs out */
+      signedIn:function(){ pmBackToEmail(); $("pmNote").textContent=IDLE_NOTE; try{ window.STELLAR.refresh(); }catch(e){} },
+      onSession:function(cb){ return window.STELLAR.onSession?window.STELLAR.onSession(cb):function(){}; },
+      cls:{btn:"pm-go",link:"pm-otp-link",input:"pm-email"}
+    });
+  }
   function renderAuth(){
     var u=(window.STELLAR&&window.STELLAR.user)||null;
     $("pmSignedOut").classList.toggle("hidden",!!u);
@@ -6620,9 +6739,8 @@ archRevalidate();
     catch(err){ p=Promise.reject(err); }
     p.then(function(res){
       if(res&&res.error) throw res.error;
-      $("pmNote").textContent="Link sent to "+email+". Open it on this device; it works once and expires shortly.";
-      /* allow a resend after a minute, matching the auth rate limit */
-      setTimeout(function(){ go.disabled=false; },60000);
+      go.disabled=false;
+      pmShowCode(email);
     }).catch(function(err){
       $("pmNote").textContent="Could not send the link ("+((err&&err.message)||"sign-in unavailable")+"). Check the address and try again.";
       go.disabled=false;
@@ -6837,6 +6955,8 @@ archRevalidate();
     ready: false, user: null, chart: null, identity: null,
     _sb: function () { return sb; },
     signIn: function (email) { if (!sb) initClient(); if (!sb) return Promise.reject(new Error("supabase unavailable")); return sb.auth.signInWithOtp({ email: email, options: { emailRedirectTo: location.origin + location.pathname } }); },
+    verifyCode: function (email, code) { if (!sb) initClient(); if (!sb) return Promise.reject(new Error("supabase unavailable")); return sb.auth.verifyOtp({ email: email, token: code, type: "email" }); },
+    onSession: function (cb) { if (!sb) return function () {}; var r = sb.auth.onAuthStateChange(function (_e, s) { if (s && s.user) cb(); }); return function () { try { r.data.subscription.unsubscribe(); } catch (e) {} }; },
     signOut: function () { if (!sb) return Promise.resolve(); return sb.auth.signOut().then(function () { api.user = user = null; api.chart = null; api.identity = null; }); },
     refresh: function () { return boot(); },
     getActiveChart: getActiveChart, placementsFor: placementsFor, identityFor: identityFor,
